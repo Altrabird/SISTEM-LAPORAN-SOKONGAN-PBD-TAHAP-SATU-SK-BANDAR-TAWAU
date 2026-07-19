@@ -21,7 +21,12 @@ import {
   Flame,
   Clock,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Calendar,
+  ClipboardList,
+  GraduationCap,
+  Info,
+  HelpCircle
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -417,6 +422,110 @@ export default function Dashboard({ activities, onNavigate }: DashboardProps) {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Section 5: Rujukan & Panduan Tugasan Kumpulan Guru Bertugas */}
+      <div className="rounded-3xl border border-gray-100 bg-white p-6 md:p-8 shadow-sm space-y-6">
+        <div className="border-b border-gray-50 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-gray-900 inline-flex items-center gap-2">
+              <ClipboardList className="h-5.5 w-5.5 text-indigo-600" />
+              Panduan & Rujukan Tugasan Kumpulan Guru Bertugas PBD
+            </h3>
+            <p className="text-xs text-gray-500">
+              Rujukan rasmi giliran kumpulan, fokus kurikulum intervensi, serta garis panduan penilaian PBD Tahap 1.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1">
+              Modul Rujukan SKBT 2026
+            </span>
+          </div>
+        </div>
+
+        {/* Inner Grid layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Column 1: Info Kumpulan & Fokus */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              <h4 className="text-sm font-bold text-gray-800">1. Jadual Penggiliran & Fokus Kumpulan Guru Bertugas</h4>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { name: 'Kumpulan Ancala', color: 'border-l-blue-500 bg-blue-50/10 text-blue-800', day: 'Isnin', teacher: 'Siti Noraidah', focus: 'Meningkatkan kelancaran membaca suku kata KV dan KVKV.' },
+                { name: 'Kumpulan Baluran', color: 'border-l-pink-500 bg-pink-50/10 text-pink-800', day: 'Selasa', teacher: 'Ahmad Rafiqi', focus: 'Latihan Phonics Blending dan ejaan perkataan CVC mudah.' },
+                { name: 'Kumpulan Ceremai', color: 'border-l-emerald-500 bg-emerald-50/10 text-emerald-800', day: 'Rabu', teacher: 'Fatimah Az-Zahra', focus: 'Aktiviti membaca nyaring ayat tunggal pendek dan bertema.' },
+                { name: 'Kumpulan Dataran', color: 'border-l-amber-500 bg-amber-50/10 text-amber-800', day: 'Khamis', teacher: 'Mohd Shukri', focus: 'Latihan penulisan perkataan dan membina frasa ringkas.' },
+                { name: 'Kumpulan Kinabalu', color: 'border-l-indigo-500 bg-indigo-50/10 text-indigo-800', day: 'Jumaat', teacher: 'Michelle Wong', focus: 'Bimbingan bertutur menerusi simulasi atau main peranan ringkas.' },
+                { name: 'Kumpulan Ledang', color: 'border-l-purple-500 bg-purple-50/10 text-purple-800', day: 'Kumpulan Sokongan', teacher: 'Samsiah Sundu', focus: 'Sesi intervensi klinikal individu bagi murid sasaran TP1.' }
+              ].map((group, index) => (
+                <div key={index} className={`rounded-xl border border-gray-100 border-l-4 p-4 space-y-2 transition hover:shadow-sm ${group.color}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs">{group.name}</span>
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-white border border-gray-100">{group.day}</span>
+                  </div>
+                  <div className="text-[11px] text-gray-600 leading-relaxed">
+                    <p className="font-medium text-gray-900">Guru Utama: <span className="font-semibold text-gray-800">Cikgu {group.teacher}</span></p>
+                    <p className="mt-1 text-gray-500 italic">Fokus Utama: {group.focus}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Column 2: Alur Kerja SOP & Standard Penilaian */}
+          <div className="space-y-6">
+            
+            {/* SOP section */}
+            <div className="rounded-2xl border border-indigo-50 bg-indigo-50/20 p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="h-5 w-5 text-indigo-700" />
+                <h4 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">SOP & Alur Kerja Guru Bertugas</h4>
+              </div>
+              
+              <div className="space-y-3 text-xs text-indigo-900 leading-relaxed">
+                <div className="flex gap-2.5">
+                  <span className="h-5 w-5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold flex items-center justify-center shrink-0">1</span>
+                  <p><strong>Kenal Pasti Murid Sasaran</strong>: Pilih murid Tahap 1 yang berprestasi TP1 / TP2 dalam subjek BM atau BI.</p>
+                </div>
+                <div className="flex gap-2.5">
+                  <span className="h-5 w-5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold flex items-center justify-center shrink-0">2</span>
+                  <p><strong>Rujuk Gemini AI</strong>: Pilih modul aktiviti interaktif yang bersesuaian di tab <span className="font-semibold cursor-pointer text-indigo-700 hover:underline" onClick={() => onNavigate('ai')}>Penasihat AI</span>.</p>
+                </div>
+                <div className="flex gap-2.5">
+                  <span className="h-5 w-5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold flex items-center justify-center shrink-0">3</span>
+                  <p><strong>Rakam Foto 4 Fasa</strong>: Pastikan anda merakam gambar bagi setiap fasa bimbingan semasa sesi berlangsung.</p>
+                </div>
+                <div className="flex gap-2.5">
+                  <span className="h-5 w-5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold flex items-center justify-center shrink-0">4</span>
+                  <p><strong>Daftar & Cetak</strong>: Simpan data di tab <span className="font-semibold cursor-pointer text-indigo-700 hover:underline" onClick={() => onNavigate('form')}>Rekod Baru</span>, jana cetakan PDF A4, dan segerakkan ke Google Sheets.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick TP guide */}
+            <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-gray-700" />
+                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Rujukan Aras TP PBD</h4>
+              </div>
+
+              <div className="space-y-2 text-[10.5px] leading-relaxed text-gray-600">
+                <p><span className="font-semibold text-red-600">TP1 (Sangat Terhad)</span>: Murid memerlukan bimbingan penuh untuk memahami perkara asas.</p>
+                <p><span className="font-semibold text-amber-600">TP2 (Terhad)</span>: Murid faham konsep asas tetapi memerlukan bantuan melafaz/menulis.</p>
+                <p><span className="font-semibold text-blue-600">TP3 (Memuaskan)</span>: Murid berdikari dalam membaca/menulis perkataan asas.</p>
+                <p><span className="font-semibold text-indigo-600">TP4 (Baik)</span>: Menguasai kemahiran dengan betul, sopan, dan lancar.</p>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
     </div>
