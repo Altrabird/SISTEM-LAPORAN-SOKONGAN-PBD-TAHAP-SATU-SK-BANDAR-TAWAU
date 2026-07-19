@@ -1,0 +1,6 @@
+{
+  "name": "Sistem Laporan PBD & Dashboard Interaktif",
+  "description": "Aplikasi web bersepadu untuk mendaftar, menjana laporan bergambar (A4 PDF), dan menguruskan statistik interaktif aktiviti sokongan PBD murid Tahap 1 subjek BM & BI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

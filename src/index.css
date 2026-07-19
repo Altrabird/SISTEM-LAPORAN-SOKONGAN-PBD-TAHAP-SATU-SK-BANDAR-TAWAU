@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer utilities {
+  /* Print layout styling overrides to optimize printing only the report on A4 */
+  @media print {
+    body {
+      background-color: white !important;
+      color: black !important;
+    }
+    main {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    #printable-report-card {
+      border: none !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      max-width: 100% !important;
+      width: 100% !important;
+    }
+    .page-break-before {
+      page-break-before: always;
+    }
+  }
+}
