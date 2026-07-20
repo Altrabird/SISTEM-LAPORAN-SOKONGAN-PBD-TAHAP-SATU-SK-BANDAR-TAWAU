@@ -31,3 +31,21 @@ export interface PbdStrategyRequest {
   targetTp: number;
   studentCount: number;
 }
+
+export interface DutyWeek {
+  number: number;
+  dates: string;
+}
+
+export interface DutyMember {
+  name: string;
+  role: string;
+}
+
+export interface DutyGroup {
+  name: string;
+  weeks: DutyWeek[];
+  members: DutyMember[];
+  holidays?: string[];
+  perananKetua?: string[];
+}

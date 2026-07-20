@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ActivityLog, Student } from '../types';
+import { OFFICIAL_DUTY_GROUPS, TANGGUNGJAWAB_UMUM } from '../data';
 import {
   ResponsiveContainer,
   BarChart,
@@ -26,7 +27,11 @@ import {
   ClipboardList,
   GraduationCap,
   Info,
-  HelpCircle
+  HelpCircle,
+  Search,
+  Filter,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -35,6 +40,102 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ activities, onNavigate }: DashboardProps) {
+  // State for Duty Schedule Interactive Panel
+  const [selectedWeekNum, setSelectedWeekNum] = useState<number>(25); // Default to Week 25 (20 - 24 Julai, Pawana) as it falls close to July 19th 2026!
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filterMonth, setFilterMonth] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'weeks' | 'groups'>('weeks');
+
+  // Helper lists & selectors
+  const allWeeks = useMemo(() => {
+    const list: { weekNum: number; dates: string; groupName: string; holidays?: string[] }[] = [];
+    OFFICIAL_DUTY_GROUPS.forEach(group => {
+      group.weeks.forEach(wk => {
+        list.push({
+          weekNum: wk.number,
+          dates: wk.dates,
+          groupName: group.name,
+          holidays: wk.holidays
+        });
+      });
+    });
+    return list.sort((a, b) => a.weekNum - b.weekNum);
+  }, []);
+
+  const filteredWeeks = useMemo(() => {
+    return allWeeks.filter(wk => {
+      const matchesSearch = searchQuery === '' ||
+        `minggu ${wk.weekNum}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        wk.groupName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        wk.dates.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        OFFICIAL_DUTY_GROUPS.find(g => g.name === wk.groupName)?.members.some(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const matchesMonth = filterMonth === 'all' ||
+        wk.dates.toLowerCase().includes(filterMonth.toLowerCase());
+
+      return matchesSearch && matchesMonth;
+    });
+  }, [allWeeks, searchQuery, filterMonth]);
+
+  const selectedWeekDetail = useMemo(() => {
+    const wk = allWeeks.find(w => w.weekNum === selectedWeekNum);
+    if (!wk) return null;
+    const group = OFFICIAL_DUTY_GROUPS.find(g => g.name === wk.groupName);
+    return {
+      weekNum: wk.weekNum,
+      dates: wk.dates,
+      group,
+      holidays: wk.holidays
+    };
+  }, [allWeeks, selectedWeekNum]);
+
+  const groupStyleHelpers = {
+    getBadge: (name: string) => {
+      switch (name.toLowerCase()) {
+        case 'ancala': return 'bg-blue-50 border-blue-200 text-blue-700';
+        case 'buana': return 'bg-emerald-50 border-emerald-200 text-emerald-700';
+        case 'candra': return 'bg-yellow-50 border-yellow-200 text-yellow-700';
+        case 'kencana': return 'bg-orange-50 border-orange-200 text-orange-700';
+        case 'mega': return 'bg-sky-50 border-sky-200 text-sky-700';
+        case 'pawana': return 'bg-purple-50 border-purple-200 text-purple-700';
+        default: return 'bg-gray-50 border-gray-200 text-gray-700';
+      }
+    },
+    getCard: (name: string) => {
+      switch (name.toLowerCase()) {
+        case 'ancala': return 'border-l-blue-500 bg-blue-50/5 hover:bg-blue-50/10 text-blue-900';
+        case 'buana': return 'border-l-emerald-500 bg-emerald-50/5 hover:bg-emerald-50/10 text-emerald-900';
+        case 'candra': return 'border-l-yellow-500 bg-yellow-50/5 hover:bg-yellow-50/10 text-yellow-900';
+        case 'kencana': return 'border-l-orange-500 bg-orange-50/5 hover:bg-orange-50/10 text-orange-900';
+        case 'mega': return 'border-l-sky-500 bg-sky-50/5 hover:bg-sky-50/10 text-sky-900';
+        case 'pawana': return 'border-l-purple-500 bg-purple-50/5 hover:bg-purple-50/10 text-purple-900';
+        default: return 'border-l-gray-500 bg-gray-50/5 hover:bg-gray-50/10 text-gray-900';
+      }
+    },
+    getTextColor: (name: string) => {
+      switch (name.toLowerCase()) {
+        case 'ancala': return 'text-blue-700';
+        case 'buana': return 'text-emerald-700';
+        case 'candra': return 'text-yellow-700';
+        case 'kencana': return 'text-orange-700';
+        case 'mega': return 'text-sky-700';
+        case 'pawana': return 'text-purple-700';
+        default: return 'text-gray-700';
+      }
+    },
+    getDotColor: (name: string) => {
+      switch (name.toLowerCase()) {
+        case 'ancala': return 'bg-blue-500';
+        case 'buana': return 'bg-emerald-500';
+        case 'candra': return 'bg-yellow-500';
+        case 'kencana': return 'bg-orange-500';
+        case 'mega': return 'bg-sky-500';
+        case 'pawana': return 'bg-purple-500';
+        default: return 'bg-gray-500';
+      }
+    }
+  };
+
   // 1. Core aggregates
   const stats = useMemo(() => {
     let totalStudentsCount = 0;
@@ -425,109 +526,328 @@ export default function Dashboard({ activities, onNavigate }: DashboardProps) {
         </div>
       </div>
 
-      {/* Section 5: Rujukan & Panduan Tugasan Kumpulan Guru Bertugas */}
-      <div className="rounded-3xl border border-gray-100 bg-white p-6 md:p-8 shadow-sm space-y-6">
+      {/* Section 5: JADUAL GURU BERTUGAS MINGGUAN SIDANG PETANG SESI 2026 */}
+      <div id="jadual-guru-bertugas" className="rounded-3xl border border-gray-100 bg-white p-6 md:p-8 shadow-sm space-y-6">
         <div className="border-b border-gray-50 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-gray-900 inline-flex items-center gap-2">
               <ClipboardList className="h-5.5 w-5.5 text-indigo-600" />
-              Panduan & Rujukan Tugasan Kumpulan Guru Bertugas PBD
+              Jadual Guru Bertugas Mingguan (Sidang Petang 2026)
             </h3>
             <p className="text-xs text-gray-500">
-              Rujukan rasmi giliran kumpulan, fokus kurikulum intervensi, serta garis panduan penilaian PBD Tahap 1.
+              Rujukan rasmi tugasan mingguan, kebersihan, disiplin, kehadiran kelas, RMT/Kantin, dan Guru Penyayang.
             </p>
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1">
-              Modul Rujukan SKBT 2026
-            </span>
+            <button
+              onClick={() => setViewMode('weeks')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                viewMode === 'weeks'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Susun Mengikut Minggu
+            </button>
+            <button
+              onClick={() => setViewMode('groups')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                viewMode === 'groups'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Info Mengikut Kumpulan
+            </button>
           </div>
         </div>
 
-        {/* Inner Grid layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Column 1: Info Kumpulan & Fokus */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              <h4 className="text-sm font-bold text-gray-800">1. Jadual Penggiliran & Fokus Kumpulan Guru Bertugas</h4>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { name: 'Kumpulan Ancala', color: 'border-l-blue-500 bg-blue-50/10 text-blue-800', day: 'Isnin', teacher: 'Siti Noraidah', focus: 'Meningkatkan kelancaran membaca suku kata KV dan KVKV.' },
-                { name: 'Kumpulan Baluran', color: 'border-l-pink-500 bg-pink-50/10 text-pink-800', day: 'Selasa', teacher: 'Ahmad Rafiqi', focus: 'Latihan Phonics Blending dan ejaan perkataan CVC mudah.' },
-                { name: 'Kumpulan Ceremai', color: 'border-l-emerald-500 bg-emerald-50/10 text-emerald-800', day: 'Rabu', teacher: 'Fatimah Az-Zahra', focus: 'Aktiviti membaca nyaring ayat tunggal pendek dan bertema.' },
-                { name: 'Kumpulan Dataran', color: 'border-l-amber-500 bg-amber-50/10 text-amber-800', day: 'Khamis', teacher: 'Mohd Shukri', focus: 'Latihan penulisan perkataan dan membina frasa ringkas.' },
-                { name: 'Kumpulan Kinabalu', color: 'border-l-indigo-500 bg-indigo-50/10 text-indigo-800', day: 'Jumaat', teacher: 'Michelle Wong', focus: 'Bimbingan bertutur menerusi simulasi atau main peranan ringkas.' },
-                { name: 'Kumpulan Ledang', color: 'border-l-purple-500 bg-purple-50/10 text-purple-800', day: 'Kumpulan Sokongan', teacher: 'Samsiah Sundu', focus: 'Sesi intervensi klinikal individu bagi murid sasaran TP1.' }
-              ].map((group, index) => (
-                <div key={index} className={`rounded-xl border border-gray-100 border-l-4 p-4 space-y-2 transition hover:shadow-sm ${group.color}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs">{group.name}</span>
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-white border border-gray-100">{group.day}</span>
-                  </div>
-                  <div className="text-[11px] text-gray-600 leading-relaxed">
-                    <p className="font-medium text-gray-900">Guru Utama: <span className="font-semibold text-gray-800">Cikgu {group.teacher}</span></p>
-                    <p className="mt-1 text-gray-500 italic">Fokus Utama: {group.focus}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Column 2: Alur Kerja SOP & Standard Penilaian */}
+        {viewMode === 'weeks' ? (
           <div className="space-y-6">
-            
-            {/* SOP section */}
-            <div className="rounded-2xl border border-indigo-50 bg-indigo-50/20 p-5 space-y-4">
-              <div className="flex items-center gap-2">
-                <HelpCircle className="h-5 w-5 text-indigo-700" />
-                <h4 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">SOP & Alur Kerja Guru Bertugas</h4>
+            {/* Search and Filters */}
+            <div className="flex flex-col md:flex-row gap-3 items-center">
+              <div className="relative w-full md:flex-1">
+                <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Cari minggu, kumpulan, atau nama guru bertugas..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-indigo-500 transition bg-gray-50/50"
+                />
               </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <Filter className="h-4 w-4 text-gray-400 shrink-0" />
+                <select
+                  value={filterMonth}
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="w-full md:w-44 px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-indigo-500 transition"
+                >
+                  <option value="all">Semua Bulan</option>
+                  <option value="JANUARI">Januari</option>
+                  <option value="FEBRUARI">Februari</option>
+                  <option value="MAC">Mac</option>
+                  <option value="APRIL">April</option>
+                  <option value="MEI">Mei</option>
+                  <option value="JUN">Jun</option>
+                  <option value="JULAI">Julai</option>
+                  <option value="OGOS">Ogos</option>
+                  <option value="SEPTEMBER">September</option>
+                  <option value="OKTOBER">Oktober</option>
+                  <option value="NOVEMBER">November</option>
+                  <option value="DIS">Disember</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Split layout: Weeks List sidebar & Selected Week Detail */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              <div className="space-y-3 text-xs text-indigo-900 leading-relaxed">
-                <div className="flex gap-2.5">
-                  <span className="h-5 w-5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold flex items-center justify-center shrink-0">1</span>
-                  <p><strong>Kenal Pasti Murid Sasaran</strong>: Pilih murid Tahap 1 yang berprestasi TP1 / TP2 dalam subjek BM atau BI.</p>
+              {/* Sidebar - Week list */}
+              <div className="lg:col-span-5 space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-wider px-1">
+                  <span>Senarai Minggu ({filteredWeeks.length} ditemui)</span>
+                  {searchQuery || filterMonth !== 'all' ? (
+                    <button
+                      onClick={() => { setSearchQuery(''); setFilterMonth('all'); }}
+                      className="text-indigo-600 hover:underline capitalize font-semibold"
+                    >
+                      Reset carian
+                    </button>
+                  ) : null}
                 </div>
-                <div className="flex gap-2.5">
-                  <span className="h-5 w-5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold flex items-center justify-center shrink-0">2</span>
-                  <p><strong>Rujuk Gemini AI</strong>: Pilih modul aktiviti interaktif yang bersesuaian di tab <span className="font-semibold cursor-pointer text-indigo-700 hover:underline" onClick={() => onNavigate('ai')}>Penasihat AI</span>.</p>
-                </div>
-                <div className="flex gap-2.5">
-                  <span className="h-5 w-5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold flex items-center justify-center shrink-0">3</span>
-                  <p><strong>Rakam Foto 4 Fasa</strong>: Pastikan anda merakam gambar bagi setiap fasa bimbingan semasa sesi berlangsung.</p>
-                </div>
-                <div className="flex gap-2.5">
-                  <span className="h-5 w-5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold flex items-center justify-center shrink-0">4</span>
-                  <p><strong>Daftar & Cetak</strong>: Simpan data di tab <span className="font-semibold cursor-pointer text-indigo-700 hover:underline" onClick={() => onNavigate('form')}>Rekod Baru</span>, jana cetakan PDF A4, dan segerakkan ke Google Sheets.</p>
+
+                <div className="space-y-1.5 max-h-[460px] overflow-y-auto pr-2 scrollbar-thin">
+                  {filteredWeeks.length > 0 ? (
+                    filteredWeeks.map((wk) => {
+                      const isSelected = selectedWeekNum === wk.weekNum;
+                      const badgeColor = groupStyleHelpers.getBadge(wk.groupName);
+                      const dotColor = groupStyleHelpers.getDotColor(wk.groupName);
+                      return (
+                        <button
+                          key={wk.weekNum}
+                          onClick={() => setSelectedWeekNum(wk.weekNum)}
+                          className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between ${
+                            isSelected
+                              ? 'border-indigo-600 bg-indigo-50/20 shadow-sm ring-1 ring-indigo-600/30'
+                              : 'border-gray-100 bg-gray-50/20 hover:bg-gray-50 hover:border-gray-200'
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <span className="text-xs font-extrabold text-gray-900 block">
+                              Minggu {wk.weekNum}
+                            </span>
+                            <span className="text-[11px] text-gray-500 block">
+                              {wk.dates}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`}></span>
+                              {wk.groupName}
+                            </span>
+                            <ArrowRight className={`h-3.5 w-3.5 transition ${isSelected ? 'text-indigo-600 translate-x-0.5' : 'text-gray-300'}`} />
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8 rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
+                      <AlertCircle className="h-6 w-6 text-gray-400 mx-auto mb-1.5" />
+                      <p className="text-xs font-bold text-gray-600">Tiada rekod minggu ditemui</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Cuba tumpukan carian anda atau tukar bulan penapis.</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Detail side */}
+              <div className="lg:col-span-7">
+                {selectedWeekDetail ? (
+                  <div className="rounded-2xl border border-gray-100 bg-white p-5 md:p-6 shadow-sm space-y-6">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-50 pb-4">
+                      <div>
+                        <span className="inline-block text-[10px] font-extrabold bg-indigo-50 text-indigo-700 rounded px-2 py-0.5 uppercase mb-1">
+                          Sesi Persekolahan 2026
+                        </span>
+                        <h4 className="text-base font-black text-gray-900 flex items-center gap-2">
+                          Minggu Bertugas {selectedWeekDetail.weekNum}
+                        </h4>
+                        <p className="text-xs text-gray-500 font-semibold mt-0.5">
+                          Tempoh: {selectedWeekDetail.dates}
+                        </p>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border font-black text-xs uppercase ${groupStyleHelpers.getBadge(selectedWeekDetail.group!.name)}`}>
+                          <span className={`h-2 w-2 rounded-full ${groupStyleHelpers.getDotColor(selectedWeekDetail.group!.name)}`}></span>
+                          Kumpulan {selectedWeekDetail.group!.name}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Holidays/Special events */}
+                    {selectedWeekDetail.holidays && selectedWeekDetail.holidays.length > 0 && (
+                      <div className="rounded-xl border border-rose-100 bg-rose-50/30 p-3.5 flex items-start gap-2.5">
+                        <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[11px] font-bold text-rose-800 uppercase tracking-wide">Makluman Cuti / Peristiwa Khas Minggu Ini:</p>
+                          <ul className="list-disc pl-4 mt-1 text-[11px] text-rose-700 space-y-0.5">
+                            {selectedWeekDetail.holidays.map((hol, hIdx) => (
+                              <li key={hIdx}>{hol}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Duty Members */}
+                    <div className="space-y-3">
+                      <h5 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-indigo-600" />
+                        Ahli Kumpulan & Tugasan Khusus
+                      </h5>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {selectedWeekDetail.group!.members.map((member, mIdx) => (
+                          <div key={mIdx} className="rounded-xl border border-gray-50 bg-gray-50/30 p-3 flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                                {member.role}
+                              </span>
+                              <span className="text-xs font-bold text-gray-800 block">
+                                Cikgu {member.name}
+                              </span>
+                            </div>
+                            <span className="h-7 w-7 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
+                              {member.name.charAt(0)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Peranan Ketua Kumpulan */}
+                    {selectedWeekDetail.group!.perananKetua && (
+                      <div className="space-y-2 border-t border-gray-50 pt-4">
+                        <h5 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle className="h-4 w-4 text-blue-600" />
+                          Peranan Ketua Kumpulan (Ketua Bertugas)
+                        </h5>
+                        <ul className="list-decimal pl-4 text-[11px] text-gray-600 space-y-1.5 leading-relaxed">
+                          {selectedWeekDetail.group!.perananKetua.map((peranan, pIdx) => (
+                            <li key={pIdx}>{peranan}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Tanggungjawab Umum Ahli */}
+                    <div className="space-y-2 border-t border-gray-50 pt-4 bg-gray-50/30 rounded-xl p-3">
+                      <h5 className="text-[11px] font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <GraduationCap className="h-4 w-4 text-emerald-600" />
+                        Tanggungjawab Umum Ahli Kumpulan
+                      </h5>
+                      <ul className="list-disc pl-4 text-[10.5px] text-gray-500 space-y-1 leading-relaxed">
+                        {TANGGUNGJAWAB_UMUM.map((tanggung, tIdx) => (
+                          <li key={tIdx}>{tanggung}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                  </div>
+                ) : (
+                  <div className="text-center py-12 rounded-2xl border border-dashed border-gray-200 bg-gray-50/30 flex flex-col items-center justify-center">
+                    <Calendar className="h-8 w-8 text-gray-300 mb-2 animate-bounce" />
+                    <p className="text-xs font-bold text-gray-600">Sila pilih minggu di sebelah kiri</p>
+                    <p className="text-[10px] text-gray-400 mt-1">Pilih minggu bertugas untuk melihat senarai ahli, peranan ketua, dan cuti am.</p>
+                  </div>
+                )}
+              </div>
+
             </div>
-
-            {/* Quick TP guide */}
-            <div className="rounded-2xl border border-gray-100 bg-gray-50/40 p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-gray-700" />
-                <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Rujukan Aras TP PBD</h4>
-              </div>
-
-              <div className="space-y-2 text-[10.5px] leading-relaxed text-gray-600">
-                <p><span className="font-semibold text-red-600">TP1 (Sangat Terhad)</span>: Murid memerlukan bimbingan penuh untuk memahami perkara asas.</p>
-                <p><span className="font-semibold text-amber-600">TP2 (Terhad)</span>: Murid faham konsep asas tetapi memerlukan bantuan melafaz/menulis.</p>
-                <p><span className="font-semibold text-blue-600">TP3 (Memuaskan)</span>: Murid berdikari dalam membaca/menulis perkataan asas.</p>
-                <p><span className="font-semibold text-indigo-600">TP4 (Baik)</span>: Menguasai kemahiran dengan betul, sopan, dan lancar.</p>
-              </div>
-            </div>
-
           </div>
+        ) : (
+          /* View mode: groups */
+          <div className="space-y-6">
+            <p className="text-xs text-gray-500 leading-relaxed max-w-3xl">
+              Berikut adalah rumusan giliran fasa, ahli kumpulan, serta cuti peristiwa yang diperuntukkan bagi setiap daripada 6 kumpulan Guru Bertugas bagi Sesi 2026.
+            </p>
 
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {OFFICIAL_DUTY_GROUPS.map((group, gIdx) => {
+                const badgeColor = groupStyleHelpers.getBadge(group.name);
+                const cardColor = groupStyleHelpers.getCard(group.name);
+                return (
+                  <div key={gIdx} className={`rounded-2xl border border-l-4 p-5 space-y-4 transition hover:shadow-md ${cardColor}`}>
+                    
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-gray-100/50 pb-2">
+                      <h4 className="text-sm font-black uppercase text-gray-900">
+                        Kumpulan {group.name}
+                      </h4>
+                      <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
+                        {group.members.length} Ahli
+                      </span>
+                    </div>
+
+                    {/* Member list */}
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Ahli & Peranan:</span>
+                      <div className="space-y-1.5">
+                        {group.members.map((m, mIdx) => (
+                          <div key={mIdx} className="text-xs flex items-center justify-between text-gray-700">
+                            <span className="font-bold">Cikgu {m.name}</span>
+                            <span className="text-[10px] bg-white/70 border border-gray-100 text-gray-500 rounded px-1.5 py-0.5">{m.role}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Assigned Weeks */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Minggu Bertugas Sesi 2026:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {group.weeks.map((wk, wIdx) => (
+                          <button
+                            key={wIdx}
+                            onClick={() => {
+                              setSelectedWeekNum(wk.number);
+                              setViewMode('weeks');
+                            }}
+                            title={wk.dates}
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-gray-100 text-gray-700 hover:border-indigo-500 hover:text-indigo-600 transition"
+                          >
+                            M{wk.number}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Holidays summary */}
+                    {group.holidays && group.holidays.length > 0 && (
+                      <div className="text-[10px] text-rose-700 space-y-0.5 bg-rose-50/40 p-2 rounded-lg border border-rose-100/30">
+                        <span className="font-bold uppercase block text-[9px] text-rose-800">Cuti / Peristiwa Khas:</span>
+                        <ul className="list-disc pl-3">
+                          {group.holidays.map((h, hIdx) => (
+                            <li key={hIdx}>{h}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
