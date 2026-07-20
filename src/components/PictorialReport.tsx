@@ -16,9 +16,10 @@ import {
 interface PictorialReportProps {
   activity: ActivityLog;
   onBack: () => void;
+  schoolName?: string;
 }
 
-export default function PictorialReport({ activity, onBack }: PictorialReportProps) {
+export default function PictorialReport({ activity, onBack, schoolName = 'SK BANDAR TAWAU' }: PictorialReportProps) {
   const isBM = activity.subject === 'BM';
   
   // Calculate stats
@@ -72,7 +73,7 @@ export default function PictorialReport({ activity, onBack }: PictorialReportPro
         {/* School Document Header */}
         <div className="text-center space-y-2 border-b-2 border-double border-gray-900 pb-6 mb-6">
           <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tight text-gray-950 font-display">
-            SK BUKIT TINGGI, KOTA KINABALU
+            {schoolName}
           </h2>
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-700">
             LAPORAN AKTIVITI SOKONGAN PBD TAHAP 1

@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
-import { ActivityLog } from './types';
-import { INITIAL_ACTIVITIES } from './data';
+import { ActivityLog, AppSettings } from './types';
+import {
+  INITIAL_ACTIVITIES,
+  AVAILABLE_CLASSES,
+  COMMON_ACTIVITIES_BM,
+  COMMON_ACTIVITIES_BI,
+  TANGGUNGJAWAB_UMUM,
+  OFFICIAL_DUTY_GROUPS
+} from './data';
 import Dashboard from './components/Dashboard';
 import ActivityForm from './components/ActivityForm';
 import ActivityList from './components/ActivityList';
 import PictorialReport from './components/PictorialReport';
 import GoogleSheetsIntegration from './components/GoogleSheetsIntegration';
 import GeminiAssistant from './components/GeminiAssistant';
+import AdminSettings from './components/AdminSettings';
 import {
   LayoutDashboard,
   ListFilter,
@@ -18,7 +26,8 @@ import {
   FileText,
   Cloud,
   CheckCircle,
-  HelpCircle
+  HelpCircle,
+  Settings
 } from 'lucide-react';
 
 export default function App() {
@@ -26,6 +35,69 @@ export default function App() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<ActivityLog | null>(null);
   const [editingActivity, setEditingActivity] = useState<ActivityLog | null>(null);
+
+  // Load and save settings in localStorage
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const saved = localStorage.getItem('lapor_pbd_settings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error loading settings', e);
+      }
+    }
+    return {
+      schoolName: 'SK BANDAR TAWAU',
+      schoolShortCode: 'SKBT',
+      footerText: 'LaporPBD v1.2.0 • SKBT 2026',
+      availableClasses: AVAILABLE_CLASSES,
+      commonActivitiesBm: COMMON_ACTIVITIES_BM,
+      commonActivitiesBi: COMMON_ACTIVITIES_BI,
+      tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
+      dutyGroups: OFFICIAL_DUTY_GROUPS
+    };
+  });
+
+  const handleUpdateSettings = (newSettings: AppSettings) => {
+    setSettings(newSettings);
+    localStorage.setItem('lapor_pbd_settings', JSON.stringify(newSettings));
+  };
+
+  const handleResetAllData = () => {
+    localStorage.removeItem('lapor_pbd_activities');
+    localStorage.removeItem('lapor_pbd_settings');
+    setActivities(INITIAL_ACTIVITIES);
+    const defaultVal = {
+      schoolName: 'SK BANDAR TAWAU',
+      schoolShortCode: 'SKBT',
+      footerText: 'LaporPBD v1.2.0 • SKBT 2026',
+      availableClasses: AVAILABLE_CLASSES,
+      commonActivitiesBm: COMMON_ACTIVITIES_BM,
+      commonActivitiesBi: COMMON_ACTIVITIES_BI,
+      tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
+      dutyGroups: OFFICIAL_DUTY_GROUPS
+    };
+    setSettings(defaultVal);
+    localStorage.setItem('lapor_pbd_activities', JSON.stringify(INITIAL_ACTIVITIES));
+    localStorage.setItem('lapor_pbd_settings', JSON.stringify(defaultVal));
+    setActiveTab('dashboard');
+  };
+
+  const handleResetSettingsOnly = () => {
+    localStorage.removeItem('lapor_pbd_settings');
+    const defaultVal = {
+      schoolName: 'SK BANDAR TAWAU',
+      schoolShortCode: 'SKBT',
+      footerText: 'LaporPBD v1.2.0 • SKBT 2026',
+      availableClasses: AVAILABLE_CLASSES,
+      commonActivitiesBm: COMMON_ACTIVITIES_BM,
+      commonActivitiesBi: COMMON_ACTIVITIES_BI,
+      tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
+      dutyGroups: OFFICIAL_DUTY_GROUPS
+    };
+    setSettings(defaultVal);
+    localStorage.setItem('lapor_pbd_settings', JSON.stringify(defaultVal));
+  };
   
   // Mobile navigation drawer toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -142,7 +214,7 @@ export default function App() {
               </div>
               <div>
                 <h1 className="text-base font-bold text-gray-900 tracking-tight leading-none">LaporPBD</h1>
-                <span className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase block mt-1">BM & BI SKBT</span>
+                <span className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase block mt-1">BM & BI {settings.schoolShortCode}</span>
               </div>
             </div>
 
@@ -207,6 +279,18 @@ export default function App() {
                 <Database className="h-4.5 w-4.5" />
                 Integrasi Excel & GD
               </button>
+
+              <button
+                onClick={() => handleTabChange('admin')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all border border-transparent ${
+                  activeTab === 'admin'
+                    ? 'bg-indigo-50 border-indigo-100 text-indigo-700 shadow-sm'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
+                }`}
+              >
+                <Settings className="h-4.5 w-4.5" />
+                Tetapan & Menu Admin
+              </button>
             </nav>
           </div>
 
@@ -221,7 +305,7 @@ export default function App() {
             </div>
             
             <p className="text-[9px] text-gray-400 text-center font-mono">
-              LaporPBD v1.2.0 • SKBT 2026
+              {settings.footerText}
             </p>
           </div>
         </aside>
@@ -242,6 +326,8 @@ export default function App() {
             <Dashboard 
               activities={activities} 
               onNavigate={handleTabChange} 
+              dutyGroups={settings.dutyGroups}
+              tanggungjawabUmum={settings.tanggungjawabUmum}
             />
           )}
 
@@ -260,6 +346,9 @@ export default function App() {
               onSave={handleSaveActivity}
               initialActivity={editingActivity}
               onCancel={() => handleTabChange('list')}
+              availableClasses={settings.availableClasses}
+              commonActivitiesBm={settings.commonActivitiesBm}
+              commonActivitiesBi={settings.commonActivitiesBi}
             />
           )}
 
@@ -267,6 +356,7 @@ export default function App() {
             <PictorialReport
               activity={selectedActivity}
               onBack={() => handleTabChange('list')}
+              schoolName={settings.schoolName}
             />
           )}
 
@@ -276,6 +366,15 @@ export default function App() {
 
           {activeTab === 'integration' && (
             <GoogleSheetsIntegration />
+          )}
+
+          {activeTab === 'admin' && (
+            <AdminSettings
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
+              onResetAllData={handleResetAllData}
+              onResetSettingsOnly={handleResetSettingsOnly}
+            />
           )}
 
         </main>

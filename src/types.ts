@@ -35,6 +35,7 @@ export interface PbdStrategyRequest {
 export interface DutyWeek {
   number: number;
   dates: string;
+  holidays?: string[];
 }
 
 export interface DutyMember {
@@ -49,3 +50,15 @@ export interface DutyGroup {
   holidays?: string[];
   perananKetua?: string[];
 }
+
+export interface AppSettings {
+  schoolName: string;
+  schoolShortCode: string;
+  footerText: string;
+  availableClasses: string[];
+  commonActivitiesBm: string[];
+  commonActivitiesBi: string[];
+  tanggungjawabUmum: string[];
+  dutyGroups: DutyGroup[];
+}
+

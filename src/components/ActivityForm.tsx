@@ -28,9 +28,19 @@ interface ActivityFormProps {
   onSave: (activity: ActivityLog) => void;
   initialActivity?: ActivityLog | null;
   onCancel: () => void;
+  availableClasses?: string[];
+  commonActivitiesBm?: string[];
+  commonActivitiesBi?: string[];
 }
 
-export default function ActivityForm({ onSave, initialActivity, onCancel }: ActivityFormProps) {
+export default function ActivityForm({
+  onSave,
+  initialActivity,
+  onCancel,
+  availableClasses = AVAILABLE_CLASSES,
+  commonActivitiesBm = COMMON_ACTIVITIES_BM,
+  commonActivitiesBi = COMMON_ACTIVITIES_BI
+}: ActivityFormProps) {
   // Main form states
   const [groupName, setGroupName] = useState('Ancala');
   const [customGroupName, setCustomGroupName] = useState('');
@@ -85,7 +95,7 @@ export default function ActivityForm({ onSave, initialActivity, onCancel }: Acti
       setDate(initialActivity.date);
       setDay(initialActivity.day);
 
-      if (AVAILABLE_CLASSES.includes(initialActivity.className)) {
+      if (availableClasses.includes(initialActivity.className)) {
         setClassName(initialActivity.className);
         setIsCustomClass(false);
       } else {
@@ -95,7 +105,7 @@ export default function ActivityForm({ onSave, initialActivity, onCancel }: Acti
 
       setSubject(initialActivity.subject);
       
-      const commonActs = initialActivity.subject === 'BM' ? COMMON_ACTIVITIES_BM : COMMON_ACTIVITIES_BI;
+      const commonActs = initialActivity.subject === 'BM' ? commonActivitiesBm : commonActivitiesBi;
       if (commonActs.includes(initialActivity.activityName)) {
         setActivityName(initialActivity.activityName);
         setIsCustomActivity(false);
@@ -135,21 +145,21 @@ export default function ActivityForm({ onSave, initialActivity, onCancel }: Acti
       
       // Default activity based on subject
       if (subject === 'BM') {
-        setActivityName(COMMON_ACTIVITIES_BM[0]);
+        setActivityName(commonActivitiesBm[0] || '');
       } else {
-        setActivityName(COMMON_ACTIVITIES_BI[0]);
+        setActivityName(commonActivitiesBi[0] || '');
       }
     }
-  }, [initialActivity]);
+  }, [initialActivity, availableClasses, commonActivitiesBm, commonActivitiesBi]);
 
   // Reset default activity selection when subject changes
   const handleSubjectChange = (newSubject: 'BM' | 'BI') => {
     setSubject(newSubject);
     setIsCustomActivity(false);
     if (newSubject === 'BM') {
-      setActivityName(COMMON_ACTIVITIES_BM[0]);
+      setActivityName(commonActivitiesBm[0] || '');
     } else {
-      setActivityName(COMMON_ACTIVITIES_BI[0]);
+      setActivityName(commonActivitiesBi[0] || '');
     }
   };
 
@@ -302,7 +312,7 @@ export default function ActivityForm({ onSave, initialActivity, onCancel }: Acti
     onSave(activityData);
   };
 
-  const activeCommonActivities = subject === 'BM' ? COMMON_ACTIVITIES_BM : COMMON_ACTIVITIES_BI;
+  const activeCommonActivities = subject === 'BM' ? commonActivitiesBm : commonActivitiesBi;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 pb-12">
@@ -451,7 +461,7 @@ export default function ActivityForm({ onSave, initialActivity, onCancel }: Acti
                     }}
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
                   >
-                    {AVAILABLE_CLASSES.map(cls => (
+                    {availableClasses.map(cls => (
                       <option key={cls} value={cls}>{cls}</option>
                     ))}
                     <option value="CUSTOM">+ Kelas Lain...</option>

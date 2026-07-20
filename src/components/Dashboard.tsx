@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ActivityLog, Student } from '../types';
+import { ActivityLog, Student, DutyGroup } from '../types';
 import { OFFICIAL_DUTY_GROUPS, TANGGUNGJAWAB_UMUM } from '../data';
 import {
   ResponsiveContainer,
@@ -37,9 +37,16 @@ import {
 interface DashboardProps {
   activities: ActivityLog[];
   onNavigate: (tab: string) => void;
+  dutyGroups?: DutyGroup[];
+  tanggungjawabUmum?: string[];
 }
 
-export default function Dashboard({ activities, onNavigate }: DashboardProps) {
+export default function Dashboard({
+  activities,
+  onNavigate,
+  dutyGroups = OFFICIAL_DUTY_GROUPS,
+  tanggungjawabUmum = TANGGUNGJAWAB_UMUM
+}: DashboardProps) {
   // State for Duty Schedule Interactive Panel
   const [selectedWeekNum, setSelectedWeekNum] = useState<number>(25); // Default to Week 25 (20 - 24 Julai, Pawana) as it falls close to July 19th 2026!
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -49,7 +56,7 @@ export default function Dashboard({ activities, onNavigate }: DashboardProps) {
   // Helper lists & selectors
   const allWeeks = useMemo(() => {
     const list: { weekNum: number; dates: string; groupName: string; holidays?: string[] }[] = [];
-    OFFICIAL_DUTY_GROUPS.forEach(group => {
+    dutyGroups.forEach(group => {
       group.weeks.forEach(wk => {
         list.push({
           weekNum: wk.number,
@@ -60,7 +67,7 @@ export default function Dashboard({ activities, onNavigate }: DashboardProps) {
       });
     });
     return list.sort((a, b) => a.weekNum - b.weekNum);
-  }, []);
+  }, [dutyGroups]);
 
   const filteredWeeks = useMemo(() => {
     return allWeeks.filter(wk => {
@@ -68,26 +75,26 @@ export default function Dashboard({ activities, onNavigate }: DashboardProps) {
         `minggu ${wk.weekNum}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
         wk.groupName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         wk.dates.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        OFFICIAL_DUTY_GROUPS.find(g => g.name === wk.groupName)?.members.some(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        dutyGroups.find(g => g.name === wk.groupName)?.members.some(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesMonth = filterMonth === 'all' ||
         wk.dates.toLowerCase().includes(filterMonth.toLowerCase());
 
       return matchesSearch && matchesMonth;
     });
-  }, [allWeeks, searchQuery, filterMonth]);
+  }, [allWeeks, searchQuery, filterMonth, dutyGroups]);
 
   const selectedWeekDetail = useMemo(() => {
     const wk = allWeeks.find(w => w.weekNum === selectedWeekNum);
     if (!wk) return null;
-    const group = OFFICIAL_DUTY_GROUPS.find(g => g.name === wk.groupName);
+    const group = dutyGroups.find(g => g.name === wk.groupName);
     return {
       weekNum: wk.weekNum,
       dates: wk.dates,
       group,
       holidays: wk.holidays
     };
-  }, [allWeeks, selectedWeekNum]);
+  }, [allWeeks, selectedWeekNum, dutyGroups]);
 
   const groupStyleHelpers = {
     getBadge: (name: string) => {
@@ -753,7 +760,7 @@ export default function Dashboard({ activities, onNavigate }: DashboardProps) {
                         Tanggungjawab Umum Ahli Kumpulan
                       </h5>
                       <ul className="list-disc pl-4 text-[10.5px] text-gray-500 space-y-1 leading-relaxed">
-                        {TANGGUNGJAWAB_UMUM.map((tanggung, tIdx) => (
+                        {tanggungjawabUmum.map((tanggung, tIdx) => (
                           <li key={tIdx}>{tanggung}</li>
                         ))}
                       </ul>
@@ -779,7 +786,7 @@ export default function Dashboard({ activities, onNavigate }: DashboardProps) {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {OFFICIAL_DUTY_GROUPS.map((group, gIdx) => {
+              {dutyGroups.map((group, gIdx) => {
                 const badgeColor = groupStyleHelpers.getBadge(group.name);
                 const cardColor = groupStyleHelpers.getCard(group.name);
                 return (
