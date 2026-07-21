@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ActivityLog, isAssessed, tpGain } from '../types';
-import { useResolvedImage } from '../lib/useResolvedImages';
+import { useResolvedImagesWithDrive } from '../lib/useResolvedImages';
 import { getWebAppUrl, getAdminToken } from '../lib/sheetsSync';
 import {
   Search,
@@ -22,8 +22,15 @@ import {
  * IndexedDB dan perlu diselesaikan melalui hook — hook tidak boleh dipanggil
  * di dalam .map() komponen induk.
  */
-function ActivityThumbnail({ imageRef, alt }: { imageRef: string; alt: string }) {
-  const url = useResolvedImage(imageRef);
+function ActivityThumbnail({
+  imageRef,
+  driveId,
+  alt
+}: { imageRef?: string; driveId?: string; alt: string }) {
+  const url = useResolvedImagesWithDrive(
+    imageRef ? [imageRef] : [],
+    driveId ? [driveId] : []
+  )[0];
 
   if (!url) {
     // Ruang dikekalkan semasa gambar dimuatkan supaya susun atur tidak melompat.
@@ -226,7 +233,7 @@ export default function ActivityList({
               s => isAssessed(s) && (tpGain(s) ?? 0) > 0
             ).length;
             const pendingCount = act.students.filter(s => !isAssessed(s)).length;
-            const hasImages = act.images && act.images.length > 0;
+            const hasImages = Boolean(act.images?.length || act.driveImages?.length);
 
             return (
               <div
@@ -236,7 +243,11 @@ export default function ActivityList({
                 {/* Image Section or Subject Banner */}
                 <div className="relative aspect-video w-full bg-white/5 overflow-hidden">
                   {hasImages ? (
-                    <ActivityThumbnail imageRef={act.images[0]} alt={act.activityName} />
+                    <ActivityThumbnail
+                      imageRef={act.images?.[0]}
+                      driveId={act.driveImages?.[0]}
+                      alt={act.activityName}
+                    />
                   ) : (
                     <div className={`w-full h-full flex flex-col items-center justify-center gap-1.5 ${
                       isBM ? 'bg-gradient-to-br from-blue-50 to-indigo-100/70 text-lime-glow' : 'bg-gradient-to-br from-pink-50 to-rose-100/70 text-fuchsia-300'

@@ -61,13 +61,28 @@ var PARENT_FOLDER_NAME = 'LAPORAN BERGAMBAR SOKONGAN PBD';
  */
 var ADMIN_TOKEN = 'c9d0168cdb671969e8323cf5edc500f4e0987600';
 
+/**
+ * Lajur helaian.
+ *
+ * Data_JSON diletakkan PALING AKHIR dan mengandungi rekod penuh dalam bentuk
+ * JSON. Lajur lain wujud untuk dibaca manusia; lajur ini wujud supaya rekod
+ * boleh dipulangkan kepada aplikasi tanpa kehilangan maklumat.
+ *
+ * Tanpa lajur ini, rekod tidak boleh dibina semula dengan tepat: senarai murid
+ * disimpan sebagai teks berformat ("1. Nama (sebelum TP2 → selepas TP3)"),
+ * dan menghuraikannya semula adalah rapuh — satu nama murid yang mengandungi
+ * kurungan sudah cukup untuk merosakkannya.
+ */
 var HEADERS = [
   'ID_Aktiviti', 'Cap_Masa_Segerak', 'Tarikh', 'Hari', 'Kumpulan', 'Guru_Bertugas',
   'Kelas', 'Subjek', 'Aktiviti', 'Deskripsi', 'Guru_Subjek',
   'Bil_Murid', 'Murid_Terlibat',
   'Purata_TP_Sebelum', 'Purata_TP_Selepas', 'Purata_Peningkatan', 'Bil_Belum_Dinilai',
-  'Catatan_Refleksi', 'Bil_Gambar', 'Pautan_Gambar_Drive'
+  'Catatan_Refleksi', 'Bil_Gambar', 'Pautan_Gambar_Drive', 'Data_JSON'
 ];
+
+/** Indeks lajur Data_JSON (1-berasaskan) — dikira supaya tidak tersasar. */
+var LAJUR_JSON = HEADERS.indexOf('Data_JSON') + 1;
 
 /* ========================================================================== */
 /*  Pemasangan                                                                 */
@@ -86,15 +101,34 @@ function setupSheet() {
 }
 
 function _pastikanTajuk(sheet) {
-  if (sheet.getLastRow() !== 0) return;
-  sheet.appendRow(HEADERS);
+  // Helaian kosong — tulis tajuk penuh.
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(HEADERS);
+    _gayaTajuk(sheet);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  /*
+   * Helaian sedia ada mungkin dicipta sebelum lajur baharu diperkenalkan.
+   * Menulis baris yang lebih panjang daripada bilangan lajur akan gagal,
+   * jadi lajur yang hilang ditambah di hujung tanpa menyentuh data sedia ada.
+   */
+  var lebarSemasa = sheet.getLastColumn();
+  if (lebarSemasa < HEADERS.length) {
+    var tambahan = HEADERS.slice(lebarSemasa);
+    sheet.getRange(1, lebarSemasa + 1, 1, tambahan.length).setValues([tambahan]);
+    _gayaTajuk(sheet);
+  }
+}
+
+function _gayaTajuk(sheet) {
   sheet
     .getRange(1, 1, 1, HEADERS.length)
     .setFontWeight('bold')
     .setBackground('#1E3A8A')
     .setFontColor('#FFFFFF')
     .setWrap(true);
-  sheet.setFrozenRows(1);
 }
 
 function _folderInduk() {
@@ -137,17 +171,70 @@ function ujiFolderInduk() {
 /** Ujian sambungan: web app memanggil ?action=ping untuk mengesahkan deployment. */
 function doGet(e) {
   var aksi = (e && e.parameter && e.parameter.action) || 'ping';
+
   if (aksi === 'ping') {
     return _json({
       status: 'SUCCESS',
       message: 'LaporPBD backend aktif.',
-      version: '3.0',
+      version: '4.0',
       // Membolehkan antara muka menunjukkan sama ada padam jauh tersedia,
       // tanpa mendedahkan token itu sendiri.
       deleteEnabled: _padamDiaktifkan()
     });
   }
+
+  if (aksi === 'senarai') {
+    return _senaraiRekod();
+  }
+
   return _json({ status: 'ERROR', message: 'Tindakan tidak dikenali: ' + aksi });
+}
+
+/**
+ * Pulangkan semua rekod supaya mana-mana peranti boleh memuatkannya.
+ *
+ * Sebelum ini penyegerakan hanya sehala. Rekod naik ke Sheet tetapi tiada
+ * laluan untuk memuat turunnya, jadi guru yang membuka sistem pada telefon
+ * melihat senarai kosong walaupun Sheet sudah penuh dengan rekod.
+ */
+function _senaraiRekod() {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    if (sheet.getLastRow() < 2) {
+      return _json({ status: 'SUCCESS', records: [], count: 0 });
+    }
+
+    // Baca lajur Data_JSON sahaja — jauh lebih ringan daripada membaca
+    // keseluruhan helaian, dan lajur lain hanya untuk bacaan manusia.
+    var nilai = sheet.getRange(2, LAJUR_JSON, sheet.getLastRow() - 1, 1).getValues();
+    var rekod = [];
+    var dilangkau = 0;
+
+    for (var i = 0; i < nilai.length; i++) {
+      var mentah = nilai[i][0];
+      if (!mentah) {
+        // Baris yang disegerakkan sebelum lajur Data_JSON wujud. Ia tidak
+        // boleh dibina semula dengan selamat, jadi dilangkau dan dikira
+        // supaya pengguna tahu ada rekod lama yang perlu dihantar semula.
+        dilangkau++;
+        continue;
+      }
+      try {
+        rekod.push(JSON.parse(mentah));
+      } catch (err) {
+        dilangkau++;
+      }
+    }
+
+    return _json({
+      status: 'SUCCESS',
+      records: rekod,
+      count: rekod.length,
+      skipped: dilangkau
+    });
+  } catch (err) {
+    return _json({ status: 'ERROR', message: String(err) });
+  }
 }
 
 function doPost(e) {
@@ -178,13 +265,21 @@ function doPost(e) {
     var bilGambar = 0;
     var images = data.images || [];
 
+    // ID fail Drive dikumpul supaya peranti LAIN boleh memaparkan gambar.
+    // Gambar asal berada dalam IndexedDB peranti yang memuat naiknya sahaja;
+    // tanpa ID ini, telefon guru lain hanya akan melihat rekod tanpa gambar.
+    var driveImages = [];
+
     if (images.length > 0) {
       var folder = _folderRekod(data);
       folderUrl = folder.getUrl();
 
       for (var i = 0; i < images.length; i++) {
-        var hasil = _simpanImej(folder, images[i], data, i);
-        if (hasil) bilGambar++;
+        var fail = _simpanImej(folder, images[i], data, i);
+        if (fail) {
+          bilGambar++;
+          driveImages.push(fail.getId());
+        }
       }
     }
 
@@ -211,7 +306,26 @@ function doPost(e) {
       ringkasan.belumDinilai,
       data.notes,
       bilGambar,
-      folderUrl
+      folderUrl,
+      JSON.stringify({
+        id: data.id,
+        groupName: data.groupName,
+        teacherOnDuty: data.teacherOnDuty,
+        date: data.date,
+        day: data.day,
+        className: data.className,
+        subject: data.subject,
+        activityName: data.activityName,
+        activityDesc: data.activityDesc,
+        subjectTeacher: data.subjectTeacher,
+        students: students,
+        notes: data.notes,
+        imageCaptions: data.imageCaptions || [],
+        // ID fail Drive, bukan rujukan IndexedDB — hanya ini yang bermakna
+        // kepada peranti selain yang memuat naik gambar berkenaan.
+        driveImages: driveImages,
+        syncedAt: new Date().toISOString()
+      })
     ];
 
     var barisSedia = _cariBaris(sheet, data.id);

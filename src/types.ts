@@ -44,9 +44,20 @@ export interface ActivityLog {
   subjectTeacher: string; // Guru Subjek yang terlibat (e.g. Samsiah Sundu)
   students: Student[];    // Murid yang terlibat
   notes: string;          // Catatan / Impak
-  images: string[];       // Array of Base64 strings or Object URLs for pictorial report
+  images: string[];       // Rujukan "idb:<id>" ke gambar dalam IndexedDB peranti ini
   imageCaptions?: string[]; // Captions for each uploaded image
   createdAt?: string;     // Timestamp rekod dibuat
+  /**
+   * ID fail Google Drive bagi setiap gambar, diisi selepas penyegerakan.
+   *
+   * Rujukan `images` hanya bermakna pada peranti yang memuat naik gambar
+   * berkenaan — IndexedDB tidak dikongsi antara peranti. Apabila rekod
+   * dimuatkan pada telefon lain, ID inilah yang membolehkan gambar dipaparkan,
+   * melalui https://lh3.googleusercontent.com/d/<id>.
+   */
+  driveImages?: string[];
+  /** Cap masa penyegerakan terakhir ke Google Sheets. */
+  syncedAt?: string;
 }
 
 export interface PbdStrategyRequest {

@@ -10,7 +10,14 @@ import {
   DEFAULT_PENYEMAK
 } from './data';
 import { migrateInlineImages, deletePhotos, clearPhotos } from './lib/photoStore';
-import { deleteFromSheets, syncActivity, getWebAppUrl, getAdminToken } from './lib/sheetsSync';
+import {
+  deleteFromSheets,
+  syncActivity,
+  fetchAllFromSheets,
+  mergeRecords,
+  getWebAppUrl,
+  getAdminToken
+} from './lib/sheetsSync';
 import Dashboard from './components/Dashboard';
 import ActivityForm from './components/ActivityForm';
 import ActivityList from './components/ActivityList';
@@ -176,6 +183,61 @@ export default function App() {
         );
       })
       .catch((e) => console.error('Migrasi gambar gagal', e));
+  }, []);
+
+  /*
+   * Muat turun rekod daripada Google Sheets semasa aplikasi dibuka.
+   *
+   * Penyegerakan dahulunya sehala: rekod naik ke Sheet, tetapi guru yang
+   * membuka sistem pada telefon melihat senarai kosong kerana aplikasi hanya
+   * membaca localStorage peranti itu sendiri. Sheet mengandungi sumbangan
+   * semua guru, jadi ia perlu dimuatkan pada setiap peranti.
+   */
+  useEffect(() => {
+    if (!getWebAppUrl()) return;
+
+    let dibatalkan = false;
+    setSyncState({ status: 'syncing', message: 'Memuatkan rekod daripada Google Sheets…' });
+
+    fetchAllFromSheets()
+      .then(hasil => {
+        if (dibatalkan) return;
+
+        if (!hasil.ok) {
+          setSyncState({ status: 'error', message: `Gagal memuatkan rekod: ${hasil.message}` });
+          return;
+        }
+
+        setActivities(semasa => {
+          const { hasil: gabung, baharu } = mergeRecords(semasa, hasil.records);
+          if (baharu > 0) persistActivities(gabung);
+
+          setSyncState(
+            baharu > 0
+              ? { status: 'ok', message: `${baharu} rekod dimuat turun daripada Google Sheets.` }
+              : { status: 'idle', message: '' }
+          );
+          return gabung;
+        });
+
+        // Rekod lama yang disegerakkan sebelum lajur Data_JSON wujud tidak
+        // boleh dibina semula. Beritahu pengguna supaya ia boleh dihantar semula.
+        if (hasil.skipped > 0) {
+          console.warn(
+            `[LaporPBD] ${hasil.skipped} baris Sheet dilangkau — disegerakkan sebelum ` +
+              'lajur Data_JSON wujud. Hantar semula rekod tersebut dari peranti asalnya.'
+          );
+        }
+      })
+      .catch(e => {
+        if (!dibatalkan) {
+          setSyncState({ status: 'error', message: `Gagal memuatkan rekod: ${e?.message || e}` });
+        }
+      });
+
+    return () => {
+      dibatalkan = true;
+    };
   }, []);
 
   // Save changes to state and local storage

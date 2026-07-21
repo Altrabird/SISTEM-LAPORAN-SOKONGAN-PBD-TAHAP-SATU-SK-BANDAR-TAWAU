@@ -1,5 +1,5 @@
 import { ActivityLog, AppSettings, isAssessed, tpGain, defaultOfficer } from '../types';
-import { useResolvedImages } from '../lib/useResolvedImages';
+import { useResolvedImagesWithDrive } from '../lib/useResolvedImages';
 import { TAHAP_PENGUASAAN_DESCS } from '../data';
 import {
   Printer,
@@ -26,7 +26,7 @@ export default function PictorialReport({
   const isBM = activity.subject === 'BM';
 
   // Gambar disimpan dalam IndexedDB — selesaikan rujukan sebelum dipaparkan/dicetak.
-  const photoUrls = useResolvedImages(activity.images);
+  const photoUrls = useResolvedImagesWithDrive(activity.images, activity.driveImages);
 
   /*
    * Nota: fasa bimbingan (Set Induksi, Aktiviti Utama, dsb.) TIDAK dilabelkan
@@ -36,7 +36,10 @@ export default function PictorialReport({
    * jadi sebarang label fasa di sini hanyalah tekaan. Kapsyen lalai borang
    * sudah pun menerangkan fasa masing-masing.
    */
-  const jumlahFoto = (activity.images ?? []).length;
+  const jumlahFoto = Math.max(
+    (activity.images ?? []).length,
+    (activity.driveImages ?? []).length
+  );
 
   /**
    * Foto yang benar-benar boleh dipaparkan.

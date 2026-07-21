@@ -221,6 +221,79 @@ export async function deleteFromSheets(activity: {
   }
 }
 
+/**
+ * Muat turun semua rekod daripada Google Sheets.
+ *
+ * Tanpa ini penyegerakan hanya sehala: rekod naik ke Sheet tetapi guru yang
+ * membuka sistem pada peranti lain melihat senarai kosong, kerana aplikasi
+ * hanya membaca localStorage peranti itu sendiri.
+ */
+export async function fetchAllFromSheets(): Promise<{
+  ok: boolean;
+  records: ActivityLog[];
+  skipped: number;
+  message: string;
+}> {
+  const url = getWebAppUrl();
+  if (!url) return { ok: false, records: [], skipped: 0, message: 'Pautan Web App tiada.' };
+
+  try {
+    const jawapan = await fetch(`${url}?action=senarai`, { method: 'GET' });
+    if (!jawapan.ok) {
+      return { ok: false, records: [], skipped: 0, message: `HTTP ${jawapan.status}` };
+    }
+
+    const data = await jawapan.json();
+    if (data.status !== 'SUCCESS') {
+      return { ok: false, records: [], skipped: 0, message: data.message || 'Ditolak pelayan.' };
+    }
+
+    return {
+      ok: true,
+      records: Array.isArray(data.records) ? data.records : [],
+      skipped: Number(data.skipped) || 0,
+      message: `${data.count ?? 0} rekod dimuat turun.`
+    };
+  } catch (err: any) {
+    return { ok: false, records: [], skipped: 0, message: `Ralat rangkaian: ${err?.message || err}` };
+  }
+}
+
+/**
+ * Gabungkan rekod tempatan dengan rekod daripada Google Sheets.
+ *
+ * Peraturan: Sheet ialah sumber kebenaran bagi rekod yang wujud di sana,
+ * kerana ia mengandungi sumbangan semua guru. Rekod yang hanya wujud secara
+ * tempatan DIKEKALKAN — ia mungkin belum sempat disegerakkan (contohnya
+ * disimpan semasa telefon di luar liputan), dan membuangnya bermakna
+ * kehilangan kerja guru.
+ */
+export function mergeRecords(
+  tempatan: ActivityLog[],
+  jauh: ActivityLog[]
+): { hasil: ActivityLog[]; baharu: number } {
+  const peta = new Map<string, ActivityLog>();
+
+  for (const r of tempatan) peta.set(r.id, r);
+
+  let baharu = 0;
+  for (const r of jauh) {
+    if (!peta.has(r.id)) baharu++;
+    const sedia = peta.get(r.id);
+    // Kekalkan rujukan gambar tempatan jika ada — ia memuat lebih pantas
+    // daripada mengambil semula gambar dari Drive.
+    peta.set(r.id, {
+      ...r,
+      images: sedia?.images?.length ? sedia.images : r.images ?? []
+    });
+  }
+
+  const hasil = Array.from(peta.values()).sort((a, b) =>
+    (b.date || '').localeCompare(a.date || '')
+  );
+  return { hasil, baharu };
+}
+
 export interface BulkSyncProgress {
   done: number;
   total: number;
