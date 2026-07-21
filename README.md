@@ -6,6 +6,8 @@ Aplikasi web untuk merekod, melaporkan secara bergambar dan memantau pelaksanaan
 aktiviti sokongan PBD yang membantu murid meningkatkan Tahap Penguasaan (TP)
 dalam Bahasa Melayu dan Bahasa Inggeris.
 
+**Tapak langsung:** https://altrabird.github.io/SISTEM-LAPORAN-SOKONGAN-PBD-TAHAP-SATU-SK-BANDAR-TAWAU/
+
 React 19 · TypeScript · Tailwind CSS v4 · Recharts · Gemini AI
 
 ---
@@ -14,10 +16,44 @@ React 19 · TypeScript · Tailwind CSS v4 · Recharts · Gemini AI
 
 ```bash
 npm install
-npm run dev      # pembangunan
+npm run dev      # pembangunan (termasuk pelayan API untuk Gemini)
 npm run build    # binaan produksi
 npm run lint     # semakan taip
 ```
+
+---
+
+## Penerbitan
+
+Setiap push ke `main` mencetuskan [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+yang menjalankan semakan taip, membina projek, dan menerbitkan `dist/` ke
+GitHub Pages. Folder `dist/` kekal dalam `.gitignore` — binaan berlaku di CI,
+bukan di-commit.
+
+> Sumber Pages mesti ditetapkan kepada **GitHub Actions**, bukan
+> "Deploy from a branch". Menghidangkan `main` dari root akan menyajikan
+> `index.html` sumber yang merujuk `/src/main.tsx` — TypeScript mentah yang
+> tidak boleh dilaksanakan pelayar, menghasilkan halaman kosong.
+
+### Apa yang berfungsi pada tapak statik
+
+| Ciri | Pages | Tempatan |
+|---|---|---|
+| Rekod aktiviti, gambar, papan pemuka | Ya | Ya |
+| Laporan bergambar A4 | Ya | Ya |
+| Segerak Google Sheets + Drive | Ya | Ya |
+| **Penasihat AI Gemini** | **Tidak** | Ya |
+
+Penasihat AI memanggil `/api/gemini/generate-strategies`, yang dilayan oleh
+`server.ts` menggunakan `GEMINI_API_KEY` di pihak pelayan. GitHub Pages hanya
+menghidangkan fail statik, jadi tiada pelayan untuk melayan laluan itu.
+
+Kunci tersebut **sengaja** tidak dihantar ke pelayar. Memindahkan panggilan
+Gemini ke sisi-pelanggan memang akan menjadikannya berfungsi di Pages, tetapi
+kunci itu akan terbenam dalam bundle JavaScript awam dan boleh disalah guna
+sesiapa sahaja. Untuk menggunakan ciri AI, jalankan `npm run dev` secara
+tempatan, atau hoskan aplikasi pada perkhidmatan yang menjalankan Node
+(Render, Railway, Cloud Run).
 
 ---
 
