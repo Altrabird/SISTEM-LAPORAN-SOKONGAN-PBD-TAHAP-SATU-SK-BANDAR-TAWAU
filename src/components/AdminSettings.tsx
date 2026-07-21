@@ -17,8 +17,7 @@ import {
   X,
   AlertCircle,
   Clock,
-  UserCheck,
-  Cloud
+  UserCheck
 } from 'lucide-react';
 
 interface AdminSettingsProps {
@@ -36,7 +35,7 @@ export default function AdminSettings({
   onResetAllData,
   onResetSettingsOnly
 }: AdminSettingsProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'general' | 'officers' | 'classes' | 'activities' | 'responsibilities' | 'groups' | 'cloud' | 'system'>('general');
+  const [activeSubTab, setActiveSubTab] = useState<'general' | 'officers' | 'classes' | 'activities' | 'responsibilities' | 'groups' | 'system'>('general');
   
   // Local state copy for form editing to prevent immediate parent state writes on keypress
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
@@ -282,7 +281,6 @@ export default function AdminSettings({
             { id: 'activities', name: 'Aktiviti Lazim', icon: BookOpen },
             { id: 'responsibilities', name: 'Tanggungjawab', icon: Briefcase },
             { id: 'groups', name: 'Kumpulan & Jadual', icon: Users },
-            { id: 'cloud', name: 'Google Sheets & Drive', icon: Cloud },
             { id: 'system', name: 'Sistem & Set Semula', icon: RotateCcw }
           ].map((tab) => {
             const Icon = tab.icon;
@@ -800,17 +798,16 @@ export default function AdminSettings({
           )}
 
           {/* 6. SYSTEM RESET & CLEAR DATA */}
-          {/* GOOGLE SHEETS & DRIVE */}
-          {activeSubTab === 'cloud' && <CloudSettings activities={activities} />}
-
           {activeSubTab === 'system' && (
             <div className="space-y-6">
               <div className="border-b border-white/8 pb-3">
                 <h3 className="text-sm font-black text-bright uppercase tracking-wider">Tetapan Sistem & Penyelenggaraan</h3>
-                <p className="text-[11px] text-muted mt-0.5">Uruskan pembersihan cache, sandaran data, dan atur semula tetapan konfigurasi kepada tetapan kilang.</p>
+                <p className="text-[11px] text-muted mt-0.5">Uruskan penyegerakan awan, sandaran data, dan atur semula tetapan konfigurasi kepada tetapan kilang.</p>
               </div>
 
               <div className="space-y-4">
+
+                <CloudSettings activities={activities} />
                 
                 {/* Reset settings only */}
                 <div className="rounded-2xl p-5 space-y-3 bg-white/5 hover:border-lime-core/25 transition">

@@ -323,7 +323,6 @@ export default function App() {
     { id: 'admin', label: 'Tetapan & Admin', icon: Settings, aktifBila: ['admin'] }
   ];
 
-  const awanAktif = Boolean(getWebAppUrl());
 
   const senaraiNav = (
     <nav className="space-y-1">
@@ -410,20 +409,38 @@ export default function App() {
             apabila melihat "Belum ditetapkan".
           */}
           <div className="mt-auto space-y-3 pt-5">
+            {/*
+              Menunjukkan hasil penyegerakan TERAKHIR, bukan "Tersambung" tetap.
+              Pautan Web App kini terbina, jadi label sambungan statik akan
+              sentiasa hijau dan tidak pernah memberitahu apa-apa yang berguna —
+              ia mendakwa keadaan yang tidak pernah disahkan.
+            */}
             <button
               onClick={() => handleTabChange('admin')}
-              title="Buka tetapan Google Sheets & Drive"
+              title="Buka tetapan penyelenggaraan"
               className="glass glass-hover flex w-full items-center gap-2.5 p-3 text-left cursor-pointer"
             >
-              {awanAktif ? (
-                <Cloud className="h-4.5 w-4.5 shrink-0 text-lime-core" />
+              {syncState.status === 'error' ? (
+                <CloudOff className="h-4.5 w-4.5 shrink-0 text-rose-400" />
               ) : (
-                <CloudOff className="h-4.5 w-4.5 shrink-0 text-faint" />
+                <Cloud className="h-4.5 w-4.5 shrink-0 text-lime-core" />
               )}
               <div className="min-w-0 text-[10px] leading-relaxed">
                 <span className="block font-bold text-soft">Google Sheets</span>
-                <span className={awanAktif ? 'text-lime-core' : 'text-faint'}>
-                  {awanAktif ? 'Tersambung' : 'Belum ditetapkan'}
+                <span
+                  className={
+                    syncState.status === 'error'
+                      ? 'text-rose-300'
+                      : syncState.status === 'syncing'
+                        ? 'text-amber-300'
+                        : 'text-lime-core'
+                  }
+                >
+                  {syncState.status === 'error'
+                    ? 'Segerak terakhir gagal'
+                    : syncState.status === 'syncing'
+                      ? 'Menyegerakkan…'
+                      : 'Segerak automatik aktif'}
                 </span>
               </div>
             </button>
