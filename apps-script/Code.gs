@@ -23,10 +23,21 @@
  * ============================================================================
  */
 
-/** Kosongkan untuk mencipta folder di My Drive, atau isi ID folder induk. */
-var PARENT_DRIVE_FOLDER_ID = '';
+/**
+ * ID folder induk Google Drive untuk semua gambar laporan.
+ *
+ * Diambil daripada URL folder:
+ *   https://drive.google.com/drive/folders/<ID-DI-SINI>
+ *
+ * Folder ini kekal PERSENDIRIAN — ID sahaja tidak memberi akses kepada sesiapa.
+ * Hanya subfolder setiap rekod ditetapkan "sesiapa dengan pautan boleh lihat",
+ * kerana pautan itulah yang disimpan dalam Sheet supaya boleh dibuka.
+ *
+ * Kosongkan untuk kembali mencipta folder bernama PARENT_FOLDER_NAME di My Drive.
+ */
+var PARENT_DRIVE_FOLDER_ID = '1A_JV5GFxvv78huTGa_VYcoaszV1H4K76';
 
-/** Nama folder induk yang akan dicipta/digunakan untuk semua gambar laporan. */
+/** Digunakan hanya apabila PARENT_DRIVE_FOLDER_ID dikosongkan. */
 var PARENT_FOLDER_NAME = 'LAPORAN BERGAMBAR SOKONGAN PBD';
 
 var HEADERS = [
@@ -67,10 +78,35 @@ function _pastikanTajuk(sheet) {
 
 function _folderInduk() {
   if (PARENT_DRIVE_FOLDER_ID && PARENT_DRIVE_FOLDER_ID.trim() !== '') {
-    return DriveApp.getFolderById(PARENT_DRIVE_FOLDER_ID);
+    try {
+      return DriveApp.getFolderById(PARENT_DRIVE_FOLDER_ID.trim());
+    } catch (err) {
+      // getFolderById membuang ralat mentah yang sukar difahami guru.
+      // Berikan sebab sebenar dan cara membetulkannya.
+      throw new Error(
+        'Folder induk Drive tidak dapat dibuka (ID: ' + PARENT_DRIVE_FOLDER_ID + '). ' +
+          'Pastikan ID betul dan akaun yang menjalankan skrip ini mempunyai akses ' +
+          'kepada folder tersebut. Kosongkan PARENT_DRIVE_FOLDER_ID untuk kembali ' +
+          'menggunakan folder "' + PARENT_FOLDER_NAME + '" di My Drive.'
+      );
+    }
   }
   var it = DriveApp.getFoldersByName(PARENT_FOLDER_NAME);
   return it.hasNext() ? it.next() : DriveApp.createFolder(PARENT_FOLDER_NAME);
+}
+
+/**
+ * Sahkan tetapan folder tanpa menulis apa-apa rekod.
+ * Jalankan fungsi ini dalam editor Apps Script untuk menguji akses folder.
+ */
+function ujiFolderInduk() {
+  var folder = _folderInduk();
+  var mesej =
+    'Folder induk berjaya diakses.\n\n' +
+    'Nama  : ' + folder.getName() + '\n' +
+    'Pautan: ' + folder.getUrl();
+  Logger.log(mesej);
+  SpreadsheetApp.getUi().alert(mesej);
 }
 
 /* ========================================================================== */

@@ -77,16 +77,38 @@ Kod backend berada dalam [`apps-script/Code.gs`](apps-script/Code.gs). Tab
 kod yang disalin pengguna sentiasa sepadan dengan repo — tiada salinan kedua
 yang boleh tersasar.
 
+### Folder gambar
+
+`PARENT_DRIVE_FOLDER_ID` di bahagian atas `Code.gs` menentukan folder induk
+tempat semua gambar laporan disimpan. Ambil ID daripada URL folder:
+
+```
+https://drive.google.com/drive/folders/<ID-DI-SINI>
+```
+
+Folder induk kekal persendirian — ID sahaja tidak memberi akses. Hanya
+subfolder setiap rekod ditetapkan *sesiapa dengan pautan boleh lihat*, kerana
+pautan itulah yang disimpan dalam Sheet supaya boleh dibuka daripada laporan.
+
+Kosongkan nilai tersebut untuk kembali mencipta folder di My Drive. Jalankan
+`ujiFolderInduk()` dalam editor Apps Script untuk mengesahkan akses tanpa
+menulis sebarang rekod.
+
+Setiap rekod mendapat satu subfolder `PBD_<id>_<kelas>_<tarikh>` yang
+**diguna semula** apabila rekod disegerakkan semula, jadi penyegerakan
+berulang tidak menghasilkan folder atau gambar pendua.
+
 ### Pemasangan
 
 1. Google Sheet baharu → **Extensions → Apps Script**.
 2. Tampal keseluruhan `apps-script/Code.gs`.
-3. Jalankan `setupSheet()` sekali, beri kebenaran akses.
-4. **Deploy → New deployment → Web app**
+3. Tetapkan `PARENT_DRIVE_FOLDER_ID` (lihat di atas).
+4. Jalankan `setupSheet()` sekali, beri kebenaran akses.
+5. **Deploy → New deployment → Web app**
    - Execute as: **Me**
    - Who has access: **Anyone**
-5. Salin URL `/exec` → tampal dalam tab Integrasi → **Simpan Pautan API**.
-6. **Jalankan Ujian Sambungan** untuk mengesahkan.
+6. Salin URL `/exec` → tampal dalam tab Integrasi → **Simpan Pautan API**.
+7. **Jalankan Ujian Sambungan** untuk mengesahkan.
 
 > Setiap kali `Code.gs` diubah, ulang
 > **Deploy → Manage deployments → Edit → Version: New version → Deploy.**
