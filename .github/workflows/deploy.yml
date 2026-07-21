@@ -1,0 +1,71 @@
+# Membina aplikasi dan menerbitkannya ke GitHub Pages.
+#
+# Sebelum ini Pages menghidangkan `main` terus dari root, bermakna pelawat
+# menerima index.html sumber Vite yang merujuk /src/main.tsx — TypeScript
+# mentah yang tidak boleh dilaksanakan oleh pelayar, jadi halaman kekal kosong.
+# Yang perlu diterbitkan ialah keluaran `vite build`, tetapi dist/ sengaja
+# berada dalam .gitignore. Workflow ini membina di CI dan menerbitkan hasilnya,
+# jadi dist/ tidak perlu dimasukkan ke dalam repo.
+
+name: Terbit ke GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # membenarkan penerbitan manual dari tab Actions
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Biarkan penerbitan yang sedang berjalan selesai; hanya buang yang menunggu.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  bina:
+    name: Bina aplikasi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil kod
+        uses: actions/checkout@v4
+
+      - name: Sediakan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Pasang kebergantungan
+        # npm ci memerlukan package-lock.json, yang tiada dalam repo ini
+        # (projek menggunakan bun.lock). npm install ialah pilihan yang betul.
+        run: npm install --no-audit --no-fund
+
+      - name: Semak taip
+        run: npx tsc --noEmit
+
+      - name: Bina
+        # Hanya `vite build` — skrip `npm run build` turut membundel server.ts
+        # (Express) yang tidak digunakan oleh hosting statik Pages.
+        run: npx vite build
+
+      - name: Sediakan Pages
+        uses: actions/configure-pages@v5
+
+      - name: Muat naik artifak
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  terbit:
+    name: Terbitkan
+    needs: bina
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Terbitkan ke GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

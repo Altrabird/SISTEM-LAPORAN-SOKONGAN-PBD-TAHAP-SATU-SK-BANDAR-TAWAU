@@ -57,6 +57,20 @@ export default function GeminiAssistant() {
         }),
       });
 
+      // Pada hosting statik (GitHub Pages) tiada pelayan, jadi /api/... memulangkan
+      // halaman 404 HTML. Menghurainya sebagai JSON menghasilkan ralat "Unexpected
+      // token '<'" yang mengelirukan. Kesan keadaan itu dan terangkan sebab sebenar.
+      const jenis = response.headers.get('content-type') || '';
+      if (!jenis.includes('application/json')) {
+        throw new Error(
+          'Penasihat AI memerlukan pelayan yang menyimpan kunci GEMINI_API_KEY, ' +
+            'dan pelayan itu tidak wujud pada tapak statik GitHub Pages.\n\n' +
+            'Jalankan "npm run dev" secara tempatan untuk menggunakan ciri ini. ' +
+            'Semua ciri lain — rekod, laporan bergambar, papan pemuka dan segerak ' +
+            'Google Sheets — berfungsi seperti biasa di sini.'
+        );
+      }
+
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.error || 'Gagal menjana strategi pembelajaran dari Gemini.');
@@ -236,9 +250,11 @@ export default function GeminiAssistant() {
               <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
               <div className="space-y-1">
                 <span className="font-bold">Gagal Berhubung dengan AI:</span>
-                <p className="leading-relaxed">{error}</p>
-                <p className="font-mono text-[10px] text-red-500 mt-2">
-                  Tips: Sila pastikan anda mempunyai kunci rahsia <strong>GEMINI_API_KEY</strong> dalam tab Secrets atau pastikan dev server menyokong API ini.
+                <p className="leading-relaxed whitespace-pre-line">{error}</p>
+                <p className="text-[10px] text-red-500 mt-2">
+                  Kunci <strong>GEMINI_API_KEY</strong> disimpan di pihak pelayan dan
+                  tidak pernah dihantar ke pelayar — sebab itulah ciri ini memerlukan
+                  pelayan Node, bukan sekadar hosting fail statik.
                 </p>
               </div>
             </div>
