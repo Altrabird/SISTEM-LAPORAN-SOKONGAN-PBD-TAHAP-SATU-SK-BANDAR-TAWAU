@@ -657,7 +657,7 @@ export default function Dashboard({
                 <select
                   value={filterMonth}
                   onChange={(e) => setFilterMonth(e.target.value)}
-                  className="w-full md:w-44 px-3 py-2 text-xs rounded-xl bg-white/5 focus:outline-none focus:border-lime-core transition"
+                  className="field w-full md:w-44 !py-2"
                 >
                   <option value="all">Semua Bulan</option>
                   <option value="JANUARI">Januari</option>
@@ -699,7 +699,7 @@ export default function Dashboard({
                   id="mobile-week-selector"
                   value={selectedWeekNum}
                   onChange={(e) => setSelectedWeekNum(Number(e.target.value))}
-                  className="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-bright focus:outline-none focus:border-lime-core shadow-sm"
+                  className="field font-semibold"
                 >
                   {filteredWeeks.length > 0 ? (
                     filteredWeeks.map((wk) => (

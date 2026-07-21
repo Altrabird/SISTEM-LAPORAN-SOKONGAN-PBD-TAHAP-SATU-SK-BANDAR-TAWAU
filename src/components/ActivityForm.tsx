@@ -397,7 +397,7 @@ export default function ActivityForm({
                           setGroupName(e.target.value);
                         }
                       }}
-                      className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
+                      className="field !text-sm"
                     >
                       {AVAILABLE_GROUPS.map(grp => (
                         <option key={grp} value={grp}>{grp}</option>
@@ -438,7 +438,7 @@ export default function ActivityForm({
                     placeholder="Siti Noraidah / Ahmad"
                     value={teacherOnDuty}
                     onChange={(e) => setTeacherOnDuty(e.target.value)}
-                    className="w-full rounded-xl bg-white/5 py-2.5 pl-10 pr-3.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
+                    className="field !text-sm !pl-10"
                   />
                 </div>
               </div>
@@ -455,7 +455,7 @@ export default function ActivityForm({
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full rounded-xl bg-white/5 py-2.5 pl-10 pr-3.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
+                    className="field !text-sm !pl-10"
                   />
                 </div>
               </div>
@@ -484,7 +484,7 @@ export default function ActivityForm({
                         setClassName(e.target.value);
                       }
                     }}
-                    className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
+                    className="field !text-sm"
                   >
                     {availableClasses.map(cls => (
                       <option key={cls} value={cls}>{cls}</option>
@@ -520,7 +520,7 @@ export default function ActivityForm({
                   placeholder="Nama guru subjek"
                   value={subjectTeacher}
                   onChange={(e) => setSubjectTeacher(e.target.value)}
-                  className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
+                  className="field !text-sm"
                 />
               </div>
             </div>
@@ -578,7 +578,7 @@ export default function ActivityForm({
                         setActivityName(e.target.value);
                       }
                     }}
-                    className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
+                    className="field !text-sm"
                   >
                     {activeCommonActivities.map(act => (
                       <option key={act} value={act}>{act}</option>
@@ -618,7 +618,7 @@ export default function ActivityForm({
                   }
                   value={activityDesc}
                   onChange={(e) => setActivityDesc(e.target.value)}
-                  className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition resize-none"
+                  className="field !text-sm resize-none"
                 />
               </div>
             </div>
@@ -665,7 +665,7 @@ export default function ActivityForm({
                       placeholder="Nama penuh murid"
                       value={student.name}
                       onChange={(e) => updateStudent(student.id, 'name', e.target.value)}
-                      className="w-full rounded-lg bg-white/5 px-3 py-1.5 text-xs text-bright focus:border-lime-core focus:outline-none"
+                      className="field !py-1.5"
                     />
                   </div>
 
@@ -675,7 +675,7 @@ export default function ActivityForm({
                     <select
                       value={student.currentTp}
                       onChange={(e) => updateStudent(student.id, 'currentTp', parseInt(e.target.value))}
-                      className="w-full rounded-lg bg-white/5 px-2 py-1.5 text-xs text-bright focus:outline-none"
+                      className="field !px-2 !py-1.5"
                     >
                       {[1, 2, 3, 4, 5, 6].map(num => (
                         <option key={num} value={num}>TP {num}</option>
@@ -689,7 +689,7 @@ export default function ActivityForm({
                     <select
                       value={student.targetTp}
                       onChange={(e) => updateStudent(student.id, 'targetTp', parseInt(e.target.value))}
-                      className="w-full rounded-lg bg-white/5 px-2 py-1.5 text-xs text-bright focus:outline-none"
+                      className="field !px-2 !py-1.5"
                     >
                       {[1, 2, 3, 4, 5, 6].map(num => (
                         <option key={num} value={num}>TP {num}</option>
@@ -740,7 +740,7 @@ export default function ActivityForm({
                       placeholder="Catatan kemajuan murid..."
                       value={student.notes || ''}
                       onChange={(e) => updateStudent(student.id, 'notes', e.target.value)}
-                      className="w-full rounded-lg bg-white/5 px-3 py-1.5 text-xs text-bright focus:border-lime-core focus:outline-none"
+                      className="field !py-1.5"
                     />
                   </div>
 
@@ -769,7 +769,7 @@ export default function ActivityForm({
               placeholder="e.g. Semua murid yang terlibat berjaya melakonkan watak berdasarkan dialog masing-masing dengan penuh seronok. Tiga murid menunjukkan kebolehan bertutur dengan sebutan yang jelas."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition resize-none"
+              className="field !text-sm resize-none"
             />
           </div>
 
@@ -863,7 +863,7 @@ export default function ActivityForm({
                             value={caption || ''}
                             onChange={(e) => handleCaptionSlotChange(idx, e.target.value)}
                             placeholder={panel.desc}
-                            className="w-full rounded-lg bg-white/5 px-2.5 py-1.5 text-xs text-soft focus:outline-none focus:border-lime-core transition"
+                            className="field !py-1.5"
                           />
                         </div>
                       </div>

@@ -64,6 +64,40 @@
     border-radius: 0.5rem;
   }
 
+  /* ------------------------------------------------------------------
+     Senarai juntai
+     ------------------------------------------------------------------
+     Chrome pada Windows melukis popup <select> menggunakan warna latar
+     elemen itu sendiri. Kelas seperti `bg-white/5` menghasilkan
+     rgba(255,255,255,0.05) — hampir lut sinar — jadi popup dilukis PUTIH
+     manakala teks <option> mewarisi warna teks cerah tema. Hasilnya putih
+     atas putih dan senarai langsung tidak boleh dibaca.
+
+     Diperbaiki di peringkat elemen, bukan pada setiap pemanggil, supaya
+     tiada <select> baharu boleh terlepas daripada pembetulan ini.
+     ------------------------------------------------------------------ */
+  select {
+    color-scheme: dark;
+  }
+
+  select option,
+  select optgroup {
+    /* Warna TEGAR — bukan rgba — supaya popup native mempunyai latar sebenar */
+    background-color: #16201a;
+    color: #f2f7ef;
+  }
+
+  select option:checked,
+  select option:hover {
+    background-color: #2a3a2c;
+    color: #bef264;
+  }
+
+  /* Pilihan lumpuh mesti kelihatan lumpuh, bukan sekadar pudar hingga hilang */
+  select option:disabled {
+    color: #6b756a;
+  }
+
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {

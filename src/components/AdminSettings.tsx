@@ -636,7 +636,7 @@ export default function AdminSettings({
                             type="text"
                             value={group.name}
                             onChange={(e) => handleUpdateGroupName(selectedGroupIdx, e.target.value)}
-                            className="bg-white/5 rounded px-2.5 py-1 text-xs font-bold text-bright focus:outline-none focus:border-lime-core"
+                            className="field !py-1 !px-2.5 font-bold"
                           />
                         </div>
                       </div>
@@ -737,7 +737,7 @@ export default function AdminSettings({
                                   type="text"
                                   value={wk.dates}
                                   onChange={(e) => handleUpdateWeekDates(selectedGroupIdx, wIdx, e.target.value)}
-                                  className="bg-white/5 border border-transparent hover:border-white/8 px-2 py-0.5 rounded text-[11px] font-bold text-soft w-full sm:w-48 text-right focus:border-lime-core focus:outline-none"
+                                  className="field !py-0.5 !px-2 !text-[11px] font-bold w-full sm:w-48 text-right"
                                 />
                               </div>
 

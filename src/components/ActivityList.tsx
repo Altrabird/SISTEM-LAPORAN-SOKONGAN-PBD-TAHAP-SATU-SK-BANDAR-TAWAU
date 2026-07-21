@@ -134,7 +134,7 @@ export default function ActivityList({
               placeholder="Cari guru, murid, aktiviti, kumpulan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl bg-white/5 py-2.5 pl-10 pr-4 text-xs text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
+              className="field !pl-10"
             />
           </div>
 
@@ -180,7 +180,7 @@ export default function ActivityList({
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full rounded-xl bg-white/5 py-2.5 pl-10 pr-3 text-xs text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition appearance-none"
+              className="field !pl-10"
             >
               {allUniqueClasses.map(cls => (
                 <option key={cls} value={cls}>
