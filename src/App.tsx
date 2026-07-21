@@ -319,7 +319,7 @@ export default function App() {
         )}
 
         {/* 3. Main Content Container Area */}
-        <main className="flex-1 min-w-0 p-5 md:p-8 overflow-y-auto max-h-[100vh] print:p-0 print:overflow-visible">
+        <main className="flex-1 min-w-0 p-4 md:p-8 overflow-x-hidden md:overflow-y-auto md:max-h-screen print:p-0 print:overflow-visible">
           
           {/* Main conditional views router */}
           {activeTab === 'dashboard' && (

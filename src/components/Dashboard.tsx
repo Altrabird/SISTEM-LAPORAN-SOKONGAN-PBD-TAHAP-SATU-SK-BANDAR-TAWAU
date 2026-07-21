@@ -295,62 +295,62 @@ export default function Dashboard({
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Card 1 */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
-          <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
-            <BookOpen className="h-6 w-6" />
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm transition-all hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <div className="rounded-xl bg-blue-50 p-2.5 md:p-3 text-blue-600 shrink-0">
+            <BookOpen className="h-5 w-5 md:h-6 md:w-6" />
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Aktiviti Direkod</p>
-            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{stats.totalActivities}</h3>
-            <div className="flex gap-2 text-[10px] text-gray-500 mt-1">
+          <div className="min-w-0">
+            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Aktiviti Direkod</p>
+            <h3 className="text-lg md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-1">{stats.totalActivities}</h3>
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-gray-500 mt-0.5 md:mt-1">
               <span className="text-blue-600 font-semibold">{stats.bmCount} BM</span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span className="text-pink-600 font-semibold">{stats.biCount} BI</span>
             </div>
           </div>
         </div>
 
         {/* Card 2 */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
-          <div className="rounded-xl bg-pink-50 p-3 text-pink-600">
-            <Users className="h-6 w-6" />
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm transition-all hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <div className="rounded-xl bg-pink-50 p-2.5 md:p-3 text-pink-600 shrink-0">
+            <Users className="h-5 w-5 md:h-6 md:w-6" />
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Murid Terlibat</p>
-            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mt-1">{stats.totalStudentsEngaged}</h3>
-            <p className="text-[10px] text-gray-500 mt-1 font-medium">
-              ({stats.uniqueStudentsCount} individu unik)
+          <div className="min-w-0">
+            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Murid Terlibat</p>
+            <h3 className="text-lg md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-1">{stats.totalStudentsEngaged}</h3>
+            <p className="text-[10px] text-gray-500 mt-0.5 md:mt-1 font-medium truncate">
+              ({stats.uniqueStudentsCount} individu)
             </p>
           </div>
         </div>
 
         {/* Card 3 */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
-          <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
-            <TrendingUp className="h-6 w-6" />
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm transition-all hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <div className="rounded-xl bg-emerald-50 p-2.5 md:p-3 text-emerald-600 shrink-0">
+            <TrendingUp className="h-5 w-5 md:h-6 md:w-6" />
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Peningkatan TP</p>
-            <h3 className="text-xl md:text-2xl font-bold text-gray-950 mt-1">{stats.improvementRate}%</h3>
-            <p className="text-[10px] text-emerald-600 mt-1 font-semibold flex items-center gap-0.5">
-              <Award className="h-3 w-3" />
-              {stats.improvedStudents} murid naik TP
+          <div className="min-w-0">
+            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Peningkatan TP</p>
+            <h3 className="text-lg md:text-2xl font-bold text-gray-950 mt-0.5 md:mt-1">{stats.improvementRate}%</h3>
+            <p className="text-[10px] text-emerald-600 mt-0.5 md:mt-1 font-semibold flex items-center gap-0.5 truncate">
+              <Award className="h-3 w-3 shrink-0" />
+              {stats.improvedStudents} naik TP
             </p>
           </div>
         </div>
 
         {/* Card 4 */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-md flex items-center gap-4">
-          <div className="rounded-xl bg-amber-50 p-3 text-amber-600">
-            <Flame className="h-6 w-6" />
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm transition-all hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <div className="rounded-xl bg-amber-50 p-2.5 md:p-3 text-amber-600 shrink-0">
+            <Flame className="h-5 w-5 md:h-6 md:w-6" />
           </div>
-          <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Pencapaian Aktif</p>
-            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mt-1">
+          <div className="min-w-0 w-full">
+            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Pencapaian Aktif</p>
+            <h3 className="text-lg md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-1 truncate">
               {activities.length > 0 ? activities[0].className : '-'}
             </h3>
-            <p className="text-[10px] text-gray-500 mt-1 truncate">
-              Kemas kini terakhir: {activities.length > 0 ? activities[0].date : 'Tiada rekod'}
+            <p className="text-[10px] text-gray-500 mt-0.5 md:mt-1 truncate">
+              {activities.length > 0 ? activities[0].date : 'Tiada rekod'}
             </p>
           </div>
         </div>
@@ -612,8 +612,42 @@ export default function Dashboard({
             {/* Split layout: Weeks List sidebar & Selected Week Detail */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              {/* Sidebar - Week list */}
-              <div className="lg:col-span-5 space-y-2">
+              {/* Mobile/Tablet dropdown selector (hidden on large screens) */}
+              <div className="lg:hidden w-full bg-indigo-50/25 border border-indigo-100 p-4 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="mobile-week-selector" className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-indigo-600 shrink-0" />
+                    Pilih Minggu Bertugas ({filteredWeeks.length} minggu):
+                  </label>
+                  {(searchQuery || filterMonth !== 'all') && (
+                    <button
+                      onClick={() => { setSearchQuery(''); setFilterMonth('all'); }}
+                      className="text-[10px] text-indigo-600 hover:underline capitalize font-bold"
+                    >
+                      Reset carian
+                    </button>
+                  )}
+                </div>
+                <select
+                  id="mobile-week-selector"
+                  value={selectedWeekNum}
+                  onChange={(e) => setSelectedWeekNum(Number(e.target.value))}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                >
+                  {filteredWeeks.length > 0 ? (
+                    filteredWeeks.map((wk) => (
+                      <option key={wk.weekNum} value={wk.weekNum}>
+                        Minggu {wk.weekNum} ({wk.dates}) - Kumpulan {wk.groupName}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Tiada minggu bertugas ditemui</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Sidebar - Week list (desktop only) */}
+              <div className="hidden lg:block lg:col-span-5 space-y-2">
                 <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-wider px-1">
                   <span>Senarai Minggu ({filteredWeeks.length} ditemui)</span>
                   {searchQuery || filterMonth !== 'all' ? (
