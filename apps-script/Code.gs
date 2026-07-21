@@ -108,11 +108,7 @@ function doPost(e) {
     var images = data.images || [];
 
     if (images.length > 0) {
-      var folder = _folderInduk().createFolder(
-        'PBD_' + (data.className || 'Kelas') + '_' + (data.date || '') + '_' +
-          String(data.activityName || '').substring(0, 20)
-      );
-      folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      var folder = _folderRekod(data);
       folderUrl = folder.getUrl();
 
       for (var i = 0; i < images.length; i++) {
@@ -185,6 +181,44 @@ function _cariBaris(sheet, id) {
     if (nilai[i][0] === id) return i + 2;
   }
   return -1;
+}
+
+/**
+ * Dapatkan folder Drive bagi satu rekod — guna semula jika sudah wujud.
+ *
+ * Nama folder bersifat deterministik (berdasarkan ID rekod), jadi menyegerakkan
+ * rekod yang sama berulang kali tidak lagi menghasilkan folder baharu setiap
+ * kali. Sebelum ini setiap penyegerakan mencipta folder baharu tanpa syarat:
+ * Sheet hanya menyimpan pautan terkini manakala folder lama menjadi yatim dan
+ * terus memakan kuota Drive. Menekan "Segerakkan Rekod" beberapa kali sudah
+ * cukup untuk menggandakan ratusan fail.
+ *
+ * Fail sedia ada dalam folder dibuang dahulu supaya gambar tidak bertimbun
+ * apabila rekod disunting dan disegerak semula.
+ */
+function _folderRekod(data) {
+  var induk = _folderInduk();
+  var nama =
+    'PBD_' + (data.id || 'tanpa-id') +
+    '_' + (data.className || 'Kelas') +
+    '_' + (data.date || '');
+
+  var it = induk.getFoldersByName(nama);
+  var folder;
+
+  if (it.hasNext()) {
+    folder = it.next();
+    // Kosongkan kandungan lama supaya tiada gambar pendua terkumpul.
+    var fail = folder.getFiles();
+    while (fail.hasNext()) {
+      folder.removeFile(fail.next());
+    }
+  } else {
+    folder = induk.createFolder(nama);
+  }
+
+  folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return folder;
 }
 
 /**
