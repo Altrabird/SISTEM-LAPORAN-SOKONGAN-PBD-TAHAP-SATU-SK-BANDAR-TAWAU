@@ -9,6 +9,7 @@ import {
   OFFICIAL_DUTY_GROUPS
 } from './data';
 import { migrateInlineImages, deletePhotos, clearPhotos } from './lib/photoStore';
+import { deleteFromSheets, getWebAppUrl, getAdminToken } from './lib/sheetsSync';
 import Dashboard from './components/Dashboard';
 import ActivityForm from './components/ActivityForm';
 import ActivityList from './components/ActivityList';
@@ -199,6 +200,28 @@ export default function App() {
 
     // Lepaskan ruang gambar milik rekod yang dipadam.
     if (dipadam?.images?.length) void deletePhotos(dipadam.images);
+
+    // Padam juga baris dalam Google Sheets. Tanpa ini, rekod yang dibuang
+    // daripada aplikasi kekal selama-lamanya dalam laporan awan — laporan
+    // rasmi akan terus memaparkan aktiviti yang sudah ditarik balik.
+    //
+    // Dilangkau secara senyap jika penyegerakan awan atau token pentadbir
+    // belum ditetapkan; padam setempat tidak sepatutnya gagal kerana itu.
+    if (dipadam && getWebAppUrl() && getAdminToken()) {
+      deleteFromSheets({
+        id: dipadam.id,
+        className: dipadam.className,
+        date: dipadam.date
+      }).then(hasil => {
+        if (!hasil.ok) {
+          alert(
+            'Rekod dipadam pada peranti ini, tetapi gagal dipadam daripada ' +
+              'Google Sheets:\n\n' + hasil.message +
+              '\n\nSila padam barisnya secara manual dalam Sheet.'
+          );
+        }
+      });
+    }
     
     if (selectedActivity && selectedActivity.id === id) {
       setSelectedActivity(null);

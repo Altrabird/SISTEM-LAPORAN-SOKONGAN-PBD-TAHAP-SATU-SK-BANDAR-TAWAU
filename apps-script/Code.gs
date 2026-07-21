@@ -40,6 +40,28 @@ var PARENT_DRIVE_FOLDER_ID = '1A_JV5GFxvv78huTGa_VYcoaszV1H4K76';
 /** Digunakan hanya apabila PARENT_DRIVE_FOLDER_ID dikosongkan. */
 var PARENT_FOLDER_NAME = 'LAPORAN BERGAMBAR SOKONGAN PBD';
 
+/**
+ * Token rahsia yang melindungi operasi PADAM.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  JANGAN commit token sebenar ke repositori awam.                     │
+ * │  Tetapkan nilai ini dalam salinan Apps Script ANDA sahaja.           │
+ * └──────────────────────────────────────────────────────────────────────┘
+ *
+ * Deployment ini dikongsi sebagai "Anyone", bermakna sesiapa yang menjumpai
+ * URL /exec boleh menghantar permintaan. Menulis rekod boleh diterima —
+ * paling teruk menghasilkan baris sampah yang mudah dibuang. Memadam pula
+ * memusnahkan data, jadi ia mesti dilindungi secara berasingan.
+ *
+ * Dibiarkan kosong = fungsi padam DIMATIKAN sepenuhnya (gagal-tertutup).
+ * Ini nilai lalai yang selamat: sesiapa yang menyalin repo ini tidak
+ * mewarisi endpoint pemusnah data yang terdedah.
+ *
+ * Untuk mengaktifkan: jana rangkaian rawak yang panjang (contoh melalui
+ * Utilities.getUuid() dalam editor) dan tampal di bawah.
+ */
+var ADMIN_TOKEN = '';
+
 var HEADERS = [
   'ID_Aktiviti', 'Cap_Masa_Segerak', 'Tarikh', 'Hari', 'Kumpulan', 'Guru_Bertugas',
   'Kelas', 'Subjek', 'Aktiviti', 'Deskripsi', 'Guru_Subjek',
@@ -117,7 +139,14 @@ function ujiFolderInduk() {
 function doGet(e) {
   var aksi = (e && e.parameter && e.parameter.action) || 'ping';
   if (aksi === 'ping') {
-    return _json({ status: 'SUCCESS', message: 'LaporPBD backend aktif.', version: '2.0' });
+    return _json({
+      status: 'SUCCESS',
+      message: 'LaporPBD backend aktif.',
+      version: '3.0',
+      // Membolehkan antara muka menunjukkan sama ada padam jauh tersedia,
+      // tanpa mendedahkan token itu sendiri.
+      deleteEnabled: _padamDiaktifkan()
+    });
   }
   return _json({ status: 'ERROR', message: 'Tindakan tidak dikenali: ' + aksi });
 }
@@ -132,6 +161,13 @@ function doPost(e) {
 
   try {
     var data = JSON.parse(e.postData.contents);
+
+    // Muatan lama tidak mempunyai medan "action" langsung, jadi ketiadaannya
+    // bermakna simpan — klien sedia ada terus berfungsi tanpa perubahan.
+    if (data.action === 'padam') {
+      return _padamRekod(data);
+    }
+
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     _pastikanTajuk(sheet);
 
@@ -198,6 +234,119 @@ function doPost(e) {
   } finally {
     kunci.releaseLock();
   }
+}
+
+/* ========================================================================== */
+/*  Padam rekod                                                                */
+/* ========================================================================== */
+
+function _padamDiaktifkan() {
+  return typeof ADMIN_TOKEN === 'string' && ADMIN_TOKEN.trim().length >= 16;
+}
+
+/**
+ * Perbandingan token yang tidak membocorkan panjang padanan melalui masa.
+ *
+ * Perbandingan rentetan biasa (===) terhenti pada aksara pertama yang berbeza,
+ * jadi masa tindak balas boleh membocorkan berapa banyak awalan yang tepat.
+ * Kesan itu kecil melalui rangkaian, tetapi menyamakan masa hampir tidak
+ * memerlukan kos, jadi tiada sebab untuk tidak melakukannya.
+ */
+function _tokenSah(diberi) {
+  if (!_padamDiaktifkan()) return false;
+  if (typeof diberi !== 'string') return false;
+
+  var jangkaan = ADMIN_TOKEN.trim();
+  var diuji = diberi.trim();
+  if (diuji.length !== jangkaan.length) return false;
+
+  var beza = 0;
+  for (var i = 0; i < jangkaan.length; i++) {
+    beza |= jangkaan.charCodeAt(i) ^ diuji.charCodeAt(i);
+  }
+  return beza === 0;
+}
+
+/**
+ * Padam satu rekod daripada Sheet, berserta folder gambarnya dalam Drive.
+ *
+ * Memerlukan token pentadbir. Tanpa perlindungan ini, sesiapa yang menjumpai
+ * URL /exec boleh memadam laporan sebenar sekolah.
+ */
+function _padamRekod(data) {
+  if (!_padamDiaktifkan()) {
+    return _json({
+      status: 'ERROR',
+      code: 'DELETE_DISABLED',
+      message:
+        'Fungsi padam dimatikan. Tetapkan ADMIN_TOKEN (sekurang-kurangnya 16 aksara) ' +
+        'dalam Code.gs, kemudian deploy versi baharu.'
+    });
+  }
+
+  if (!_tokenSah(data.token)) {
+    return _json({
+      status: 'ERROR',
+      code: 'BAD_TOKEN',
+      message: 'Token pentadbir tidak sah. Rekod tidak dipadam.'
+    });
+  }
+
+  var id = data.id;
+  if (!id) {
+    return _json({ status: 'ERROR', message: 'ID rekod diperlukan untuk memadam.' });
+  }
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var baris = _cariBaris(sheet, id);
+
+  if (baris < 0) {
+    // Bukan ralat: rekod mungkin sudah dipadam, atau tidak pernah disegerakkan.
+    // Melaporkannya sebagai kegagalan hanya akan mengelirukan pengguna.
+    return _json({
+      status: 'SUCCESS',
+      message: 'Rekod ' + id + ' tiada dalam Sheet — tiada apa yang perlu dipadam.',
+      removed: false
+    });
+  }
+
+  sheet.deleteRow(baris);
+
+  // Buang juga folder gambarnya supaya Drive tidak dipenuhi fail yatim.
+  var folderDibuang = false;
+  try {
+    var nama = 'PBD_' + id + '_' + (data.className || '') + '_' + (data.date || '');
+    var it = _folderInduk().getFoldersByName(nama);
+    if (it.hasNext()) {
+      it.next().setTrashed(true);
+      folderDibuang = true;
+    }
+  } catch (err) {
+    // Baris sudah dipadam; kegagalan membuang folder tidak boleh
+    // menjadikan keseluruhan operasi gagal.
+    Logger.log('Gagal membuang folder untuk ' + id + ': ' + err);
+  }
+
+  return _json({
+    status: 'SUCCESS',
+    message: 'Rekod ' + id + ' dipadam daripada Sheet.',
+    removed: true,
+    folderTrashed: folderDibuang
+  });
+}
+
+/**
+ * Jana token rahsia untuk ditampal ke dalam ADMIN_TOKEN.
+ * Jalankan dari editor Apps Script.
+ */
+function janaAdminToken() {
+  var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().slice(0, 8);
+  var mesej =
+    'Token pentadbir baharu:\n\n' + token +
+    '\n\nSalin ke pemboleh ubah ADMIN_TOKEN di bahagian atas Code.gs, ' +
+    'kemudian Deploy versi baharu.\n\nJANGAN commit token ini ke GitHub.';
+  Logger.log(mesej);
+  SpreadsheetApp.getUi().alert(mesej);
 }
 
 /* ========================================================================== */

@@ -18,12 +18,29 @@ import { ActivityLog } from '../types';
 import { resolveImages } from './photoStore';
 
 export const KUNCI_URL_API = 'pbd_appscript_url';
+export const KUNCI_TOKEN = 'pbd_admin_token';
 
 export const getWebAppUrl = (): string =>
   localStorage.getItem(KUNCI_URL_API)?.trim() || '';
 
 export const setWebAppUrl = (url: string): void => {
   localStorage.setItem(KUNCI_URL_API, url.trim());
+};
+
+/**
+ * Token pentadbir untuk memadam rekod daripada Google Sheets.
+ *
+ * Disimpan dalam localStorage pelayar sahaja, tidak pernah dimasukkan ke dalam
+ * repo atau bundle. Setiap guru yang perlu memadam rekod jauh menampalnya
+ * sekali pada peranti masing-masing.
+ */
+export const getAdminToken = (): string =>
+  localStorage.getItem(KUNCI_TOKEN)?.trim() || '';
+
+export const setAdminToken = (token: string): void => {
+  const bersih = token.trim();
+  if (bersih) localStorage.setItem(KUNCI_TOKEN, bersih);
+  else localStorage.removeItem(KUNCI_TOKEN);
 };
 
 export interface SyncResult {
@@ -129,6 +146,58 @@ export async function syncActivity(activity: ActivityLog): Promise<SyncResult> {
       photosSaved: data.photosSaved,
       updated: data.updated
     };
+  } catch (err: any) {
+    return { ok: false, message: `Ralat rangkaian: ${err?.message || err}` };
+  }
+}
+
+/**
+ * Padam satu rekod daripada Google Sheets dan buang folder gambarnya.
+ *
+ * Memerlukan token pentadbir yang sepadan dengan ADMIN_TOKEN dalam Code.gs.
+ * Jika token tidak ditetapkan pada mana-mana pihak, operasi ini dilangkau
+ * dengan senyap oleh pemanggil — padam setempat tetap diteruskan.
+ */
+export async function deleteFromSheets(activity: {
+  id: string;
+  className?: string;
+  date?: string;
+}): Promise<SyncResult> {
+  const url = getWebAppUrl();
+  const token = getAdminToken();
+
+  if (!url) return { ok: false, message: 'Pautan Web App belum ditetapkan.' };
+  if (!token) {
+    return {
+      ok: false,
+      message:
+        'Token pentadbir belum ditetapkan. Rekod dipadam pada peranti ini sahaja, ' +
+        'barisnya masih kekal dalam Google Sheets.'
+    };
+  }
+
+  try {
+    const jawapan = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'padam',
+        token,
+        id: activity.id,
+        className: activity.className,
+        date: activity.date
+      })
+    });
+
+    if (!jawapan.ok) {
+      return { ok: false, message: `Pelayan membalas HTTP ${jawapan.status}.` };
+    }
+
+    const data: ApsResponse & { code?: string } = await jawapan.json();
+    if (data.status !== 'SUCCESS') {
+      return { ok: false, message: data.message || 'Padam ditolak oleh pelayan.' };
+    }
+    return { ok: true, message: data.message || 'Rekod dipadam daripada Google Sheets.' };
   } catch (err: any) {
     return { ok: false, message: `Ralat rangkaian: ${err?.message || err}` };
   }

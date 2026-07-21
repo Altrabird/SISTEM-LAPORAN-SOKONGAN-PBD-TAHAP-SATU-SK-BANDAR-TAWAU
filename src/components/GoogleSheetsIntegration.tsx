@@ -4,7 +4,9 @@ import {
   testConnection,
   syncMany,
   getWebAppUrl,
-  setWebAppUrl as setWebAppUrlStored
+  setWebAppUrl as setWebAppUrlStored,
+  getAdminToken,
+  setAdminToken as setAdminTokenStored
 } from '../lib/sheetsSync';
 // Kod Apps Script diimport terus daripada apps-script/Code.gs supaya kod yang
 // disalin pengguna sentiasa sepadan dengan fail sebenar dalam repo ini.
@@ -35,6 +37,7 @@ export default function GoogleSheetsIntegration({
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedTemplate, setCopiedTemplate] = useState(false);
   const [webAppUrl, setWebAppUrl] = useState(() => getWebAppUrl());
+  const [adminToken, setAdminTokenState] = useState(() => getAdminToken());
   const [syncStatus, setSyncStatus] = useState<'IDLE' | 'SYNCING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [syncMessage, setSyncMessage] = useState('');
 
@@ -279,6 +282,45 @@ export default function GoogleSheetsIntegration({
                 <Play className="h-3.5 w-3.5" />
                 Jalankan Ujian Sambungan
               </button>
+
+              {/* Token pentadbir untuk padam jauh */}
+              <div className="pt-2.5 border-t border-gray-50 space-y-2">
+                <h4 className="text-xs font-bold text-gray-800">
+                  Token Pentadbir <span className="font-normal text-gray-400">(pilihan)</span>
+                </h4>
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Tanpa token, memadam rekod dalam aplikasi <strong>tidak</strong> membuang
+                  barisnya daripada Google Sheets. Tetapkan <code className="text-[10px]">ADMIN_TOKEN</code> dalam
+                  Code.gs (jalankan <code className="text-[10px]">janaAdminToken()</code> untuk
+                  menjananya), deploy versi baharu, kemudian tampal token yang sama di sini.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={adminToken}
+                    onChange={(e) => setAdminTokenState(e.target.value)}
+                    placeholder="Tampal token pentadbir…"
+                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdminTokenStored(adminToken);
+                      alert(
+                        adminToken.trim()
+                          ? 'Token pentadbir disimpan dalam pelayar ini sahaja.'
+                          : 'Token dikosongkan. Padam jauh dimatikan.'
+                      );
+                    }}
+                    className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 transition whitespace-nowrap"
+                  >
+                    Simpan
+                  </button>
+                </div>
+                <p className="text-[10px] text-amber-600">
+                  Disimpan dalam pelayar ini sahaja — jangan kongsi atau commit ke GitHub.
+                </p>
+              </div>
 
               {/* Penyegerakan rekod sebenar */}
               <div className="pt-2.5 border-t border-gray-50 space-y-2">

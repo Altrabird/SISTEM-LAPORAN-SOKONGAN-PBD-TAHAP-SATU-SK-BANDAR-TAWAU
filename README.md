@@ -160,6 +160,31 @@ diduplikasi, jadi penyegerakan berulang adalah selamat.
 Penyegerakan berjalan secara berjujukan kerana Apps Script mempunyai had kuota
 pelaksanaan yang mudah dilanggar oleh permintaan serentak.
 
+### Memadam rekod daripada Sheets
+
+Secara lalai, memadam aktiviti dalam aplikasi hanya membuangnya daripada
+peranti itu — barisnya kekal dalam Google Sheets selama-lamanya. Untuk
+membolehkan padam jauh:
+
+1. Dalam editor Apps Script, jalankan `janaAdminToken()`.
+2. Tampal token yang dijana ke `ADMIN_TOKEN` di bahagian atas `Code.gs`.
+3. Deploy versi baharu.
+4. Dalam aplikasi: **Integrasi Excel & GD → Token Pentadbir → Simpan**.
+
+Selepas itu, memadam aktiviti turut membuang barisnya daripada Sheet dan
+menghantar folder gambarnya ke tong sampah Drive.
+
+> **Mengapa perlu token.** Deployment dikongsi sebagai `Anyone`, jadi sesiapa
+> yang menjumpai URL `/exec` boleh menghantar permintaan. Menulis rekod paling
+> teruk menghasilkan baris sampah yang mudah dibuang; memadam pula memusnahkan
+> laporan sebenar. Sebab itu operasi padam dilindungi secara berasingan.
+>
+> `ADMIN_TOKEN` kekal **kosong** dalam repo ini, dan nilai kosong mematikan
+> fungsi padam sepenuhnya. Sesiapa yang menyalin repo ini tidak mewarisi
+> endpoint pemusnah data yang terdedah. Token sebenar hidup hanya dalam
+> salinan Apps Script anda dan `localStorage` pelayar guru — jangan sekali-kali
+> commit ke GitHub.
+
 ---
 
 ## Struktur
