@@ -98,6 +98,22 @@
     color: #6b756a;
   }
 
+  /* ------------------------------------------------------------------
+     Kad laporan boleh cetak
+     ------------------------------------------------------------------
+     Kad ini ialah pulau hitam-atas-putih di dalam aplikasi bertema gelap.
+     Elemen di dalamnya yang tidak menyatakan warna teks secara eksplisit
+     — contohnya sel <th> dan <td> — mewarisi warna daripada body, iaitu
+     #f2f7ef. Hasilnya teks putih di atas kad putih, dan sebahagian jadual
+     laporan hilang sepenuhnya.
+
+     Menetapkan warna pada kad menjadikan warna gelap sebagai lalai untuk
+     semua kandungannya, jadi sel baharu tidak boleh terlepas.
+     ------------------------------------------------------------------ */
+  #printable-report-card {
+    color: #0f172a;
+  }
+
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {

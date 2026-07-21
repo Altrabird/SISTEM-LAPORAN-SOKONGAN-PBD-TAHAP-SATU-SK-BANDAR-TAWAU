@@ -28,6 +28,38 @@ export default function PictorialReport({
   // Gambar disimpan dalam IndexedDB — selesaikan rujukan sebelum dipaparkan/dicetak.
   const photoUrls = useResolvedImages(activity.images);
 
+  /*
+   * Nota: fasa bimbingan (Set Induksi, Aktiviti Utama, dsb.) TIDAK dilabelkan
+   * di sini. Borang menyimpan gambar melalui images.filter(), yang memampatkan
+   * slot kosong — jadi jika guru mengisi slot 1 dan 3 sahaja, foto kedua yang
+   * disimpan sebenarnya milik fasa ketiga. Nombor slot asal tidak dikekalkan,
+   * jadi sebarang label fasa di sini hanyalah tekaan. Kapsyen lalai borang
+   * sudah pun menerangkan fasa masing-masing.
+   */
+  const jumlahFoto = (activity.images ?? []).length;
+
+  /**
+   * Foto yang benar-benar boleh dipaparkan.
+   *
+   * resolveImages() memulangkan rentetan kosong bagi rujukan yang tiada dalam
+   * IndexedDB — contohnya apabila rekod disegerakkan daripada peranti lain.
+   * Menapisnya di sini mengelakkan sel kosong berbingkai dalam laporan, sambil
+   * mengekalkan pasangan kapsyen yang betul melalui indeks asal.
+   */
+  const fotoSah = photoUrls
+    .map((url, i) => ({
+      url,
+      ref: (activity.images ?? [])[i],
+      kapsyen: activity.imageCaptions?.[i] ?? ''
+    }))
+    .filter(f => Boolean(f.url));
+
+  /** Susun atur grid mengikut bilangan foto sebenar. */
+  const gridFoto =
+    fotoSah.length === 1 ? 'grid-cols-1 max-w-md mx-auto'
+    : fotoSah.length === 3 ? 'grid-cols-2 md:grid-cols-3'
+    : 'grid-cols-2';
+
   // Statistik impak dikira daripada TP Selepas yang telah dinilai sahaja.
   const totalStudents = activity.students.length;
   const assessedStudents = activity.students.filter(isAssessed);
@@ -210,29 +242,60 @@ export default function PictorialReport({
         </div>
 
         {/* 4. Photo Gallery (Laporan Bergambar) */}
-        {activity.images && activity.images.length > 0 && (
+        {jumlahFoto > 0 && (
           <div className="space-y-4 mt-6 page-break-before">
-            <h4 className="text-xs font-bold text-gray-950 uppercase tracking-wider border-l-4 border-gray-900 pl-2">
-              4. Dokumentasi Bergambar Aktiviti Sokongan PBD
-            </h4>
-            
-            <div className="grid grid-cols-2 gap-4">
-              {photoUrls.map((img, idx) => (
-                <div key={idx} className="border border-gray-900 p-2 rounded-lg space-y-2 flex flex-col justify-between">
-                  <div className="aspect-video w-full rounded overflow-hidden bg-gray-100 border border-gray-200">
+            <div className="flex items-baseline justify-between gap-3">
+              <h4 className="text-xs font-bold text-gray-950 uppercase tracking-wider border-l-4 border-gray-900 pl-2">
+                4. Dokumentasi Bergambar Aktiviti Sokongan PBD
+              </h4>
+              <span className="text-[10px] font-mono text-gray-500 shrink-0">
+                {fotoSah.length} / {jumlahFoto} foto
+              </span>
+            </div>
+
+            {/*
+              Susun atur mengikut bilangan foto. Grid dua lajur tetap
+              menghasilkan foto tunggal separuh lebar dan ruang kosong janggal
+              apabila terdapat tiga foto.
+            */}
+            <div className={`grid gap-4 ${gridFoto}`}>
+              {fotoSah.map((foto, idx) => (
+                <figure
+                  key={foto.ref || idx}
+                  className="border border-gray-900 p-2 rounded-lg flex flex-col gap-2 break-inside-avoid"
+                >
+                  <div
+                    className={`w-full rounded overflow-hidden bg-gray-100 border border-gray-200 ${
+                      fotoSah.length === 1 ? 'aspect-[16/10]' : 'aspect-video'
+                    }`}
+                  >
                     <img
-                      src={img}
-                      alt={`Dokumentasi ${idx + 1}: ${activity.imageCaptions?.[idx] || activity.activityName}`}
+                      src={foto.url}
+                      alt={`Dokumentasi ${idx + 1}: ${foto.kapsyen || activity.activityName}`}
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
                   </div>
-                  <p className="text-[10px] text-center italic text-gray-700 font-medium px-1">
-                    Foto {idx + 1}: {activity.imageCaptions?.[idx] || 'Sesi aktiviti sokongan murid.'}
-                  </p>
-                </div>
+                  <figcaption className="text-[10px] text-center italic text-gray-700 font-medium px-1">
+                    <span className="not-italic font-bold">Foto {idx + 1}</span>
+                    : {foto.kapsyen || 'Sesi aktiviti sokongan murid.'}
+                  </figcaption>
+                </figure>
               ))}
             </div>
+
+            {/*
+              Amaran jujur: sebahagian gambar gagal dimuatkan daripada IndexedDB.
+              Tanpa nota ini, laporan hanya kelihatan mempunyai kurang foto dan
+              guru tidak tahu ada yang hilang.
+            */}
+            {fotoSah.length < jumlahFoto && (
+              <p className="text-[10px] text-red-700 italic print:text-black">
+                Nota: {jumlahFoto - fotoSah.length} daripada {jumlahFoto} gambar tidak
+                dapat dimuatkan daripada storan pelayar ini. Gambar mungkin dimuat naik
+                pada peranti lain, atau storan pelayar telah dibersihkan.
+              </p>
+            )}
           </div>
         )}
 
