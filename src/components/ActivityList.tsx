@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { ActivityLog } from '../types';
+import { ActivityLog, isAssessed, tpGain } from '../types';
+import { useResolvedImage } from '../lib/useResolvedImages';
 import {
   Search,
   BookOpen,
@@ -15,6 +16,32 @@ import {
   ChevronRight,
   Filter
 } from 'lucide-react';
+
+/**
+ * Lakaran kecil bagi kad aktiviti.
+ *
+ * Diasingkan menjadi komponen sendiri kerana gambar kini disimpan dalam
+ * IndexedDB dan perlu diselesaikan melalui hook — hook tidak boleh dipanggil
+ * di dalam .map() komponen induk.
+ */
+function ActivityThumbnail({ imageRef, alt }: { imageRef: string; alt: string }) {
+  const url = useResolvedImage(imageRef);
+
+  if (!url) {
+    // Ruang dikekalkan semasa gambar dimuatkan supaya susun atur tidak melompat.
+    return <div className="w-full h-full bg-gray-100 animate-pulse" aria-hidden="true" />;
+  }
+
+  return (
+    <img
+      src={url}
+      alt={alt}
+      loading="lazy"
+      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+      referrerPolicy="no-referrer"
+    />
+  );
+}
 
 interface ActivityListProps {
   activities: ActivityLog[];
@@ -173,7 +200,11 @@ export default function ActivityList({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredActivities.map((act) => {
             const isBM = act.subject === 'BM';
-            const improvementCount = act.students.filter(s => s.targetTp > s.currentTp).length;
+            // Hanya kira murid yang sudah dinilai (TP Selepas diisi).
+            const improvementCount = act.students.filter(
+              s => isAssessed(s) && (tpGain(s) ?? 0) > 0
+            ).length;
+            const pendingCount = act.students.filter(s => !isAssessed(s)).length;
             const hasImages = act.images && act.images.length > 0;
 
             return (
@@ -184,12 +215,7 @@ export default function ActivityList({
                 {/* Image Section or Subject Banner */}
                 <div className="relative aspect-video w-full bg-gray-50 overflow-hidden">
                   {hasImages ? (
-                    <img
-                      src={act.images[0]}
-                      alt={act.activityName}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                      referrerPolicy="no-referrer"
-                    />
+                    <ActivityThumbnail imageRef={act.images[0]} alt={act.activityName} />
                   ) : (
                     <div className={`w-full h-full flex flex-col items-center justify-center gap-1.5 ${
                       isBM ? 'bg-gradient-to-br from-blue-50 to-indigo-100/70 text-blue-700' : 'bg-gradient-to-br from-pink-50 to-rose-100/70 text-pink-700'

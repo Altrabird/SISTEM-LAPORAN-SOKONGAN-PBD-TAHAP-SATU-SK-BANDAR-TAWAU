@@ -1,9 +1,34 @@
 export interface Student {
   id: string;
   name: string;
-  currentTp: number; // Tahap Penguasaan 1-6
-  targetTp: number;  // Target Tahap Penguasaan 1-6
+  currentTp: number; // TP Sebelum — tahap penguasaan sebelum aktiviti (1-6)
+  targetTp: number;  // TP Sasaran — tahap yang disasarkan oleh guru (1-6)
+  /**
+   * TP Selepas — tahap penguasaan yang BENAR-BENAR dicapai selepas aktiviti (1-6).
+   *
+   * Dibiarkan undefined sehingga guru menilai murid selepas sesi. Ini berbeza
+   * daripada targetTp: sasaran ialah hasrat, manakala tpAfter ialah bukti impak.
+   * Laporan dan carta hendaklah menggunakan tpAfter untuk mengukur pencapaian,
+   * dan hanya jatuh semula kepada targetTp jika penilaian belum dibuat.
+   */
+  tpAfter?: number;
   notes?: string;
+}
+
+/** Kenaikan TP sebenar bagi seorang murid, atau null jika belum dinilai. */
+export function tpGain(student: Student): number | null {
+  if (typeof student.tpAfter !== 'number') return null;
+  return student.tpAfter - student.currentTp;
+}
+
+/** TP hasil yang hendak dipaparkan: keputusan sebenar jika ada, jika tidak sasaran. */
+export function tpOutcome(student: Student): number {
+  return typeof student.tpAfter === 'number' ? student.tpAfter : student.targetTp;
+}
+
+/** Adakah murid ini sudah dinilai selepas aktiviti? */
+export function isAssessed(student: Student): boolean {
+  return typeof student.tpAfter === 'number';
 }
 
 export interface ActivityLog {

@@ -1,4 +1,14 @@
 import React, { useState } from 'react';
+import { ActivityLog } from '../types';
+import {
+  testConnection,
+  syncMany,
+  getWebAppUrl,
+  setWebAppUrl as setWebAppUrlStored
+} from '../lib/sheetsSync';
+// Kod Apps Script diimport terus daripada apps-script/Code.gs supaya kod yang
+// disalin pengguna sentiasa sepadan dengan fail sebenar dalam repo ini.
+import appsScriptCode from '../../apps-script/Code.gs?raw';
 import {
   Database,
   Download,
@@ -14,12 +24,17 @@ import {
   Sparkles
 } from 'lucide-react';
 
-export default function GoogleSheetsIntegration() {
+interface GoogleSheetsIntegrationProps {
+  /** Rekod sebenar yang boleh disegerakkan ke Google Sheets. */
+  activities?: ActivityLog[];
+}
+
+export default function GoogleSheetsIntegration({
+  activities = []
+}: GoogleSheetsIntegrationProps) {
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedTemplate, setCopiedTemplate] = useState(false);
-  const [webAppUrl, setWebAppUrl] = useState(() => {
-    return localStorage.getItem('pbd_appscript_url') || '';
-  });
+  const [webAppUrl, setWebAppUrl] = useState(() => getWebAppUrl());
   const [syncStatus, setSyncStatus] = useState<'IDLE' | 'SYNCING' | 'SUCCESS' | 'ERROR'>('IDLE');
   const [syncMessage, setSyncMessage] = useState('');
 
@@ -35,128 +50,20 @@ export default function GoogleSheetsIntegration() {
     { no: 8, name: 'Aktiviti', type: 'Teks', example: 'Main peranan', desc: 'Nama modul / aktiviti sokongan.' },
     { no: 9, name: 'Deskripsi', type: 'Teks (Perenggan)', example: 'Murid melakonkan dialog...', desc: 'Langkah pelaksanaan bimbingan.' },
     { no: 10, name: 'Guru_Subjek', type: 'Teks', example: 'Samsiah Sundu', desc: 'Guru subjek yang terlibat.' },
-    { no: 11, name: 'Murid_Terlibat', type: 'Teks (Senarai)', example: 'Akram (TP2->TP3), M. Yusuf (TP2->TP3)...', desc: 'Senarai penuh murid terlibat, TP asal, TP sasaran dan nota.' },
-    { no: 12, name: 'Catatan_Refleksi', type: 'Teks (Perenggan)', example: 'Semua murid berjaya...', desc: 'Rumusan impak keseluruhan.' },
-    { no: 13, name: 'Pautan_Gambar_Drive', type: 'Teks (Pautan URL)', example: 'https://drive.google.com/open?id=...', desc: 'Pautan folder gambar yang dimuat naik ke Google Drive secara automatik.' }
+    { no: 11, name: 'Bil_Murid', type: 'Nombor', example: '4', desc: 'Bilangan murid yang terlibat dalam sesi.' },
+    { no: 12, name: 'Murid_Terlibat', type: 'Teks (Senarai)', example: '1. Akram (sebelum TP2 → selepas TP3; sasaran TP3)', desc: 'Senarai murid berserta TP sebelum, TP selepas dan sasaran.' },
+    { no: 13, name: 'Purata_TP_Sebelum', type: 'Nombor', example: '2.00', desc: 'Purata TP sebelum bagi murid yang telah dinilai.' },
+    { no: 14, name: 'Purata_TP_Selepas', type: 'Nombor', example: '3.00', desc: 'Purata TP selepas — pencapaian sebenar, bukan sasaran.' },
+    { no: 15, name: 'Purata_Peningkatan', type: 'Nombor', example: '1.00', desc: 'Purata kenaikan TP yang disahkan melalui penilaian.' },
+    { no: 16, name: 'Bil_Belum_Dinilai', type: 'Nombor', example: '0', desc: 'Bilangan murid yang TP Selepas masih belum diisi.' },
+    { no: 17, name: 'Catatan_Refleksi', type: 'Teks (Perenggan)', example: 'Semua murid berjaya...', desc: 'Rumusan impak keseluruhan.' },
+    { no: 18, name: 'Bil_Gambar', type: 'Nombor', example: '4', desc: 'Bilangan gambar yang berjaya dimuat naik ke Drive.' },
+    { no: 19, name: 'Pautan_Gambar_Drive', type: 'Teks (Pautan URL)', example: 'https://drive.google.com/drive/folders/...', desc: 'Pautan folder gambar yang dimuat naik ke Google Drive secara automatik.' }
   ];
 
-  // 2. Google Apps Script Code
-  const appsScriptCode = `/**
- * Google Apps Script: Integrasi Laporan Aktiviti PBD & Folder Bergambar Google Drive
- * 
- * Skenario:
- * 1. Menerima data JSON dari Web App LaporPBD (termasuk butiran aktiviti, murid & fail imej base64).
- * 2. Menyimpan maklumat bertulis ke baris baharu di Google Sheets.
- * 3. Mencipta Folder Laporan bergambar di Google Drive (GD) di bawah Folder Induk.
- * 4. Menukarkan Base64 imej kepada fail imej dan menyimpannya di dalam folder GD tersebut.
- * 5. Memulangkan pautan folder Drive tersebut semula ke Google Sheets.
- */
+  // Kod Apps Script kini berada dalam apps-script/Code.gs dan diimport di atas,
+  // menghapuskan salinan kedua yang mudah tersasar daripada fail sebenar.
 
-// Sila masukkan ID Folder Induk Google Drive anda di sini (Tinggalkan kosong untuk cipta di My Drive)
-const PARENT_DRIVE_FOLDER_ID = ""; 
-
-function doPost(e) {
-  try {
-    // Membaca parameter data POST
-    const rawData = e.postData.contents;
-    const data = JSON.parse(rawData);
-    
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    
-    // Cipta baris tajuk (headers) sekiranya helaian (sheet) masih kosong
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        "ID_Aktiviti", 
-        "Tarikh", 
-        "Hari", 
-        "Kumpulan", 
-        "Guru_Bertugas", 
-        "Kelas", 
-        "Subjek", 
-        "Aktiviti", 
-        "Deskripsi", 
-        "Guru_Subjek", 
-        "Murid_Terlibat", 
-        "Catatan_Refleksi", 
-        "Pautan_Gambar_Drive"
-      ]);
-      // Cantikkan tajuk
-      sheet.getRange(1, 1, 1, 13).setFontWeight("bold").setBackground("#e2e8f0");
-    }
-    
-    // 1. Menguruskan Folder Bergambar di Google Drive (GD)
-    let folderUrl = "Tiada gambar dimuat naik";
-    
-    if (data.images && data.images.length > 0) {
-      let parentFolder;
-      if (PARENT_DRIVE_FOLDER_ID && PARENT_DRIVE_FOLDER_ID.trim() !== "") {
-        parentFolder = DriveApp.getFolderById(PARENT_DRIVE_FOLDER_ID);
-      } else {
-        parentFolder = DriveApp.getRootFolder();
-      }
-      
-      // Cipta folder khusus untuk laporan aktiviti ini
-      const folderName = "PBD_" + data.className + "_" + data.date + "_" + data.activityName.substring(0, 20);
-      const activityFolder = parentFolder.createFolder(folderName);
-      activityFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      folderUrl = activityFolder.getUrl();
-      
-      // Simpan setiap imej base64 ke dalam folder
-      data.images.forEach((base64String, index) => {
-        try {
-          // Bersihkan header base64 (e.g. data:image/png;base64,)
-          const contentType = base64String.substring(5, base64String.indexOf(";"));
-          const base64Data = base64String.substring(base64String.indexOf(",") + 1);
-          
-          const decodedBlob = Utilities.newBlob(
-            Utilities.base64Decode(base64Data), 
-            contentType, 
-            "Foto_" + (index + 1) + "_" + data.className + ".png"
-          );
-          
-          activityFolder.createFile(decodedBlob);
-        } catch (imgError) {
-          // Log ralat imej tetapi teruskan pemprosesan
-          Logger.log("Ralat simpan imej: " + imgError.toString());
-        }
-      });
-    }
-    
-    // 2. Formatkan data senarai murid ke dalam satu sel teks yang kemas
-    const formattedStudents = data.students.map((stud, idx) => {
-      return (idx + 1) + ". " + stud.name + " (TP" + stud.currentTp + " -> TP" + stud.targetTp + ") - " + (stud.notes || "");
-    }).join("\\n");
-    
-    // 3. Masukkan rekod ke helaian Excel/Sheets
-    sheet.appendRow([
-      data.id,
-      data.date,
-      data.day,
-      data.groupName,
-      data.teacherOnDuty,
-      data.className,
-      data.subject,
-      data.activityName,
-      data.activityDesc,
-      data.subjectTeacher,
-      formattedStudents,
-      data.notes,
-      folderUrl
-    ]);
-    
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "SUCCESS",
-      message: "Data berjaya disegerakkan ke Google Sheets!",
-      folderUrl: folderUrl
-    })).setMimeType(ContentService.MimeType.JSON);
-    
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "ERROR",
-      message: error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
-  }
-}`;
 
   // Copy code utility
   const copyScriptToClipboard = () => {
@@ -199,53 +106,66 @@ function doPost(e) {
 
   const handleSaveUrl = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('pbd_appscript_url', webAppUrl.trim());
+    setWebAppUrlStored(webAppUrl);
     alert('Pautan Google Apps Script berjaya disimpan secara lokal!');
   };
 
-  // Simulated Sync Test
+  /**
+   * Uji sambungan sebenar.
+   *
+   * Versi lama menggunakan mode 'no-cors', menjadikan respons legap — status
+   * sentiasa dilaporkan "BERJAYA" walaupun Apps Script mengembalikan ralat
+   * atau deployment tidak wujud. Kini balasan pelayan benar-benar dibaca.
+   */
   const triggerTestSync = async () => {
-    if (!webAppUrl.trim()) {
-      alert('Sila masukkan pautan Apps Script Web App yang sah terlebih dahulu.');
+    setSyncStatus('SYNCING');
+    setSyncMessage('Menghubungi deployment Apps Script…');
+
+    const hasil = await testConnection(webAppUrl);
+    setSyncStatus(hasil.ok ? 'SUCCESS' : 'ERROR');
+    setSyncMessage(hasil.message);
+  };
+
+  /** Segerakkan semua rekod sebenar ke Google Sheets + Drive. */
+  const syncAllRecords = async () => {
+    if (!activities.length) {
+      alert('Tiada rekod aktiviti untuk disegerakkan.');
+      return;
+    }
+    if (!getWebAppUrl()) {
+      alert('Sila simpan pautan Web App terlebih dahulu.');
+      return;
+    }
+    if (
+      !confirm(
+        `Segerakkan ${activities.length} rekod ke Google Sheets?\n\n` +
+          'Gambar turut dimuat naik ke Google Drive, jadi proses ini mungkin ' +
+          'mengambil masa beberapa minit.'
+      )
+    ) {
       return;
     }
 
     setSyncStatus('SYNCING');
-    setSyncMessage('Sedang menghantar isyarat ujian segerak ke Google Sheets...');
+    setSyncMessage(`Menyegerakkan 0 daripada ${activities.length} rekod…`);
 
-    const testPayload = {
-      id: 'act-test-999',
-      groupName: 'Ujian Integrasi',
-      teacherOnDuty: 'Samsiah Sundu',
-      date: new Date().toISOString().split('T')[0],
-      day: 'Isnin',
-      className: 'Tahap 1 Test',
-      subject: 'BM',
-      activityName: 'Ujian Sambungan Web App',
-      activityDesc: 'Sesi ping ujian integrasi penuh dari Sistem LaporPBD ke Google Sheets.',
-      subjectTeacher: 'Samsiah Sundu',
-      students: [
-        { id: 'stud-t1', name: 'Murid Simulasi 1', currentTp: 2, targetTp: 3, notes: 'Berjaya menyambung API.' }
-      ],
-      notes: 'Sambungan Web App & Google Drive API berjalan lancar!',
-      images: [] // empty for speed
-    };
+    const hasil = await syncMany(activities, (p) => {
+      setSyncMessage(
+        `Menyegerakkan ${p.done} daripada ${p.total} rekod…` +
+          (p.current ? ` (${p.current})` : '')
+      );
+    });
 
-    try {
-      const response = await fetch(webAppUrl.trim(), {
-        method: 'POST',
-        mode: 'no-cors', // Apps Script requires no-cors sometimes if not returning proper headers
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(testPayload),
-      });
-
+    if (hasil.gagal === 0) {
       setSyncStatus('SUCCESS');
-      setSyncMessage('Isyarat ujian berjaya dihantar ke Google Sheets! Sila buka Google Sheet anda untuk melihat kemasukan baris baharu.');
-    } catch (err: any) {
+      setSyncMessage(`Selesai — ${hasil.berjaya} rekod berjaya disegerakkan ke Google Sheets & Drive.`);
+    } else {
       setSyncStatus('ERROR');
-      setSyncMessage(`Ralat sambungan: ${err.message || err}. Sila pastikan tetapan Apps Script deployed sebagai Web App (Anyone can access).`);
+      setSyncMessage(
+        `${hasil.berjaya} berjaya, ${hasil.gagal} gagal.\n\n` +
+          hasil.ralat.slice(0, 3).join('\n') +
+          (hasil.ralat.length > 3 ? `\n…dan ${hasil.ralat.length - 3} lagi.` : '')
+      );
     }
   };
 
@@ -346,17 +266,40 @@ function doPost(e) {
             <div className="pt-4 border-t border-gray-100 space-y-2.5">
               <h4 className="text-xs font-bold text-gray-800">Uji Sambungan Google Sheets</h4>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                Hantar satu baris data ujian simulasi ke Sheets anda untuk memastikan Apps Script berfungsi.
+                Menghubungi deployment anda dan membaca balasannya. Jika deployment
+                tiada atau tidak dikongsi kepada "Anyone", ralat sebenar akan dipaparkan.
               </p>
-              
+
               <button
                 type="button"
                 onClick={triggerTestSync}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 py-2 text-xs font-bold text-blue-700 transition"
+                disabled={syncStatus === 'SYNCING'}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 py-2 text-xs font-bold text-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Play className="h-3.5 w-3.5" />
                 Jalankan Ujian Sambungan
               </button>
+
+              {/* Penyegerakan rekod sebenar */}
+              <div className="pt-2.5 border-t border-gray-50 space-y-2">
+                <h4 className="text-xs font-bold text-gray-800">Segerakkan Rekod Sebenar</h4>
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Menghantar {activities.length} rekod aktiviti yang tersimpan ke Google
+                  Sheets, berserta memuat naik gambar ke Google Drive. Rekod dengan ID
+                  yang sama akan dikemas kini, bukan diduplikasi.
+                </p>
+                <button
+                  type="button"
+                  onClick={syncAllRecords}
+                  disabled={syncStatus === 'SYNCING' || activities.length === 0}
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 text-xs font-bold text-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Database className="h-3.5 w-3.5" />
+                  {activities.length > 0
+                    ? `Segerakkan ${activities.length} Rekod Sekarang`
+                    : 'Tiada Rekod Untuk Disegerakkan'}
+                </button>
+              </div>
 
               {syncStatus !== 'IDLE' && (
                 <div className={`p-3 rounded-lg text-xs leading-relaxed ${
@@ -367,7 +310,7 @@ function doPost(e) {
                   <span className="font-bold uppercase block mb-1">
                     {syncStatus === 'SYNCING' ? 'MENGHANTAR...' : syncStatus === 'SUCCESS' ? 'BERJAYA!' : 'RALAT'}
                   </span>
-                  {syncMessage}
+                  <span className="whitespace-pre-line">{syncMessage}</span>
                 </div>
               )}
             </div>

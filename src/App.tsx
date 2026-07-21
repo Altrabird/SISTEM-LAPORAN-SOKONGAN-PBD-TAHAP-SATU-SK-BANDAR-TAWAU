@@ -8,6 +8,7 @@ import {
   TANGGUNGJAWAB_UMUM,
   OFFICIAL_DUTY_GROUPS
 } from './data';
+import { migrateInlineImages, deletePhotos, clearPhotos } from './lib/photoStore';
 import Dashboard from './components/Dashboard';
 import ActivityForm from './components/ActivityForm';
 import ActivityList from './components/ActivityList';
@@ -29,6 +30,29 @@ import {
   HelpCircle,
   Settings
 } from 'lucide-react';
+
+/**
+ * Simpan senarai aktiviti ke localStorage.
+ *
+ * Gambar kini disimpan dalam IndexedDB, jadi muatan di sini hanya teks —
+ * tetapi kuota masih boleh dilanggar jika rekod menjadi sangat banyak.
+ * Kegagalan dilaporkan kepada pengguna, bukan ditelan secara senyap seperti
+ * sebelum ini (dahulu penyimpanan gagal tanpa sebarang amaran).
+ */
+function persistActivities(senarai: ActivityLog[]): boolean {
+  try {
+    localStorage.setItem('lapor_pbd_activities', JSON.stringify(senarai));
+    return true;
+  } catch (e) {
+    console.error('Gagal menyimpan aktiviti', e);
+    alert(
+      'Storan pelayar penuh — rekod terbaharu TIDAK dapat disimpan.\n\n' +
+        'Sila buka Tetapan & Menu Admin untuk mengeksport sandaran, ' +
+        'kemudian buang rekod lama sebelum mencuba semula.'
+    );
+    return false;
+  }
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -66,6 +90,7 @@ export default function App() {
   const handleResetAllData = () => {
     localStorage.removeItem('lapor_pbd_activities');
     localStorage.removeItem('lapor_pbd_settings');
+    void clearPhotos(); // buang juga gambar dalam IndexedDB
     setActivities(INITIAL_ACTIVITIES);
     const defaultVal = {
       schoolName: 'SK BANDAR TAWAU',
@@ -78,7 +103,7 @@ export default function App() {
       dutyGroups: OFFICIAL_DUTY_GROUPS
     };
     setSettings(defaultVal);
-    localStorage.setItem('lapor_pbd_activities', JSON.stringify(INITIAL_ACTIVITIES));
+    persistActivities(INITIAL_ACTIVITIES);
     localStorage.setItem('lapor_pbd_settings', JSON.stringify(defaultVal));
     setActiveTab('dashboard');
   };
@@ -102,20 +127,37 @@ export default function App() {
   // Mobile navigation drawer toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Load activities from localStorage on mount
+  // Load activities from localStorage on mount, memindahkan gambar base64
+  // lama ke IndexedDB supaya kuota localStorage tidak lagi menjadi halangan.
   useEffect(() => {
     const saved = localStorage.getItem('lapor_pbd_activities');
-    if (saved) {
-      try {
-        setActivities(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error loading saved activities, falling back to defaults', e);
-        setActivities(INITIAL_ACTIVITIES);
-      }
-    } else {
+    if (!saved) {
       setActivities(INITIAL_ACTIVITIES);
-      localStorage.setItem('lapor_pbd_activities', JSON.stringify(INITIAL_ACTIVITIES));
+      persistActivities(INITIAL_ACTIVITIES);
+      return;
     }
+
+    let dimuat: ActivityLog[];
+    try {
+      dimuat = JSON.parse(saved);
+    } catch (e) {
+      console.error('Error loading saved activities, falling back to defaults', e);
+      setActivities(INITIAL_ACTIVITIES);
+      return;
+    }
+
+    setActivities(dimuat);
+
+    migrateInlineImages(dimuat)
+      .then((dipindah) => {
+        if (!dipindah) return; // tiada gambar tertanam — tiada apa nak buat
+        setActivities(dipindah);
+        persistActivities(dipindah);
+        console.info(
+          `[LaporPBD] ${dipindah.length} rekod disemak; gambar base64 dipindahkan ke IndexedDB.`
+        );
+      })
+      .catch((e) => console.error('Migrasi gambar gagal', e));
   }, []);
 
   // Save changes to state and local storage
@@ -123,15 +165,21 @@ export default function App() {
     let updated: ActivityLog[];
     
     // Check if we are updating an existing activity
-    const exists = activities.some(act => act.id === newActivity.id);
-    if (exists) {
+    const existing = activities.find(act => act.id === newActivity.id);
+    if (existing) {
       updated = activities.map(act => act.id === newActivity.id ? newActivity : act);
+
+      // Buang gambar yang telah ditanggalkan semasa suntingan supaya
+      // IndexedDB tidak dipenuhi fail yatim.
+      const kekal = new Set(newActivity.images ?? []);
+      const dibuang = (existing.images ?? []).filter(img => !kekal.has(img));
+      if (dibuang.length) void deletePhotos(dibuang);
     } else {
       updated = [newActivity, ...activities];
     }
 
     setActivities(updated);
-    localStorage.setItem('lapor_pbd_activities', JSON.stringify(updated));
+    persistActivities(updated);
     
     // Reset state and redirect
     setEditingActivity(null);
@@ -144,9 +192,13 @@ export default function App() {
 
   // Delete activity
   const handleDeleteActivity = (id: string) => {
+    const dipadam = activities.find(act => act.id === id);
     const updated = activities.filter(act => act.id !== id);
     setActivities(updated);
-    localStorage.setItem('lapor_pbd_activities', JSON.stringify(updated));
+    persistActivities(updated);
+
+    // Lepaskan ruang gambar milik rekod yang dipadam.
+    if (dipadam?.images?.length) void deletePhotos(dipadam.images);
     
     if (selectedActivity && selectedActivity.id === id) {
       setSelectedActivity(null);
@@ -365,7 +417,7 @@ export default function App() {
           )}
 
           {activeTab === 'integration' && (
-            <GoogleSheetsIntegration />
+            <GoogleSheetsIntegration activities={activities} />
           )}
 
           {activeTab === 'admin' && (

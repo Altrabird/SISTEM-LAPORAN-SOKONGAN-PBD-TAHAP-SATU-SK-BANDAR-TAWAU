@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ActivityLog, Student, DutyGroup } from '../types';
+import { ActivityLog, Student, DutyGroup, isAssessed, tpGain } from '../types';
 import { OFFICIAL_DUTY_GROUPS, TANGGUNGJAWAB_UMUM } from '../data';
 import {
   ResponsiveContainer,
@@ -147,6 +147,7 @@ export default function Dashboard({
   const stats = useMemo(() => {
     let totalStudentsCount = 0;
     let totalImprovedCount = 0;
+    let assessedCount = 0;
     let bmCount = 0;
     let biCount = 0;
 
@@ -158,16 +159,21 @@ export default function Dashboard({
 
       act.students.forEach(stud => {
         totalStudentsCount++;
-        if (stud.targetTp > stud.currentTp) {
+        // Peningkatan dikira daripada TP Selepas yang benar-benar dinilai,
+        // bukan daripada TP Sasaran (sasaran hanyalah hasrat, bukan bukti).
+        if (isAssessed(stud) && (tpGain(stud) ?? 0) > 0) {
           totalImprovedCount++;
         }
+        if (isAssessed(stud)) assessedCount++;
         allStudents.push(stud);
       });
     });
 
     const totalStudentsUnique = new Set(allStudents.map(s => s.name.toLowerCase().trim())).size;
-    const improvementRate = totalStudentsCount > 0 
-      ? Math.round((totalImprovedCount / totalStudentsCount) * 100) 
+    // Kadar peningkatan berasaskan murid yang SUDAH dinilai sahaja — jika tidak,
+    // rekod yang belum dinilai akan menenggelamkan peratusan secara palsu.
+    const improvementRate = assessedCount > 0
+      ? Math.round((totalImprovedCount / assessedCount) * 100)
       : 0;
 
     return {
@@ -177,7 +183,9 @@ export default function Dashboard({
       totalStudentsEngaged: totalStudentsCount,
       uniqueStudentsCount: totalStudentsUnique,
       improvementRate,
-      improvedStudents: totalImprovedCount
+      improvedStudents: totalImprovedCount,
+      assessedCount,
+      pendingAssessment: totalStudentsCount - assessedCount
     };
   }, [activities]);
 
@@ -189,18 +197,27 @@ export default function Dashboard({
     ].filter(item => item.value > 0);
   }, [stats]);
 
-  // 3. Data for TP Shift (Before vs After)
+  /**
+   * 3. Anjakan TP — Sebelum berbanding Selepas.
+   *
+   * Hanya murid yang sudah dinilai (tpAfter diisi) dimasukkan ke dalam carta ini.
+   * Sebelum ini carta membandingkan TP Sebelum dengan TP *Sasaran*, jadi ia
+   * sentiasa menunjukkan "peningkatan" walaupun tiada penilaian dibuat —
+   * memberikan gambaran impak yang tidak benar dalam laporan rasmi.
+   */
   const tpShiftChartData = useMemo(() => {
     const beforeDistribution = [0, 0, 0, 0, 0, 0]; // Index 0-5 mapping to TP1-TP6
     const afterDistribution = [0, 0, 0, 0, 0, 0];
 
     activities.forEach(act => {
       act.students.forEach(stud => {
+        if (!isAssessed(stud)) return;
         if (stud.currentTp >= 1 && stud.currentTp <= 6) {
           beforeDistribution[stud.currentTp - 1]++;
         }
-        if (stud.targetTp >= 1 && stud.targetTp <= 6) {
-          afterDistribution[stud.targetTp - 1]++;
+        const selepas = stud.tpAfter as number;
+        if (selepas >= 1 && selepas <= 6) {
+          afterDistribution[selepas - 1]++;
         }
       });
     });
@@ -208,7 +225,7 @@ export default function Dashboard({
     return Array.from({ length: 6 }, (_, i) => ({
       name: `TP ${i + 1}`,
       'Sebelum': beforeDistribution[i],
-      'Selepas (Sasaran)': afterDistribution[i]
+      'Selepas (Dicapai)': afterDistribution[i]
     }));
   }, [activities]);
 
@@ -330,12 +347,26 @@ export default function Dashboard({
             <TrendingUp className="h-5 w-5 md:h-6 md:w-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Peningkatan TP</p>
-            <h3 className="text-lg md:text-2xl font-bold text-gray-950 mt-0.5 md:mt-1">{stats.improvementRate}%</h3>
-            <p className="text-[10px] text-emerald-600 mt-0.5 md:mt-1 font-semibold flex items-center gap-0.5 truncate">
-              <Award className="h-3 w-3 shrink-0" />
-              {stats.improvedStudents} naik TP
-            </p>
+            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Peningkatan TP Disahkan</p>
+            <h3 className="text-lg md:text-2xl font-bold text-gray-950 mt-0.5 md:mt-1">
+              {stats.assessedCount > 0 ? `${stats.improvementRate}%` : '—'}
+            </h3>
+            {stats.assessedCount > 0 ? (
+              <p className="text-[10px] text-emerald-600 mt-0.5 md:mt-1 font-semibold flex items-center gap-0.5 truncate">
+                <Award className="h-3 w-3 shrink-0" />
+                {stats.improvedStudents} daripada {stats.assessedCount} dinilai
+              </p>
+            ) : (
+              <p className="text-[10px] text-amber-600 mt-0.5 md:mt-1 font-semibold flex items-center gap-0.5 truncate">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                Belum ada TP Selepas diisi
+              </p>
+            )}
+            {stats.pendingAssessment > 0 && stats.assessedCount > 0 && (
+              <p className="text-[9px] text-gray-400 mt-0.5 truncate">
+                {stats.pendingAssessment} murid menunggu penilaian
+              </p>
+            )}
           </div>
         </div>
 
@@ -381,7 +412,7 @@ export default function Dashboard({
                   />
                   <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                   <Bar dataKey="Sebelum" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
-                  <Bar dataKey="Selepas (Sasaran)" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={20} />
+                  <Bar dataKey="Selepas (Dicapai)" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={20} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

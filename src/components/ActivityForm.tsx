@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ActivityLog, Student } from '../types';
+import { compressImage, savePhoto, resolveImages } from '../lib/photoStore';
 import {
   AVAILABLE_GROUPS,
   MALAYSIAN_DAYS,
@@ -61,8 +62,12 @@ export default function ActivityForm({
   const [subjectTeacher, setSubjectTeacher] = useState('');
   
   const [notes, setNotes] = useState('');
+  /** Rujukan gambar yang akan disimpan bersama rekod ("idb:<id>"). */
   const [images, setImages] = useState<string[]>(['', '', '', '']);
+  /** Data URL untuk paparan sahaja — tidak pernah disimpan ke localStorage. */
+  const [imagePreviews, setImagePreviews] = useState<string[]>(['', '', '', '']);
   const [imageCaptions, setImageCaptions] = useState<string[]>(['', '', '', '']);
+  const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
 
   // Student list state
   const [students, setStudents] = useState<Student[]>([
@@ -133,6 +138,11 @@ export default function ActivityForm({
       }
       setImages(loadedImages);
       setImageCaptions(loadedCaptions);
+
+      // Gambar disimpan sebagai rujukan IndexedDB — muatkan semula untuk pratonton.
+      resolveImages(loadedImages)
+        .then(setImagePreviews)
+        .catch(() => setImagePreviews(loadedImages));
     } else {
       // Set some nice initial defaults for a new record
       setTeacherOnDuty('');
@@ -140,6 +150,7 @@ export default function ActivityForm({
       setActivityDesc('');
       setNotes('');
       setImages(['', '', '', '']);
+      setImagePreviews(['', '', '', '']);
       setImageCaptions(['', '', '', '']);
       setStudents([{ id: 'stud-temp-1', name: '', currentTp: 2, targetTp: 3, notes: '' }]);
       
@@ -186,42 +197,72 @@ export default function ActivityForm({
     setStudents(students.map(s => s.id === id ? { ...s, [field]: value } : s));
   };
 
-  // Handle image upload for a specific slot and conversion to base64
-  const handleImageSlotChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Muat naik gambar untuk satu slot.
+   *
+   * Gambar dimampatkan terlebih dahulu (1280px / JPEG q0.72) kemudian disimpan
+   * ke IndexedDB. Rekod aktiviti hanya memegang rujukan ringkas, jadi kuota
+   * localStorage tidak lagi boleh dilanggar oleh gambar.
+   */
+  const handleImageSlotChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     const file = files[0];
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        const newImages = [...images];
-        newImages[index] = reader.result;
-        setImages(newImages);
-        
-        const newCaptions = [...imageCaptions];
-        if (!newCaptions[index]) {
-          const defaultCaptions = [
-            'Sesi penerangan awal tajuk dan objektif pembelajaran oleh guru bertugas.',
-            'Murid-murid berbincang dan bekerjasama dalam kumpulan kecil.',
-            'Bimbingan rapat secara bersemuka (intervensi) diberikan kepada murid sasaran.',
-            'Murid membuat simulasi pembentangan hasil tugasan di hadapan kelas.'
-          ];
-          newCaptions[index] = defaultCaptions[index];
-        }
-        setImageCaptions(newCaptions);
-      }
-    };
-    reader.readAsDataURL(file);
+    e.target.value = ''; // benarkan fail sama dipilih semula
+
+    if (!file.type.startsWith('image/')) {
+      alert('Sila pilih fail gambar (JPG atau PNG).');
+      return;
+    }
+
+    setUploadingSlot(index);
+    try {
+      const dataUrl = await compressImage(file);
+      const ref = await savePhoto(dataUrl);
+
+      setImages(prev => {
+        const baharu = [...prev];
+        baharu[index] = ref;
+        return baharu;
+      });
+      setImagePreviews(prev => {
+        const baharu = [...prev];
+        baharu[index] = dataUrl;
+        return baharu;
+      });
+
+      setImageCaptions(prev => {
+        if (prev[index]) return prev;
+        const defaultCaptions = [
+          'Sesi penerangan awal tajuk dan objektif pembelajaran oleh guru bertugas.',
+          'Murid-murid berbincang dan bekerjasama dalam kumpulan kecil.',
+          'Bimbingan rapat secara bersemuka (intervensi) diberikan kepada murid sasaran.',
+          'Murid membuat simulasi pembentangan hasil tugasan di hadapan kelas.'
+        ];
+        const baharu = [...prev];
+        baharu[index] = defaultCaptions[index] ?? '';
+        return baharu;
+      });
+    } catch (err: any) {
+      console.error('Muat naik gambar gagal', err);
+      alert(`Gambar tidak dapat diproses: ${err?.message || err}`);
+    } finally {
+      setUploadingSlot(null);
+    }
   };
 
   // Load beautiful pre-set mock images for all 4 slots
   const loadMockImages = () => {
-    setImages([
+    const contoh = [
       PLACEHOLDER_IMAGES.classroom1,
       PLACEHOLDER_IMAGES.groupLearning,
       PLACEHOLDER_IMAGES.classroom3,
       PLACEHOLDER_IMAGES.classroom2
-    ]);
+    ];
+    // Gambar contoh kekal sebagai URL/base64 asal — resolveImage() melepaskannya
+    // tanpa perubahan, jadi tiada keperluan menyimpannya ke IndexedDB.
+    setImages(contoh);
+    setImagePreviews(contoh);
     setImageCaptions([
       'Sesi penerangan awal tajuk dan objektif pembelajaran oleh guru bertugas.',
       'Murid-murid bekerjasama melakonkan dialog dan watak.',
@@ -234,7 +275,14 @@ export default function ActivityForm({
     const newImages = [...images];
     newImages[index] = '';
     setImages(newImages);
-    
+
+    const newPreviews = [...imagePreviews];
+    newPreviews[index] = '';
+    setImagePreviews(newPreviews);
+
+    // Gambar dalam IndexedDB tidak dipadam di sini — jika pengguna membatalkan
+    // suntingan, rekod asal masih memerlukannya. App.handleSaveActivity yang
+    // membuang gambar yatim selepas simpanan disahkan.
     const newCaptions = [...imageCaptions];
     newCaptions[index] = '';
     setImageCaptions(newCaptions);
@@ -617,7 +665,9 @@ export default function ActivityForm({
             </div>
 
             <p className="text-xs text-gray-500">
-              Sila masukkan nama murid, Tahap Penguasaan (TP) semasa aktiviti bermula, sasaran TP baharu, serta impak perkembangan individu.
+              Masukkan <strong>TP Sebelum</strong> (tahap ketika aktiviti bermula) dan <strong>TP Sasaran</strong> semasa merancang.
+              Selepas sesi tamat, kembali ke rekod ini dan isi <strong>TP Selepas</strong> — itulah tahap sebenar yang dicapai murid.
+              Hanya TP Selepas dikira sebagai bukti impak dalam papan pemuka dan laporan rasmi.
             </p>
 
             <div className="space-y-3">
@@ -642,12 +692,26 @@ export default function ActivityForm({
                     />
                   </div>
 
-                  {/* Current TP */}
-                  <div className="w-full md:w-28">
-                    <label className="block md:hidden text-[10px] text-gray-500 font-semibold mb-1">TP Semasa</label>
+                  {/* TP Sebelum */}
+                  <div className="w-full md:w-24">
+                    <label className="block md:hidden text-[10px] text-gray-500 font-semibold mb-1">TP Sebelum</label>
                     <select
                       value={student.currentTp}
                       onChange={(e) => updateStudent(student.id, 'currentTp', parseInt(e.target.value))}
+                      className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 focus:outline-none"
+                    >
+                      {[1, 2, 3, 4, 5, 6].map(num => (
+                        <option key={num} value={num}>TP {num}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* TP Sasaran */}
+                  <div className="w-full md:w-24">
+                    <label className="block md:hidden text-[10px] text-gray-500 font-semibold mb-1">TP Sasaran</label>
+                    <select
+                      value={student.targetTp}
+                      onChange={(e) => updateStudent(student.id, 'targetTp', parseInt(e.target.value))}
                       className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 focus:outline-none"
                     >
                       {[1, 2, 3, 4, 5, 6].map(num => (
@@ -661,16 +725,33 @@ export default function ActivityForm({
                     <Check className="h-4 w-4" />
                   </div>
 
-                  {/* Target TP */}
-                  <div className="w-full md:w-32">
-                    <label className="block md:hidden text-[10px] text-gray-500 font-semibold mb-1">TP Sasaran/Selepas</label>
+                  {/*
+                    TP Selepas — keputusan sebenar selepas aktiviti.
+                    Sengaja dibiarkan "Belum dinilai" secara lalai supaya laporan
+                    tidak mendakwa pencapaian yang belum disahkan oleh guru.
+                  */}
+                  <div className="w-full md:w-36">
+                    <label className="block md:hidden text-[10px] text-gray-500 font-semibold mb-1">TP Selepas (dicapai)</label>
                     <select
-                      value={student.targetTp}
-                      onChange={(e) => updateStudent(student.id, 'targetTp', parseInt(e.target.value))}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 focus:outline-none"
+                      value={student.tpAfter ?? ''}
+                      onChange={(e) =>
+                        updateStudent(
+                          student.id,
+                          'tpAfter',
+                          e.target.value === '' ? undefined : parseInt(e.target.value)
+                        )
+                      }
+                      className={`w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none ${
+                        typeof student.tpAfter === 'number'
+                          ? student.tpAfter > student.currentTp
+                            ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-bold'
+                            : 'border-gray-200 bg-white text-gray-800'
+                          : 'border-amber-200 bg-amber-50/60 text-amber-700'
+                      }`}
                     >
+                      <option value="">Belum dinilai</option>
                       {[1, 2, 3, 4, 5, 6].map(num => (
-                        <option key={num} value={num}>TP {num} (Sasaran)</option>
+                        <option key={num} value={num}>TP {num} (dicapai)</option>
                       ))}
                     </select>
                   </div>
@@ -741,6 +822,7 @@ export default function ActivityForm({
                   type="button"
                   onClick={() => {
                     setImages(['', '', '', '']);
+                    setImagePreviews(['', '', '', '']);
                     setImageCaptions(['', '', '', '']);
                   }}
                   className="rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-2 text-xs font-bold text-red-700 transition"
@@ -762,9 +844,10 @@ export default function ActivityForm({
                 { label: 'Fasa 3: Sesi Bimbingan (Intervensi)', desc: 'Bimbingan personal rapat bersemuka dengan murid.' },
                 { label: 'Fasa 4: Hasil Kerja (Penutup)', desc: 'Murid mementaskan dialog atau hasil kerja.' }
               ].map((panel, idx) => {
-                const img = images[idx];
+                const img = imagePreviews[idx];
                 const caption = imageCaptions[idx];
-                
+                const sedangMuatNaik = uploadingSlot === idx;
+
                 return (
                   <div key={idx} className="rounded-xl border border-gray-100 p-3 bg-gray-50/30 space-y-2.5 transition hover:border-gray-200">
                     <div className="flex items-center justify-between">
@@ -821,15 +904,30 @@ export default function ActivityForm({
                         />
                         <label
                           htmlFor={`image-slot-input-${idx}`}
-                          className="flex flex-col items-center justify-center gap-1.5 aspect-video rounded-lg border border-dashed border-gray-200 bg-white hover:bg-gray-50/50 hover:border-blue-300 cursor-pointer transition p-3 text-center"
+                          className={`flex flex-col items-center justify-center gap-1.5 aspect-video rounded-lg border border-dashed bg-white transition p-3 text-center ${
+                            sedangMuatNaik
+                              ? 'border-blue-300 bg-blue-50/40 cursor-wait'
+                              : 'border-gray-200 hover:bg-gray-50/50 hover:border-blue-300 cursor-pointer'
+                          }`}
                         >
-                          <Upload className="h-5 w-5 text-gray-400" />
-                          <div>
-                            <span className="text-[11px] font-bold text-gray-700 block">Muat Naik Foto {idx + 1}</span>
-                            <span className="text-[10px] text-gray-400 block max-w-[180px] mx-auto leading-tight mt-0.5">
-                              {panel.desc}
-                            </span>
-                          </div>
+                          {sedangMuatNaik ? (
+                            <>
+                              <Upload className="h-5 w-5 text-blue-500 animate-pulse" />
+                              <span className="text-[11px] font-bold text-blue-700 block">
+                                Memampat &amp; menyimpan…
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-5 w-5 text-gray-400" />
+                              <div>
+                                <span className="text-[11px] font-bold text-gray-700 block">Muat Naik Foto {idx + 1}</span>
+                                <span className="text-[10px] text-gray-400 block max-w-[180px] mx-auto leading-tight mt-0.5">
+                                  {panel.desc}
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </label>
                       </div>
                     )}

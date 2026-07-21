@@ -1,4 +1,5 @@
-import { ActivityLog } from '../types';
+import { ActivityLog, isAssessed, tpGain } from '../types';
+import { useResolvedImages } from '../lib/useResolvedImages';
 import { TAHAP_PENGUASAAN_DESCS } from '../data';
 import {
   Printer,
@@ -21,12 +22,18 @@ interface PictorialReportProps {
 
 export default function PictorialReport({ activity, onBack, schoolName = 'SK BANDAR TAWAU' }: PictorialReportProps) {
   const isBM = activity.subject === 'BM';
-  
-  // Calculate stats
+
+  // Gambar disimpan dalam IndexedDB — selesaikan rujukan sebelum dipaparkan/dicetak.
+  const photoUrls = useResolvedImages(activity.images);
+
+  // Statistik impak dikira daripada TP Selepas yang telah dinilai sahaja.
   const totalStudents = activity.students.length;
-  const improvedStudents = activity.students.filter(s => s.targetTp > s.currentTp);
+  const assessedStudents = activity.students.filter(isAssessed);
+  const improvedStudents = assessedStudents.filter(s => (tpGain(s) ?? 0) > 0);
   const improvedCount = improvedStudents.length;
-  const improvementRate = totalStudents > 0 ? Math.round((improvedCount / totalStudents) * 100) : 0;
+  const improvementRate = assessedStudents.length > 0
+    ? Math.round((improvedCount / assessedStudents.length) * 100)
+    : 0;
 
   // Handle printing
   const handlePrint = () => {
@@ -153,25 +160,39 @@ export default function PictorialReport({ activity, onBack, schoolName = 'SK BAN
               <tr className="bg-gray-100 border-b border-gray-900 font-bold text-gray-900">
                 <th className="w-12 text-center p-2 border-r border-gray-900">Bil.</th>
                 <th className="p-2 border-r border-gray-900">Nama Murid</th>
-                <th className="w-24 text-center p-2 border-r border-gray-900">TP Semasa</th>
-                <th className="w-24 text-center p-2 border-r border-gray-900">TP Sasaran</th>
+                <th className="w-20 text-center p-2 border-r border-gray-900">TP Sebelum</th>
+                <th className="w-20 text-center p-2 border-r border-gray-900">TP Sasaran</th>
+                <th className="w-20 text-center p-2 border-r border-gray-900">TP Selepas</th>
                 <th className="w-28 text-center p-2 border-r border-gray-900">Status Impak</th>
                 <th className="p-2">Catatan Perkembangan Individu</th>
               </tr>
             </thead>
             <tbody>
               {activity.students.map((student, idx) => {
-                const hasImproved = student.targetTp > student.currentTp;
+                // Status impak hanya boleh diisytiharkan selepas guru menilai murid.
+                const dinilai = isAssessed(student);
+                const kenaikan = tpGain(student);
                 return (
                   <tr key={student.id} className="border-b border-gray-900 last:border-b-0">
                     <td className="text-center p-2 border-r border-gray-900 font-medium">{idx + 1}</td>
                     <td className="p-2 border-r border-gray-900 font-semibold text-gray-950">{student.name}</td>
                     <td className="text-center p-2 border-r border-gray-900 font-bold text-gray-500">TP {student.currentTp}</td>
-                    <td className="text-center p-2 border-r border-gray-900 font-bold text-indigo-800">TP {student.targetTp}</td>
+                    <td className="text-center p-2 border-r border-gray-900 text-gray-500">TP {student.targetTp}</td>
+                    <td className="text-center p-2 border-r border-gray-900 font-bold text-indigo-800">
+                      {dinilai ? `TP ${student.tpAfter}` : '—'}
+                    </td>
                     <td className="text-center p-2 border-r border-gray-900 font-semibold">
-                      {hasImproved ? (
+                      {!dinilai ? (
+                        <span className="inline-flex rounded bg-amber-50 border border-amber-300 px-1.5 py-0.5 text-[9px] text-amber-800 print:bg-white print:border-gray-900 print:text-black">
+                          Belum dinilai
+                        </span>
+                      ) : (kenaikan ?? 0) > 0 ? (
                         <span className="inline-flex rounded bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 text-[9px] text-emerald-800 print:bg-white print:border-gray-900 print:text-black">
-                          Meningkat ▲
+                          Meningkat +{kenaikan} ▲
+                        </span>
+                      ) : (kenaikan ?? 0) < 0 ? (
+                        <span className="inline-flex rounded bg-red-50 border border-red-300 px-1.5 py-0.5 text-[9px] text-red-800 print:bg-white print:border-gray-900 print:text-black">
+                          Menurun {kenaikan} ▼
                         </span>
                       ) : (
                         <span className="inline-flex rounded bg-gray-50 border border-gray-200 px-1.5 py-0.5 text-[9px] text-gray-600 print:bg-white print:border-gray-900 print:text-black">
@@ -195,12 +216,12 @@ export default function PictorialReport({ activity, onBack, schoolName = 'SK BAN
             </h4>
             
             <div className="grid grid-cols-2 gap-4">
-              {activity.images.map((img, idx) => (
+              {photoUrls.map((img, idx) => (
                 <div key={idx} className="border border-gray-900 p-2 rounded-lg space-y-2 flex flex-col justify-between">
                   <div className="aspect-video w-full rounded overflow-hidden bg-gray-100 border border-gray-200">
                     <img
                       src={img}
-                      alt={`Dokumentasi ${idx}`}
+                      alt={`Dokumentasi ${idx + 1}: ${activity.imageCaptions?.[idx] || activity.activityName}`}
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
