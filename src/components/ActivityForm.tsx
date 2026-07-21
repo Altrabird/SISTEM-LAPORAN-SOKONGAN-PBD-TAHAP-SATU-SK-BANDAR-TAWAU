@@ -365,12 +365,12 @@ export default function ActivityForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8 pb-12">
       {/* Header Form */}
-      <div className="flex items-center justify-between border-b border-gray-100 pb-5">
+      <div className="flex items-center justify-between border-b border-white/8 pb-5">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+          <h1 className="text-xl md:text-2xl font-bold text-bright">
             {initialActivity ? 'Kemaskini Laporan Aktiviti' : 'Daftar & Rekod Aktiviti Sokongan PBD'}
           </h1>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted mt-1">
             Isikan borang maklumat di bawah untuk menjana laporan bergambar dan statistik interaktif.
           </p>
         </div>
@@ -378,13 +378,13 @@ export default function ActivityForm({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+            className="px-4 py-2 text-sm font-medium text-muted hover:text-soft bg-white/5 hover:bg-white/8 rounded-xl transition"
           >
             Batal
           </button>
           <button
             type="submit"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700 shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-lime-core px-5 py-2 text-sm font-medium text-[#0a0f08] transition hover:bg-lime-deep shadow-sm"
           >
             <Check className="h-4 w-4" />
             Simpan Rekod
@@ -399,16 +399,16 @@ export default function ActivityForm({
         <div className="lg:col-span-2 space-y-6">
           
           {/* Section 1: Maklumat Am & Pentadbiran */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-gray-50 pb-2">
-              <span className="h-4 w-1 rounded-full bg-blue-600"></span>
+          <div className="glass p-6 space-y-4">
+            <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-white/8 pb-2">
+              <span className="h-4 w-1 rounded-full bg-lime-core"></span>
               1. Maklumat Pentadbiran & Bertugas
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Group Name Selector */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Kumpulan Guru</label>
+                <label className="block text-xs font-semibold text-soft uppercase mb-1">Kumpulan Guru</label>
                 {!isCustomGroup ? (
                   <div className="flex gap-2">
                     <select
@@ -420,7 +420,7 @@ export default function ActivityForm({
                           setGroupName(e.target.value);
                         }
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
+                      className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
                     >
                       {AVAILABLE_GROUPS.map(grp => (
                         <option key={grp} value={grp}>{grp}</option>
@@ -435,12 +435,12 @@ export default function ActivityForm({
                       placeholder="Masukkan nama kumpulan"
                       value={customGroupName}
                       onChange={(e) => setCustomGroupName(e.target.value)}
-                      className="w-full rounded-xl border border-blue-200 bg-blue-50/10 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-xl border border-lime-core/30 bg-blue-50/10 px-3.5 py-2 text-sm focus:border-lime-core focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setIsCustomGroup(false)}
-                      className="px-2.5 text-xs text-blue-600 hover:underline"
+                      className="px-2.5 text-xs text-lime-core hover:underline"
                     >
                       Senarai
                     </button>
@@ -450,9 +450,9 @@ export default function ActivityForm({
 
               {/* Teacher on duty */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Guru Bertugas Utama</label>
+                <label className="block text-xs font-semibold text-soft uppercase mb-1">Guru Bertugas Utama</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-faint">
                     <User className="h-4 w-4" />
                   </span>
                   <input
@@ -461,16 +461,16 @@ export default function ActivityForm({
                     placeholder="Siti Noraidah / Ahmad"
                     value={teacherOnDuty}
                     onChange={(e) => setTeacherOnDuty(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-3.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
+                    className="w-full rounded-xl bg-white/5 py-2.5 pl-10 pr-3.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
                   />
                 </div>
               </div>
 
               {/* Date selection */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Tarikh Aktiviti</label>
+                <label className="block text-xs font-semibold text-soft uppercase mb-1">Tarikh Aktiviti</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-faint">
                     <Calendar className="h-4 w-4" />
                   </span>
                   <input
@@ -478,25 +478,25 @@ export default function ActivityForm({
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-3.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
+                    className="w-full rounded-xl bg-white/5 py-2.5 pl-10 pr-3.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
                   />
                 </div>
               </div>
 
               {/* Day selection */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Hari (Auto-Kira)</label>
+                <label className="block text-xs font-semibold text-soft uppercase mb-1">Hari (Auto-Kira)</label>
                 <input
                   type="text"
                   readOnly
                   value={day}
-                  className="w-full rounded-xl border border-gray-150 bg-gray-100 py-2.5 px-3.5 text-sm text-gray-500 font-medium cursor-not-allowed focus:outline-none"
+                  className="w-full rounded-xl bg-white/8 py-2.5 px-3.5 text-sm text-muted font-medium cursor-not-allowed focus:outline-none"
                 />
               </div>
 
               {/* Class Selector */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Kelas</label>
+                <label className="block text-xs font-semibold text-soft uppercase mb-1">Kelas</label>
                 {!isCustomClass ? (
                   <select
                     value={className}
@@ -507,7 +507,7 @@ export default function ActivityForm({
                         setClassName(e.target.value);
                       }
                     }}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
+                    className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
                   >
                     {availableClasses.map(cls => (
                       <option key={cls} value={cls}>{cls}</option>
@@ -521,12 +521,12 @@ export default function ActivityForm({
                       placeholder="e.g. 3 Pintar"
                       value={customClassName}
                       onChange={(e) => setCustomClassName(e.target.value)}
-                      className="w-full rounded-xl border border-blue-200 bg-blue-50/10 px-3.5 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-xl border border-lime-core/30 bg-blue-50/10 px-3.5 py-2 text-sm focus:border-lime-core focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setIsCustomClass(false)}
-                      className="px-2.5 text-xs text-blue-600 hover:underline"
+                      className="px-2.5 text-xs text-lime-core hover:underline"
                     >
                       Senarai
                     </button>
@@ -536,37 +536,37 @@ export default function ActivityForm({
 
               {/* Subject teacher involved */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Guru BM/BI yang terlibat</label>
+                <label className="block text-xs font-semibold text-soft uppercase mb-1">Guru BM/BI yang terlibat</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Samsiah Sundu"
                   value={subjectTeacher}
                   onChange={(e) => setSubjectTeacher(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
+                  className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 2: Maklumat Subjek & Aktiviti */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-gray-50 pb-2">
-              <span className="h-4 w-1 rounded-full bg-blue-600"></span>
+          <div className="glass p-6 space-y-4">
+            <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-white/8 pb-2">
+              <span className="h-4 w-1 rounded-full bg-lime-core"></span>
               2. Butiran Aktiviti Akademik PBD
             </h3>
 
             {/* Subject Selector Buttons */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Pilih Subjek Sokongan</label>
+              <label className="block text-xs font-semibold text-soft uppercase mb-2">Pilih Subjek Sokongan</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => handleSubjectChange('BM')}
                   className={`flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold border text-sm transition-all ${
                     subject === 'BM'
-                      ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm shadow-blue-100'
-                      : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'
+                      ? 'bg-lime-core/12 border-lime-core text-lime-glow shadow-sm shadow-lime-core/20'
+                      : 'bg-white/5 border-white/8 text-soft hover:bg-white/8'
                   }`}
                 >
                   <BookOpen className="h-4.5 w-4.5" />
@@ -577,8 +577,8 @@ export default function ActivityForm({
                   onClick={() => handleSubjectChange('BI')}
                   className={`flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold border text-sm transition-all ${
                     subject === 'BI'
-                      ? 'bg-pink-50 border-pink-500 text-pink-700 shadow-sm shadow-pink-100'
-                      : 'bg-gray-50 border-gray-100 text-gray-600 hover:bg-gray-100'
+                      ? 'bg-fuchsia-400/12 border-pink-500 text-fuchsia-300 shadow-sm shadow-pink-100'
+                      : 'bg-white/5 border-white/8 text-soft hover:bg-white/8'
                   }`}
                 >
                   <Sparkles className="h-4.5 w-4.5" />
@@ -590,7 +590,7 @@ export default function ActivityForm({
             <div className="space-y-4 mt-2">
               {/* Activity name */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Nama Aktiviti</label>
+                <label className="block text-xs font-semibold text-soft uppercase mb-1">Nama Aktiviti</label>
                 {!isCustomActivity ? (
                   <select
                     value={activityName}
@@ -601,7 +601,7 @@ export default function ActivityForm({
                         setActivityName(e.target.value);
                       }
                     }}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
+                    className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
                   >
                     {activeCommonActivities.map(act => (
                       <option key={act} value={act}>{act}</option>
@@ -615,12 +615,12 @@ export default function ActivityForm({
                       placeholder="e.g. Spelling Bee Khas Tahap 1"
                       value={customActivityName}
                       onChange={(e) => setCustomActivityName(e.target.value)}
-                      className="w-full rounded-xl border border-blue-200 bg-blue-50/10 px-3.5 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-xl border border-lime-core/30 bg-blue-50/10 px-3.5 py-2.5 text-sm focus:border-lime-core focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setIsCustomActivity(false)}
-                      className="px-2.5 text-xs text-blue-600 hover:underline"
+                      className="px-2.5 text-xs text-lime-core hover:underline"
                     >
                       Cadangan
                     </button>
@@ -630,7 +630,7 @@ export default function ActivityForm({
 
               {/* Activity description */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Deskripsi Aktiviti & Langkah Pelaksanaan</label>
+                <label className="block text-xs font-semibold text-soft uppercase mb-1">Deskripsi Aktiviti & Langkah Pelaksanaan</label>
                 <textarea
                   rows={4}
                   required
@@ -641,30 +641,30 @@ export default function ActivityForm({
                   }
                   value={activityDesc}
                   onChange={(e) => setActivityDesc(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition resize-none"
+                  className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition resize-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 3: Senarai Murid Terlibat & Pencapaian TP */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-50 pb-3">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                <span className="h-4 w-1 rounded-full bg-blue-600"></span>
+          <div className="glass p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/8 pb-3">
+              <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2">
+                <span className="h-4 w-1 rounded-full bg-lime-core"></span>
                 3. Murid Terlibat & Rekod TP PBD (Tahap Penguasaan)
               </h3>
               <button
                 type="button"
                 onClick={addStudent}
-                className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition"
+                className="inline-flex items-center gap-1 text-xs font-bold text-lime-core glass-inset bg-lime-core/10 px-3 py-1.5 rounded-xl hover:bg-lime-core/20 transition"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Tambah Murid
               </button>
             </div>
 
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted">
               Masukkan <strong>TP Sebelum</strong> (tahap ketika aktiviti bermula) dan <strong>TP Sasaran</strong> semasa merancang.
               Selepas sesi tamat, kembali ke rekod ini dan isi <strong>TP Selepas</strong> — itulah tahap sebenar yang dicapai murid.
               Hanya TP Selepas dikira sebagai bukti impak dalam papan pemuka dan laporan rasmi.
@@ -674,9 +674,9 @@ export default function ActivityForm({
               {students.map((student, index) => (
                 <div
                   key={student.id}
-                  className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4 relative"
+                  className="p-4 rounded-xl bg-gray-50/50 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4 relative"
                 >
-                  <span className="absolute top-2 left-2 md:static text-xs font-bold text-gray-400 bg-gray-200/60 rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute top-2 left-2 md:static text-xs font-bold text-faint bg-gray-200/60 rounded-full h-5 w-5 flex items-center justify-center">
                     {index + 1}
                   </span>
                   
@@ -688,17 +688,17 @@ export default function ActivityForm({
                       placeholder="Nama Murid (e.g. Akram)"
                       value={student.name}
                       onChange={(e) => updateStudent(student.id, 'name', e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-lg bg-white/5 px-3 py-1.5 text-xs text-bright focus:border-lime-core focus:outline-none"
                     />
                   </div>
 
                   {/* TP Sebelum */}
                   <div className="w-full md:w-24">
-                    <label className="block md:hidden text-[10px] text-gray-500 font-semibold mb-1">TP Sebelum</label>
+                    <label className="block md:hidden text-[10px] text-muted font-semibold mb-1">TP Sebelum</label>
                     <select
                       value={student.currentTp}
                       onChange={(e) => updateStudent(student.id, 'currentTp', parseInt(e.target.value))}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 focus:outline-none"
+                      className="w-full rounded-lg bg-white/5 px-2 py-1.5 text-xs text-bright focus:outline-none"
                     >
                       {[1, 2, 3, 4, 5, 6].map(num => (
                         <option key={num} value={num}>TP {num}</option>
@@ -708,11 +708,11 @@ export default function ActivityForm({
 
                   {/* TP Sasaran */}
                   <div className="w-full md:w-24">
-                    <label className="block md:hidden text-[10px] text-gray-500 font-semibold mb-1">TP Sasaran</label>
+                    <label className="block md:hidden text-[10px] text-muted font-semibold mb-1">TP Sasaran</label>
                     <select
                       value={student.targetTp}
                       onChange={(e) => updateStudent(student.id, 'targetTp', parseInt(e.target.value))}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 focus:outline-none"
+                      className="w-full rounded-lg bg-white/5 px-2 py-1.5 text-xs text-bright focus:outline-none"
                     >
                       {[1, 2, 3, 4, 5, 6].map(num => (
                         <option key={num} value={num}>TP {num}</option>
@@ -721,7 +721,7 @@ export default function ActivityForm({
                   </div>
 
                   {/* Icon separator arrow */}
-                  <div className="hidden md:block text-gray-400">
+                  <div className="hidden md:block text-faint">
                     <Check className="h-4 w-4" />
                   </div>
 
@@ -731,7 +731,7 @@ export default function ActivityForm({
                     tidak mendakwa pencapaian yang belum disahkan oleh guru.
                   */}
                   <div className="w-full md:w-36">
-                    <label className="block md:hidden text-[10px] text-gray-500 font-semibold mb-1">TP Selepas (dicapai)</label>
+                    <label className="block md:hidden text-[10px] text-muted font-semibold mb-1">TP Selepas (dicapai)</label>
                     <select
                       value={student.tpAfter ?? ''}
                       onChange={(e) =>
@@ -744,9 +744,9 @@ export default function ActivityForm({
                       className={`w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none ${
                         typeof student.tpAfter === 'number'
                           ? student.tpAfter > student.currentTp
-                            ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-bold'
-                            : 'border-gray-200 bg-white text-gray-800'
-                          : 'border-amber-200 bg-amber-50/60 text-amber-700'
+                            ? 'border-emerald-300 bg-emerald-400/12 text-emerald-300 font-bold'
+                            : 'border-white/10 bg-white/5 text-bright'
+                          : 'border-amber-400/30 bg-amber-50/60 text-amber-300'
                       }`}
                     >
                       <option value="">Belum dinilai</option>
@@ -763,7 +763,7 @@ export default function ActivityForm({
                       placeholder="Catatan kemajuan murid..."
                       value={student.notes || ''}
                       onChange={(e) => updateStudent(student.id, 'notes', e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-lg bg-white/5 px-3 py-1.5 text-xs text-bright focus:border-lime-core focus:outline-none"
                     />
                   </div>
 
@@ -771,7 +771,7 @@ export default function ActivityForm({
                   <button
                     type="button"
                     onClick={() => removeStudent(student.id)}
-                    className="absolute top-2 right-2 md:static p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                    className="absolute top-2 right-2 md:static p-1.5 text-faint hover:text-rose-400 hover:bg-rose-500/12 rounded-lg transition"
                     title="Hapus Murid"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -782,9 +782,9 @@ export default function ActivityForm({
           </div>
 
           {/* Section 4: Catatan Keseluruhan */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-gray-50 pb-2">
-              <span className="h-4 w-1 rounded-full bg-blue-600"></span>
+          <div className="glass p-6 space-y-4">
+            <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-white/8 pb-2">
+              <span className="h-4 w-1 rounded-full bg-lime-core"></span>
               4. Catatan Impak / Catatan Refleksi Keseluruhan
             </h3>
             <textarea
@@ -792,7 +792,7 @@ export default function ActivityForm({
               placeholder="e.g. Semua murid yang terlibat berjaya melakonkan watak berdasarkan dialog masing-masing dengan penuh seronok. Tiga murid menunjukkan kebolehan bertutur dengan sebutan yang jelas."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition resize-none"
+              className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition resize-none"
             />
           </div>
 
@@ -800,10 +800,10 @@ export default function ActivityForm({
 
         {/* Right Column - Images Upload & Pictorial Section */}
         <div className="space-y-6">
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-50 pb-2.5">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                <span className="h-4 w-1 rounded-full bg-blue-600"></span>
+          <div className="glass p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/8 pb-2.5">
+              <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2">
+                <span className="h-4 w-1 rounded-full bg-lime-core"></span>
                 5. Foto Laporan Bergambar (4 Panel)
               </h3>
             </div>
@@ -812,7 +812,7 @@ export default function ActivityForm({
               <button
                 type="button"
                 onClick={loadMockImages}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-lime-core/30 bg-indigo-50/40 hover:bg-lime-core/12 px-3 py-2 text-xs font-bold text-lime-glow transition"
               >
                 <Sparkles className="h-4 w-4" />
                 Guna Contoh Foto Lengkap (4 Fasa)
@@ -825,14 +825,14 @@ export default function ActivityForm({
                     setImagePreviews(['', '', '', '']);
                     setImageCaptions(['', '', '', '']);
                   }}
-                  className="rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-2 text-xs font-bold text-red-700 transition"
+                  className="rounded-xl border border-rose-400/30 bg-rose-500/12 hover:bg-rose-500/20 px-3 py-2 text-xs font-bold text-rose-300 transition"
                 >
                   Kosongkan
                 </button>
               )}
             </div>
 
-            <p className="text-xs text-gray-500 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               Sila muat naik foto bagi setiap daripada 4 fasa bimbingan berikut untuk melengkapkan helaian laporan bergambar formal:
             </p>
 
@@ -849,10 +849,10 @@ export default function ActivityForm({
                 const sedangMuatNaik = uploadingSlot === idx;
 
                 return (
-                  <div key={idx} className="rounded-xl border border-gray-100 p-3 bg-gray-50/30 space-y-2.5 transition hover:border-gray-200">
+                  <div key={idx} className="rounded-xl p-3 bg-gray-50/30 space-y-2.5 transition hover:border-white/10">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-gray-900 flex items-center gap-1.5">
-                        <span className="h-4 w-4 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[10px]">
+                      <span className="text-[11px] font-bold text-bright flex items-center gap-1.5">
+                        <span className="h-4 w-4 rounded-full bg-lime-core/20 text-lime-glow font-bold flex items-center justify-center text-[10px]">
                           {idx + 1}
                         </span>
                         {panel.label}
@@ -862,7 +862,7 @@ export default function ActivityForm({
                     {img ? (
                       <div className="space-y-2">
                         {/* Image Preview */}
-                        <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 border border-gray-100 shadow-sm">
+                        <div className="relative aspect-video rounded-lg overflow-hidden bg-white/8 shadow-sm">
                           <img
                             src={img}
                             alt={`Preview ${panel.label}`}
@@ -881,14 +881,14 @@ export default function ActivityForm({
 
                         {/* Caption input */}
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-gray-400 uppercase">Kapsyen Foto {idx + 1}</label>
+                          <label className="text-[9px] font-bold text-faint uppercase">Kapsyen Foto {idx + 1}</label>
                           <input
                             type="text"
                             required
                             value={caption || ''}
                             onChange={(e) => handleCaptionSlotChange(idx, e.target.value)}
                             placeholder={panel.desc}
-                            className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-blue-500 transition"
+                            className="w-full rounded-lg bg-white/5 px-2.5 py-1.5 text-xs text-soft focus:outline-none focus:border-lime-core transition"
                           />
                         </div>
                       </div>
@@ -904,25 +904,25 @@ export default function ActivityForm({
                         />
                         <label
                           htmlFor={`image-slot-input-${idx}`}
-                          className={`flex flex-col items-center justify-center gap-1.5 aspect-video rounded-lg border border-dashed bg-white transition p-3 text-center ${
+                          className={`flex flex-col items-center justify-center gap-1.5 aspect-video rounded-lg border border-dashed bg-white/5 transition p-3 text-center ${
                             sedangMuatNaik
-                              ? 'border-blue-300 bg-blue-50/40 cursor-wait'
-                              : 'border-gray-200 hover:bg-gray-50/50 hover:border-blue-300 cursor-pointer'
+                              ? 'border-lime-core/40 bg-blue-50/40 cursor-wait'
+                              : 'border-white/10 hover:bg-gray-50/50 hover:border-lime-core/40 cursor-pointer'
                           }`}
                         >
                           {sedangMuatNaik ? (
                             <>
-                              <Upload className="h-5 w-5 text-blue-500 animate-pulse" />
-                              <span className="text-[11px] font-bold text-blue-700 block">
+                              <Upload className="h-5 w-5 text-lime-core animate-pulse" />
+                              <span className="text-[11px] font-bold text-lime-glow block">
                                 Memampat &amp; menyimpan…
                               </span>
                             </>
                           ) : (
                             <>
-                              <Upload className="h-5 w-5 text-gray-400" />
+                              <Upload className="h-5 w-5 text-faint" />
                               <div>
-                                <span className="text-[11px] font-bold text-gray-700 block">Muat Naik Foto {idx + 1}</span>
-                                <span className="text-[10px] text-gray-400 block max-w-[180px] mx-auto leading-tight mt-0.5">
+                                <span className="text-[11px] font-bold text-soft block">Muat Naik Foto {idx + 1}</span>
+                                <span className="text-[10px] text-faint block max-w-[180px] mx-auto leading-tight mt-0.5">
                                   {panel.desc}
                                 </span>
                               </div>
@@ -941,17 +941,17 @@ export default function ActivityForm({
       </div>
 
       {/* Sticky Bottom Actions Bar */}
-      <div className="border-t border-gray-100 pt-6 flex items-center justify-end gap-3 bg-white/80 backdrop-blur-md py-4">
+      <div className="border-t border-white/8 pt-6 flex items-center justify-end gap-3 bg-white/80 backdrop-blur-md py-4">
         <button
           type="button"
           onClick={onCancel}
-          className="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+          className="px-5 py-2.5 text-sm font-medium text-muted hover:text-soft bg-white/5 hover:bg-white/8 rounded-xl transition"
         >
           Kembali Ke Senarai
         </button>
         <button
           type="submit"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 shadow-md shadow-blue-200"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-lime-core px-6 py-2.5 text-sm font-bold text-[#0a0f08] transition hover:bg-lime-deep shadow-md shadow-lime-core/25"
         >
           <Check className="h-4.5 w-4.5" />
           Simpan Laporan Aktiviti

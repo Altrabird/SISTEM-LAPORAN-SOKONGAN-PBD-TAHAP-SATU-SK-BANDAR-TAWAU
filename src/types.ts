@@ -76,6 +76,22 @@ export interface DutyGroup {
   perananKetua?: string[];
 }
 
+/**
+ * Pegawai yang menandatangani laporan.
+ *
+ * Laporan bergambar mempunyai dua ruangan tandatangan: pihak yang menyediakan
+ * (pelapor — biasanya guru bertugas) dan pihak yang menyemak/mengesahkan
+ * (penyemak — pentadbir sekolah). Nama dan jawatan disimpan bersama supaya
+ * blok tandatangan sentiasa tepat tanpa perlu ditaip semula setiap kali.
+ */
+export interface Officer {
+  id: string;
+  name: string;
+  position: string;
+  /** Dipaparkan dahulu dalam senarai pilihan dan menjadi pilihan lalai. */
+  isDefault?: boolean;
+}
+
 export interface AppSettings {
   schoolName: string;
   schoolShortCode: string;
@@ -85,5 +101,14 @@ export interface AppSettings {
   commonActivitiesBi: string[];
   tanggungjawabUmum: string[];
   dutyGroups: DutyGroup[];
+  /** Guru yang menyediakan laporan. */
+  pelaporList?: Officer[];
+  /** Pentadbir yang menyemak dan mengesahkan laporan. */
+  penyemakList?: Officer[];
+}
+
+/** Pegawai lalai bagi senarai, atau yang pertama jika tiada ditanda. */
+export function defaultOfficer(senarai: Officer[] = []): Officer | undefined {
+  return senarai.find(o => o.isDefault) ?? senarai[0];
 }
 

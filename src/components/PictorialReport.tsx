@@ -1,4 +1,4 @@
-import { ActivityLog, isAssessed, tpGain } from '../types';
+import { ActivityLog, AppSettings, isAssessed, tpGain, defaultOfficer } from '../types';
 import { useResolvedImages } from '../lib/useResolvedImages';
 import { TAHAP_PENGUASAAN_DESCS } from '../data';
 import {
@@ -18,9 +18,18 @@ interface PictorialReportProps {
   activity: ActivityLog;
   onBack: () => void;
   schoolName?: string;
+  settings?: AppSettings;
 }
 
-export default function PictorialReport({ activity, onBack, schoolName = 'SK BANDAR TAWAU' }: PictorialReportProps) {
+export default function PictorialReport({
+  activity,
+  onBack,
+  schoolName = 'SK BANDAR TAWAU',
+  settings
+}: PictorialReportProps) {
+  // Pegawai penandatangan diambil daripada tetapan sekolah supaya blok
+  // tandatangan tidak perlu ditaip semula pada setiap laporan.
+  const penyemak = defaultOfficer(settings?.penyemakList);
   const isBM = activity.subject === 'BM';
 
   // Gambar disimpan dalam IndexedDB — selesaikan rujukan sebelum dipaparkan/dicetak.
@@ -263,11 +272,16 @@ export default function PictorialReport({ activity, onBack, schoolName = 'SK BAN
           <div className="space-y-12">
             <div className="space-y-1">
               <p>Disemak dan Disahkan oleh,</p>
-              <p className="font-mono text-[9px] text-gray-400">Tandatangan & Tarikh</p>
+              <p className="font-mono text-[9px] text-gray-400">Tandatangan &amp; Tarikh</p>
             </div>
             <div className="space-y-0.5 border-t border-gray-900 w-4/5 pt-1">
-              <p className="font-bold uppercase">SAMSIAN SUNDU</p>
-              <p className="text-gray-500">Guru Besar / Penolong Kanan Pentadbiran</p>
+              {/*
+                Nama penyemak dahulunya dikodkan keras di sini — termasuk salah
+                taip "SAMSIAN SUNDU" yang tercetak pada setiap laporan rasmi.
+                Kini diambil daripada senarai penyemak dalam Tetapan & Admin.
+              */}
+              <p className="font-bold uppercase">{penyemak?.name || '—'}</p>
+              <p className="text-gray-500">{penyemak?.position || 'Pentadbir Sekolah'}</p>
             </div>
           </div>
         </div>

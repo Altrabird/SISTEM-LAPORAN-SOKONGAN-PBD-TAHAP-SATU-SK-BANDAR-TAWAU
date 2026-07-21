@@ -29,7 +29,7 @@ function ActivityThumbnail({ imageRef, alt }: { imageRef: string; alt: string })
 
   if (!url) {
     // Ruang dikekalkan semasa gambar dimuatkan supaya susun atur tidak melompat.
-    return <div className="w-full h-full bg-gray-100 animate-pulse" aria-hidden="true" />;
+    return <div className="w-full h-full bg-white/8 animate-pulse" aria-hidden="true" />;
   }
 
   return (
@@ -110,15 +110,15 @@ export default function ActivityList({
     <div className="space-y-6">
       
       {/* Search & Filter Header bar */}
-      <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm space-y-4">
+      <div className="glass p-5 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Senarai Aktiviti Sokongan PBD</h2>
-            <p className="text-xs text-gray-500 mt-1">Cari, tapis, dan urus rekod bimbingan akademik sekolah.</p>
+            <h2 className="text-lg font-bold text-bright">Senarai Aktiviti Sokongan PBD</h2>
+            <p className="text-xs text-muted mt-1">Cari, tapis, dan urus rekod bimbingan akademik sekolah.</p>
           </div>
           <button
             onClick={onAddNew}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-lime-core px-4 py-2.5 text-sm font-bold text-[#0a0f08] transition hover:bg-lime-deep shadow-sm"
           >
             <PlusCircle className="h-4 w-4" />
             Rekod Sesi Baru
@@ -129,7 +129,7 @@ export default function ActivityList({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2">
           {/* Search box */}
           <div className="relative md:col-span-2">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-faint">
               <Search className="h-4 w-4" />
             </span>
             <input
@@ -137,18 +137,18 @@ export default function ActivityList({
               placeholder="Cari guru, murid, aktiviti, kumpulan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-4 text-xs text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition"
+              className="w-full rounded-xl bg-white/5 py-2.5 pl-10 pr-4 text-xs text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
             />
           </div>
 
           {/* Subject Selector */}
-          <div className="flex gap-1.5 bg-gray-50 p-1.5 rounded-xl border border-gray-150">
+          <div className="flex gap-1.5 bg-white/5 p-1.5 rounded-xl">
             <button
               onClick={() => setSelectedSubject('ALL')}
               className={`flex-1 text-[11px] font-bold py-1.5 rounded-lg transition-all ${
                 selectedSubject === 'ALL'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
+                  ? 'bg-white/5 text-bright shadow-sm'
+                  : 'text-muted hover:text-bright'
               }`}
             >
               Semua
@@ -157,8 +157,8 @@ export default function ActivityList({
               onClick={() => setSelectedSubject('BM')}
               className={`flex-1 text-[11px] font-bold py-1.5 rounded-lg transition-all ${
                 selectedSubject === 'BM'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
+                  ? 'bg-lime-core text-[#0a0f08] shadow-sm'
+                  : 'text-muted hover:text-bright'
               }`}
             >
               BM
@@ -167,8 +167,8 @@ export default function ActivityList({
               onClick={() => setSelectedSubject('BI')}
               className={`flex-1 text-[11px] font-bold py-1.5 rounded-lg transition-all ${
                 selectedSubject === 'BI'
-                  ? 'bg-pink-600 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900'
+                  ? 'bg-fuchsia-400 text-[#160a12] shadow-sm'
+                  : 'text-muted hover:text-bright'
               }`}
             >
               BI
@@ -177,13 +177,13 @@ export default function ActivityList({
 
           {/* Class Select */}
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-faint pointer-events-none">
               <Filter className="h-4 w-4" />
             </span>
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-3 text-xs text-gray-800 focus:border-blue-500 focus:bg-white focus:outline-none transition appearance-none"
+              className="w-full rounded-xl bg-white/5 py-2.5 pl-10 pr-3 text-xs text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition appearance-none"
             >
               {allUniqueClasses.map(cls => (
                 <option key={cls} value={cls}>
@@ -210,15 +210,15 @@ export default function ActivityList({
             return (
               <div
                 key={act.id}
-                className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-gray-200 transition-all group"
+                className="glass glass-hover overflow-hidden flex flex-col justify-between group"
               >
                 {/* Image Section or Subject Banner */}
-                <div className="relative aspect-video w-full bg-gray-50 overflow-hidden">
+                <div className="relative aspect-video w-full bg-white/5 overflow-hidden">
                   {hasImages ? (
                     <ActivityThumbnail imageRef={act.images[0]} alt={act.activityName} />
                   ) : (
                     <div className={`w-full h-full flex flex-col items-center justify-center gap-1.5 ${
-                      isBM ? 'bg-gradient-to-br from-blue-50 to-indigo-100/70 text-blue-700' : 'bg-gradient-to-br from-pink-50 to-rose-100/70 text-pink-700'
+                      isBM ? 'bg-gradient-to-br from-blue-50 to-indigo-100/70 text-lime-glow' : 'bg-gradient-to-br from-pink-50 to-rose-100/70 text-fuchsia-300'
                     }`}>
                       <BookOpen className="h-8 w-8 stroke-1.5" />
                       <span className="text-xs font-semibold">Tiada Gambar Laporan</span>
@@ -228,11 +228,11 @@ export default function ActivityList({
                   {/* Badges */}
                   <div className="absolute top-3 left-3 flex flex-wrap gap-2">
                     <span className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase shadow-sm ${
-                      isBM ? 'bg-blue-600 text-white' : 'bg-pink-600 text-white'
+                      isBM ? 'bg-lime-core text-[#0a0f08]' : 'bg-fuchsia-400 text-[#160a12]'
                     }`}>
                       {isBM ? 'Bahasa Melayu' : 'English (BI)'}
                     </span>
-                    <span className="inline-flex items-center rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-gray-800 shadow-sm">
+                    <span className="inline-flex items-center rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-bright shadow-sm">
                       {act.className}
                     </span>
                   </div>
@@ -246,69 +246,69 @@ export default function ActivityList({
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                   <div className="space-y-1.5">
                     {/* Date / Day */}
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-semibold">
-                      <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                    <div className="flex items-center gap-1.5 text-[10px] text-faint font-semibold">
+                      <Calendar className="h-3.5 w-3.5 text-faint" />
                       <span>{act.date} ({act.day})</span>
                     </div>
 
                     {/* Title */}
-                    <h3 className="font-bold text-gray-900 text-sm md:text-base group-hover:text-blue-600 transition truncate" title={act.activityName}>
+                    <h3 className="font-bold text-bright text-sm md:text-base group-hover:text-lime-core transition truncate" title={act.activityName}>
                       {act.activityName}
                     </h3>
 
                     {/* Description */}
-                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-muted line-clamp-2 leading-relaxed">
                       {act.activityDesc}
                     </p>
                   </div>
 
                   {/* Student participation summary */}
-                  <div className="rounded-xl bg-gray-50 p-3 space-y-1.5">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase">
+                  <div className="rounded-xl bg-white/5 p-3 space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-muted uppercase">
                       <span className="flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" />
                         Murid Terlibat
                       </span>
-                      <span className="text-indigo-600">{act.students.length} Orang</span>
+                      <span className="text-lime-core">{act.students.length} Orang</span>
                     </div>
                     {/* Names inline */}
-                    <div className="text-[11px] text-gray-600 font-medium truncate">
+                    <div className="text-[11px] text-soft font-medium truncate">
                       {act.students.map(s => s.name).join(', ')}
                     </div>
                     
                     {/* Progress Badge */}
-                    <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+                    <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
                       <Sparkles className="h-3 w-3" />
                       <span>{improvementCount} orang meningkat Tahap Penguasaan (TP)</span>
                     </div>
                   </div>
 
                   {/* Metadata teacher */}
-                  <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1.5 border-t border-gray-50">
+                  <div className="flex items-center justify-between text-[10px] text-faint pt-1.5 border-t border-white/8">
                     <span>Guru BM/BI: <strong>{act.subjectTeacher}</strong></span>
                     <span>Bertugas: <strong>{act.teacherOnDuty}</strong></span>
                   </div>
                 </div>
 
                 {/* Bottom Actions Row */}
-                <div className="grid grid-cols-3 border-t border-gray-100 bg-gray-50/50 text-center">
+                <div className="grid grid-cols-3 border-t border-white/8 bg-gray-50/50 text-center">
                   <button
                     onClick={() => onViewReport(act)}
-                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-blue-600 hover:bg-blue-50/50 hover:text-blue-700 transition"
+                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-lime-core hover:bg-blue-50/50 hover:text-lime-glow transition"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     Laporan
                   </button>
                   <button
                     onClick={() => onEditActivity(act)}
-                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-gray-600 border-x border-gray-100 hover:bg-gray-150/50 hover:text-gray-800 transition"
+                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-soft border-x border-white/8 hover:bg-gray-150/50 hover:text-bright transition"
                   >
                     <Edit className="h-3.5 w-3.5" />
                     Ubah
                   </button>
                   <button
                     onClick={() => confirmDelete(act.id, act.activityName)}
-                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition"
+                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-rose-400 hover:bg-rose-500/12 hover:text-rose-300 transition"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Hapus
@@ -319,12 +319,12 @@ export default function ActivityList({
           })}
         </div>
       ) : (
-        <div className="rounded-2xl border border-gray-100 bg-white p-12 text-center shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 text-gray-400 mb-4">
+        <div className="glass p-12 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-faint mb-4">
             <Search className="h-6 w-6 stroke-1.5" />
           </div>
-          <h3 className="text-base font-bold text-gray-900">Tiada Rekod Dijumpai</h3>
-          <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+          <h3 className="text-base font-bold text-bright">Tiada Rekod Dijumpai</h3>
+          <p className="text-xs text-muted mt-1 max-w-sm mx-auto">
             Tiada rekod aktiviti sokongan PBD yang sepadan dengan carian atau tapisan anda. Cuba tukar kriteria carian atau tambah rekod baru.
           </p>
           <div className="mt-5 flex justify-center gap-2">
@@ -335,14 +335,14 @@ export default function ActivityList({
                   setSelectedSubject('ALL');
                   setSelectedClass('ALL');
                 }}
-                className="px-4 py-2 text-xs font-bold text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition"
+                className="px-4 py-2 text-xs font-bold text-soft bg-white/5 hover:bg-white/8 rounded-xl transition"
               >
                 Set Semula Penapis
               </button>
             )}
             <button
               onClick={onAddNew}
-              className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition"
+              className="px-4 py-2 text-xs font-bold text-white bg-lime-core hover:bg-lime-glow rounded-xl transition"
             >
               Daftar Rekod Baru
             </button>

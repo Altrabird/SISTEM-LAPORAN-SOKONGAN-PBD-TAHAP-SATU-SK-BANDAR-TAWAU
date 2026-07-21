@@ -6,7 +6,9 @@ import {
   COMMON_ACTIVITIES_BM,
   COMMON_ACTIVITIES_BI,
   TANGGUNGJAWAB_UMUM,
-  OFFICIAL_DUTY_GROUPS
+  OFFICIAL_DUTY_GROUPS,
+  DEFAULT_PELAPOR,
+  DEFAULT_PENYEMAK
 } from './data';
 import { migrateInlineImages, deletePhotos, clearPhotos } from './lib/photoStore';
 import { deleteFromSheets, getWebAppUrl, getAdminToken } from './lib/sheetsSync';
@@ -14,22 +16,17 @@ import Dashboard from './components/Dashboard';
 import ActivityForm from './components/ActivityForm';
 import ActivityList from './components/ActivityList';
 import PictorialReport from './components/PictorialReport';
-import GoogleSheetsIntegration from './components/GoogleSheetsIntegration';
-import GeminiAssistant from './components/GeminiAssistant';
 import AdminSettings from './components/AdminSettings';
 import {
   LayoutDashboard,
   ListFilter,
   PlusCircle,
-  BrainCircuit,
-  Database,
   Menu,
   X,
-  FileText,
+  Settings,
+  Leaf,
   Cloud,
-  CheckCircle,
-  HelpCircle,
-  Settings
+  CloudOff
 } from 'lucide-react';
 
 /**
@@ -79,7 +76,9 @@ export default function App() {
       commonActivitiesBm: COMMON_ACTIVITIES_BM,
       commonActivitiesBi: COMMON_ACTIVITIES_BI,
       tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
-      dutyGroups: OFFICIAL_DUTY_GROUPS
+      dutyGroups: OFFICIAL_DUTY_GROUPS,
+      pelaporList: DEFAULT_PELAPOR,
+      penyemakList: DEFAULT_PENYEMAK
     };
   });
 
@@ -101,7 +100,9 @@ export default function App() {
       commonActivitiesBm: COMMON_ACTIVITIES_BM,
       commonActivitiesBi: COMMON_ACTIVITIES_BI,
       tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
-      dutyGroups: OFFICIAL_DUTY_GROUPS
+      dutyGroups: OFFICIAL_DUTY_GROUPS,
+      pelaporList: DEFAULT_PELAPOR,
+      penyemakList: DEFAULT_PENYEMAK
     };
     setSettings(defaultVal);
     persistActivities(INITIAL_ACTIVITIES);
@@ -119,7 +120,9 @@ export default function App() {
       commonActivitiesBm: COMMON_ACTIVITIES_BM,
       commonActivitiesBi: COMMON_ACTIVITIES_BI,
       tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
-      dutyGroups: OFFICIAL_DUTY_GROUPS
+      dutyGroups: OFFICIAL_DUTY_GROUPS,
+      pelaporList: DEFAULT_PELAPOR,
+      penyemakList: DEFAULT_PENYEMAK
     };
     setSettings(defaultVal);
     localStorage.setItem('lapor_pbd_settings', JSON.stringify(defaultVal));
@@ -250,208 +253,174 @@ export default function App() {
     setActiveTab('report');
   };
 
+  /* Item navigasi — dipacu data supaya penanda aktif hanya ditakrif sekali. */
+  const navItems = [
+    { id: 'dashboard', label: 'Paparan Utama', icon: LayoutDashboard, aktifBila: ['dashboard'] },
+    { id: 'list', label: 'Senarai Aktiviti', icon: ListFilter, aktifBila: ['list', 'report'] },
+    { id: 'form', label: 'Rekod Aktiviti Baru', icon: PlusCircle, aktifBila: ['form'] },
+    { id: 'admin', label: 'Tetapan & Admin', icon: Settings, aktifBila: ['admin'] }
+  ];
+
+  const awanAktif = Boolean(getWebAppUrl());
+
+  const senaraiNav = (
+    <nav className="space-y-1">
+      {navItems.map(({ id, label, icon: Icon, aktifBila }) => {
+        const aktif = aktifBila.includes(activeTab);
+        return (
+          <button
+            key={id}
+            onClick={() => handleTabChange(id)}
+            aria-current={aktif ? 'page' : undefined}
+            className={`group relative w-full flex items-center gap-3 rounded-xl px-3.5 py-3 text-xs font-bold transition-all duration-200 cursor-pointer ${
+              aktif
+                ? 'bg-lime-core/12 text-lime-glow'
+                : 'text-muted hover:bg-white/5 hover:text-bright'
+            }`}
+          >
+            {/* Penanda aktif — bar menegak, bukan latar penuh yang berat */}
+            <span
+              className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-lime-core transition-all duration-200 ${
+                aktif ? 'h-6 opacity-100' : 'h-0 opacity-0'
+              }`}
+            />
+            <Icon className={`h-4.5 w-4.5 shrink-0 transition-colors ${aktif ? 'text-lime-core' : ''}`} />
+            <span className="text-left leading-tight">{label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50/50 flex flex-col font-sans">
-      
-      {/* 1. Mobile top-bar navigation header (Hidden on A4 printing) */}
-      <header className="flex items-center justify-between bg-white border-b border-gray-100 px-5 py-4 md:hidden print:hidden shadow-sm">
+    <div className="min-h-screen flex flex-col font-sans">
+
+      {/* Bar atas mudah alih */}
+      <header className="glass sticky top-0 z-30 flex items-center justify-between rounded-none px-4 py-3 md:hidden print:hidden">
         <div className="flex items-center gap-2.5">
-          <div className="rounded-xl bg-blue-600 p-2 text-white">
-            <Database className="h-5 w-5" />
+          <div className="rounded-xl bg-gradient-to-b from-lime-core to-lime-deep p-2 text-[#0a0f08] shadow-lg shadow-lime-core/20">
+            <Leaf className="h-4.5 w-4.5" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-gray-900 tracking-tight leading-none">LaporPBD</h1>
-            <span className="text-[9px] text-gray-400 font-medium">Aktiviti Sokongan PBD</span>
+            <h1 className="font-display text-sm font-bold leading-none tracking-tight">LaporPBD</h1>
+            <span className="text-[9px] font-medium text-muted">Aktiviti Sokongan PBD</span>
           </div>
         </div>
 
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-1.5 rounded-lg border border-gray-100 text-gray-600 hover:bg-gray-50"
+          aria-label={isSidebarOpen ? 'Tutup menu' : 'Buka menu'}
+          className="btn-ghost !p-2"
         >
           {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </header>
 
-      <div className="flex flex-1 relative">
-        
-        {/* 2. Desktop Sidebar Menu Panel (Hidden on A4 printing) */}
+      <div className="relative flex flex-1">
+
+        {/* Panel sisi */}
         <aside
-          className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-100 p-6 flex flex-col justify-between transition-transform duration-300 md:static md:translate-x-0 print:hidden shrink-0 ${
+          className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col justify-between bg-abyss/95 p-5 backdrop-blur-xl transition-transform duration-300 md:static md:translate-x-0 md:bg-transparent md:backdrop-blur-none print:hidden ${
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <div className="space-y-8">
-            {/* Logo area */}
-            <div className="hidden md:flex items-center gap-3 border-b border-gray-50 pb-5">
-              <div className="rounded-xl bg-blue-600 p-2.5 text-white shadow-md shadow-blue-100">
-                <Database className="h-5.5 w-5.5" />
+          <div className="space-y-7">
+            {/* Jenama */}
+            <div className="hidden items-center gap-3 px-1 md:flex">
+              <div className="rounded-xl bg-gradient-to-b from-lime-core to-lime-deep p-2.5 text-[#0a0f08] shadow-lg shadow-lime-core/25">
+                <Leaf className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-gray-900 tracking-tight leading-none">LaporPBD</h1>
-                <span className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase block mt-1">BM & BI {settings.schoolShortCode}</span>
+                <h1 className="font-display text-base font-bold leading-none tracking-tight">LaporPBD</h1>
+                <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-lime-core/70">
+                  BM &amp; BI {settings.schoolShortCode}
+                </span>
               </div>
             </div>
 
-            {/* Menu options list */}
-            <nav className="space-y-1.5">
-              <button
-                onClick={() => handleTabChange('dashboard')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'dashboard'
-                    ? 'bg-blue-50 text-blue-700 shadow-sm shadow-blue-50/50'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <LayoutDashboard className="h-4.5 w-4.5" />
-                Paparan Utama (Dashboard)
-              </button>
-
-              <button
-                onClick={() => handleTabChange('list')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'list' || activeTab === 'report'
-                    ? 'bg-blue-50 text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <ListFilter className="h-4.5 w-4.5" />
-                Senarai Aktiviti Sokongan
-              </button>
-
-              <button
-                onClick={() => handleTabChange('form')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'form'
-                    ? 'bg-blue-50 text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <PlusCircle className="h-4.5 w-4.5" />
-                Rekod Aktiviti Baru
-              </button>
-
-              <button
-                onClick={() => handleTabChange('ai')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'ai'
-                    ? 'bg-blue-50 text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <BrainCircuit className="h-4.5 w-4.5" />
-                Penasihat AI Gemini
-              </button>
-
-              <button
-                onClick={() => handleTabChange('integration')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'integration'
-                    ? 'bg-blue-50 text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <Database className="h-4.5 w-4.5" />
-                Integrasi Excel & GD
-              </button>
-
-              <button
-                onClick={() => handleTabChange('admin')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all border border-transparent ${
-                  activeTab === 'admin'
-                    ? 'bg-indigo-50 border-indigo-100 text-indigo-700 shadow-sm'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-950'
-                }`}
-              >
-                <Settings className="h-4.5 w-4.5" />
-                Tetapan & Menu Admin
-              </button>
-            </nav>
+            {senaraiNav}
           </div>
 
-          {/* School badge summary / footer */}
-          <div className="mt-auto border-t border-gray-50 pt-5 space-y-3">
-            <div className="flex items-center gap-2.5 rounded-xl bg-gray-50 border border-gray-100 p-3">
-              <Cloud className="h-4.5 w-4.5 text-blue-500 animate-pulse" />
-              <div className="text-[10px] leading-relaxed">
-                <span className="font-bold text-gray-700 block">Status Integrasi GD</span>
-                <span className="text-gray-400">Siap untuk segerak</span>
+          {/* Kaki panel — status awan sebenar, bukan hiasan */}
+          <div className="mt-auto space-y-3 pt-5">
+            <div className="glass glass-hover flex items-center gap-2.5 p-3">
+              {awanAktif ? (
+                <Cloud className="h-4.5 w-4.5 shrink-0 text-lime-core" />
+              ) : (
+                <CloudOff className="h-4.5 w-4.5 shrink-0 text-faint" />
+              )}
+              <div className="min-w-0 text-[10px] leading-relaxed">
+                <span className="block font-bold text-soft">Google Sheets</span>
+                <span className={awanAktif ? 'text-lime-core' : 'text-faint'}>
+                  {awanAktif ? 'Tersambung' : 'Belum ditetapkan'}
+                </span>
               </div>
             </div>
-            
-            <p className="text-[9px] text-gray-400 text-center font-mono">
-              {settings.footerText}
-            </p>
+
+            <p className="text-center font-mono text-[9px] text-faint">{settings.footerText}</p>
           </div>
         </aside>
 
-        {/* Backdrop for mobile navigation drawer */}
+        {/* Tirai untuk laci mudah alih */}
         {isSidebarOpen && (
           <div
             onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 z-30 bg-gray-900/40 backdrop-blur-sm md:hidden"
-          ></div>
+            className="fixed inset-0 z-30 bg-void/70 backdrop-blur-sm md:hidden"
+          />
         )}
 
-        {/* 3. Main Content Container Area */}
-        <main className="flex-1 min-w-0 p-4 md:p-8 overflow-x-hidden md:overflow-y-auto md:max-h-screen print:p-0 print:overflow-visible">
-          
-          {/* Main conditional views router */}
-          {activeTab === 'dashboard' && (
-            <Dashboard 
-              activities={activities} 
-              onNavigate={handleTabChange} 
-              dutyGroups={settings.dutyGroups}
-              tanggungjawabUmum={settings.tanggungjawabUmum}
-            />
-          )}
+        {/* Kandungan utama */}
+        <main className="min-w-0 flex-1 overflow-x-hidden p-4 md:max-h-screen md:overflow-y-auto md:p-8 print:overflow-visible print:p-0">
+          <div className="animate-fade-in" key={activeTab}>
+            {activeTab === 'dashboard' && (
+              <Dashboard
+                activities={activities}
+                onNavigate={handleTabChange}
+                dutyGroups={settings.dutyGroups}
+                tanggungjawabUmum={settings.tanggungjawabUmum}
+              />
+            )}
 
-          {activeTab === 'list' && (
-            <ActivityList
-              activities={activities}
-              onViewReport={startViewReport}
-              onEditActivity={startEdit}
-              onDeleteActivity={handleDeleteActivity}
-              onAddNew={() => handleTabChange('form')}
-            />
-          )}
+            {activeTab === 'list' && (
+              <ActivityList
+                activities={activities}
+                onViewReport={startViewReport}
+                onEditActivity={startEdit}
+                onDeleteActivity={handleDeleteActivity}
+                onAddNew={() => handleTabChange('form')}
+              />
+            )}
 
-          {activeTab === 'form' && (
-            <ActivityForm
-              onSave={handleSaveActivity}
-              initialActivity={editingActivity}
-              onCancel={() => handleTabChange('list')}
-              availableClasses={settings.availableClasses}
-              commonActivitiesBm={settings.commonActivitiesBm}
-              commonActivitiesBi={settings.commonActivitiesBi}
-            />
-          )}
+            {activeTab === 'form' && (
+              <ActivityForm
+                onSave={handleSaveActivity}
+                initialActivity={editingActivity}
+                onCancel={() => handleTabChange('list')}
+                availableClasses={settings.availableClasses}
+                commonActivitiesBm={settings.commonActivitiesBm}
+                commonActivitiesBi={settings.commonActivitiesBi}
+              />
+            )}
 
-          {activeTab === 'report' && selectedActivity && (
-            <PictorialReport
-              activity={selectedActivity}
-              onBack={() => handleTabChange('list')}
-              schoolName={settings.schoolName}
-            />
-          )}
+            {activeTab === 'report' && selectedActivity && (
+              <PictorialReport
+                activity={selectedActivity}
+                onBack={() => handleTabChange('list')}
+                schoolName={settings.schoolName}
+                settings={settings}
+              />
+            )}
 
-          {activeTab === 'ai' && (
-            <GeminiAssistant />
-          )}
-
-          {activeTab === 'integration' && (
-            <GoogleSheetsIntegration activities={activities} />
-          )}
-
-          {activeTab === 'admin' && (
-            <AdminSettings
-              settings={settings}
-              onUpdateSettings={handleUpdateSettings}
-              onResetAllData={handleResetAllData}
-              onResetSettingsOnly={handleResetSettingsOnly}
-            />
-          )}
-
+            {activeTab === 'admin' && (
+              <AdminSettings
+                settings={settings}
+                activities={activities}
+                onUpdateSettings={handleUpdateSettings}
+                onResetAllData={handleResetAllData}
+                onResetSettingsOnly={handleResetSettingsOnly}
+              />
+            )}
+          </div>
         </main>
       </div>
     </div>

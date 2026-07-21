@@ -1,23 +1,326 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/* ==========================================================================
+   Tema — lime green di atas gelap
+   ==========================================================================
+   Latar bukan hitam tulen tetapi hijau-gelap yang sangat tepu. Hitam tulen
+   membuatkan aksen lime kelihatan melayang dan memenatkan mata; sedikit
+   pigmen hijau pada permukaan mengikat keseluruhan antara muka.
+   ========================================================================== */
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Aksen */
+  --color-lime-glow: #bef264;
+  --color-lime-core: #a3e635;
+  --color-lime-deep: #84cc16;
+  --color-lime-dark: #4d7c0f;
+
+  /* Permukaan */
+  --color-void: #080b08;
+  --color-abyss: #0c110d;
+  --color-surface: #121a14;
+  --color-raised: #18221a;
+
+  /* Teks — nisbah kontras dianggarkan berbanding latar gelap */
+  --color-bright: #f2f7ef;
+  --color-soft: #b8c4b4;
+  --color-muted: #8b9788;
+  --color-faint: #6b756a;
 }
 
+/* ==========================================================================
+   Asas
+   ========================================================================== */
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-void);
+    color: var(--color-bright);
+    /* Cahaya lime yang sangat halus supaya latar tidak rata mati */
+    background-image:
+      radial-gradient(ellipse 80% 60% at 15% -10%, rgba(163, 230, 53, 0.07), transparent),
+      radial-gradient(ellipse 60% 50% at 100% 0%, rgba(132, 204, 22, 0.04), transparent);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background-color: rgba(163, 230, 53, 0.28);
+    color: var(--color-bright);
+  }
+
+  /* Fokus papan kekunci yang jelas — keperluan kebolehcapaian, bukan hiasan */
+  :focus-visible {
+    outline: 2px solid var(--color-lime-core);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(163, 230, 53, 0.16);
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(163, 230, 53, 0.3);
+    background-clip: content-box;
+  }
+}
+
+/* ==========================================================================
+   Kad kaca
+   ==========================================================================
+   Tiada `border`. Bentuk kad dihasilkan oleh lapisan permukaan yang lebih
+   cerah sedikit ditambah sorotan dalaman setebal 1px di bahagian atas —
+   meniru cara cahaya menyentuh bibir kaca. Garis border penuh menghasilkan
+   rupa kotak-dalam-kotak yang kaku; sorotan ini memberi kedalaman tanpa
+   melukis kerangka.
+   ========================================================================== */
+
+@utility glass {
+  position: relative;
+  border-radius: 1rem;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.055),
+    rgba(255, 255, 255, 0.022)
+  );
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.07),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 12px 32px -16px rgba(0, 0, 0, 0.6);
+  transition:
+    background 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Kad yang boleh disentuh tetikus — mengangkat sedikit dan menyala lime */
+@utility glass-hover {
+  &:hover {
+    background: linear-gradient(
+      to bottom,
+      rgba(163, 230, 53, 0.09),
+      rgba(255, 255, 255, 0.03)
+    );
+    box-shadow:
+      inset 0 1px 0 0 rgba(190, 242, 100, 0.22),
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      0 20px 44px -18px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(163, 230, 53, 0.14);
+    transform: translateY(-2px);
+  }
+}
+
+/* Varian lebih pekat untuk panel dalam kad */
+@utility glass-inset {
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Kad yang menonjolkan aksen — untuk statistik utama */
+@utility glass-accent {
+  position: relative;
+  border-radius: 1rem;
+  background: linear-gradient(
+    to bottom,
+    rgba(163, 230, 53, 0.13),
+    rgba(163, 230, 53, 0.035)
+  );
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(190, 242, 100, 0.24),
+    0 12px 32px -16px rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================================================
+   Kawalan borang
+   ========================================================================== */
+
+@utility field {
+  width: 100%;
+  border-radius: 0.625rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.8125rem;
+  color: var(--color-bright);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.045);
+  transition: background 160ms ease, box-shadow 160ms ease;
+
+  &::placeholder { color: var(--color-faint); }
+
+  &:hover { background: rgba(0, 0, 0, 0.38); }
+
+  &:focus {
+    outline: none;
+    background: rgba(0, 0, 0, 0.45);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+      0 0 0 2px rgba(163, 230, 53, 0.42);
+  }
+
+  /* Senarai juntai perlu warna latar tegar, jika tidak pilihan tidak terbaca */
+  & option { background: #121a14; color: #f2f7ef; }
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  background: linear-gradient(to bottom, var(--color-lime-core), var(--color-lime-deep));
+  padding: 0.625rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #0a0f08;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    0 8px 20px -10px rgba(163, 230, 53, 0.65);
+  cursor: pointer;
+  transition: filter 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.09);
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
+      0 12px 26px -10px rgba(163, 230, 53, 0.8);
+  }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+@utility btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.625rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-soft);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-bright);
+  }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+@utility btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  background: rgba(244, 63, 94, 0.14);
+  padding: 0.625rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fda4af;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+
+  &:hover:not(:disabled) { background: rgba(244, 63, 94, 0.24); color: #fecdd3; }
+}
+
+/* Cip status kecil */
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-soft);
+}
+
+@utility chip-lime {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 0.5rem;
+  background: rgba(163, 230, 53, 0.16);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-lime-glow);
+}
+
+/* ==========================================================================
+   Gerakan
+   ========================================================================== */
+
 @layer utilities {
-  /* Print layout styling overrides to optimize printing only the report on A4 */
+  .animate-fade-in {
+    animation: fadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* Hormati keutamaan pengguna yang sensitif kepada gerakan */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Cetakan — laporan A4 mesti kekal hitam atas putih.
+     Tema gelap direka untuk skrin; mencetaknya membazir dakwat dan
+     menghasilkan dokumen rasmi yang tidak boleh dibaca.
+     ------------------------------------------------------------------ */
   @media print {
+    html { color-scheme: light; }
+
     body {
-      background-color: white !important;
+      background: white !important;
+      background-image: none !important;
       color: black !important;
     }
-    main {
-      padding: 0 !important;
-      margin: 0 !important;
+
+    main { padding: 0 !important; margin: 0 !important; }
+
+    /* Tanggalkan kesan kaca sepenuhnya semasa mencetak */
+    .glass,
+    .glass-accent,
+    .glass-inset {
+      background: white !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: none !important;
     }
+
     #printable-report-card {
       border: none !important;
       padding: 0 !important;
@@ -25,8 +328,7 @@
       max-width: 100% !important;
       width: 100% !important;
     }
-    .page-break-before {
-      page-break-before: always;
-    }
+
+    .page-break-before { page-break-before: always; }
   }
 }

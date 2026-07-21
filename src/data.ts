@@ -1,4 +1,4 @@
-import { ActivityLog } from './types';
+import { ActivityLog, Officer } from './types';
 
 // Beautiful SVG placeholders as mock base64/image URLs to simulate uploaded photos
 export const PLACEHOLDER_IMAGES = {
@@ -314,4 +314,31 @@ export const TANGGUNGJAWAB_UMUM = [
   'Memastikan semua bilik khas ditutup dan dikunci selepas tamat sesi persekolahan.',
   'Memastikan kebersihan persekitaran, tandas, kantin dan tempat-tempat lain dijaga.',
   'Memastikan aktiviti sokongan PBD dilaksanakan sebelum sesi PdPc.'
+];
+
+/* ==========================================================================
+   Pegawai penandatangan laporan
+   ==========================================================================
+   Diambil daripada "KEMAS KINI JADUAL GURU BERTUGAS SESI PETANG 2026":
+   ketua setiap kumpulan bertugas menyediakan laporan, manakala blok
+   tandatangan dokumen rasmi menamakan GPK Petang sebagai penyedia dan
+   Guru Besar sebagai pengesah.
+
+   Kesemuanya boleh disunting melalui Tetapan & Menu Admin — senarai ini
+   hanyalah titik permulaan supaya guru tidak bermula dengan borang kosong.
+   ========================================================================== */
+
+export const DEFAULT_PELAPOR: Officer[] = [
+  { id: 'plp-1', name: 'Siti Noraidah', position: 'Ketua Kumpulan Ancala', isDefault: true },
+  { id: 'plp-2', name: 'Harsidi', position: 'Ketua Kumpulan Buana' },
+  { id: 'plp-3', name: 'Siti Khairah', position: 'Ketua Kumpulan Candra' },
+  { id: 'plp-4', name: 'Saridah', position: 'Ketua Kumpulan Kencana' },
+  { id: 'plp-5', name: 'Suharitini', position: 'Ketua Kumpulan Mega' },
+  { id: 'plp-6', name: 'Sarinah', position: 'Ketua Kumpulan Pawana' },
+  { id: 'plp-7', name: 'Samsiah binti Sundu', position: 'Guru Penolong Kanan Petang' }
+];
+
+export const DEFAULT_PENYEMAK: Officer[] = [
+  { id: 'psk-1', name: 'Samsiah binti Sundu', position: 'Guru Penolong Kanan Petang', isDefault: true },
+  { id: 'psk-2', name: 'Abidin bin Moen', position: 'Guru Besar' }
 ];

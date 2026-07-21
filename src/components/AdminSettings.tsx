@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { AppSettings, DutyGroup, DutyMember, DutyWeek } from '../types';
+import { AppSettings, DutyGroup, DutyMember, DutyWeek, Officer, ActivityLog } from '../types';
+import { DEFAULT_PELAPOR, DEFAULT_PENYEMAK } from '../data';
+import OfficerList from './OfficerList';
+import CloudSettings from './CloudSettings';
 import {
   Settings,
   School,
@@ -16,11 +19,14 @@ import {
   X,
   AlertCircle,
   Clock,
-  ArrowRight
+  ArrowRight,
+  UserCheck,
+  Cloud
 } from 'lucide-react';
 
 interface AdminSettingsProps {
   settings: AppSettings;
+  activities: ActivityLog[];
   onUpdateSettings: (newSettings: AppSettings) => void;
   onResetAllData: () => void;
   onResetSettingsOnly: () => void;
@@ -28,11 +34,12 @@ interface AdminSettingsProps {
 
 export default function AdminSettings({
   settings,
+  activities,
   onUpdateSettings,
   onResetAllData,
   onResetSettingsOnly
 }: AdminSettingsProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'general' | 'classes' | 'activities' | 'responsibilities' | 'groups' | 'system'>('general');
+  const [activeSubTab, setActiveSubTab] = useState<'general' | 'officers' | 'classes' | 'activities' | 'responsibilities' | 'groups' | 'cloud' | 'system'>('general');
   
   // Local state copy for form editing to prevent immediate parent state writes on keypress
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
@@ -245,22 +252,22 @@ export default function AdminSettings({
     <div id="admin-settings-container" className="space-y-6">
       
       {/* Upper header segment */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass p-6">
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full text-[10px] font-bold text-indigo-700 uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 glass-inset bg-lime-core/10 px-3 py-1 rounded-full text-[10px] font-bold text-lime-glow uppercase tracking-wider">
             <Settings className="h-3 w-3 animate-spin" /> Menu Admin Pentadbir
           </div>
-          <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">
+          <h2 className="text-xl md:text-2xl font-black text-bright tracking-tight">
             Konfigurasi & Tetapan Sistem
           </h2>
-          <p className="text-xs text-gray-500 leading-relaxed max-w-2xl">
+          <p className="text-xs text-muted leading-relaxed max-w-2xl">
             Ubah nama sekolah, kod singkatan, senarai pilihan kelas, aktiviti lazim, tanggungjawab guru bertugas, peranan ahli kumpulan, serta jadual cuti peristiwa mingguan.
           </p>
         </div>
 
         {saveSuccess && (
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-150 px-4 py-2.5 rounded-2xl text-emerald-800 text-xs font-bold animate-bounce shadow-sm shrink-0">
-            <Check className="h-4 w-4 text-emerald-600" />
+          <div className="flex items-center gap-2 glass-inset bg-emerald-400/10 px-4 py-2.5 rounded-2xl text-emerald-300 text-xs font-bold animate-bounce shadow-sm shrink-0">
+            <Check className="h-4 w-4 text-emerald-400" />
             Tetapan Berjaya Disimpan!
           </div>
         )}
@@ -273,10 +280,12 @@ export default function AdminSettings({
         <div className="lg:col-span-3 flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-3 lg:pb-0 scrollbar-none">
           {[
             { id: 'general', name: 'Maklumat Am', icon: School },
+            { id: 'officers', name: 'Pelapor & Penyemak', icon: UserCheck },
             { id: 'classes', name: 'Senarai Kelas', icon: Clock },
             { id: 'activities', name: 'Aktiviti Lazim', icon: BookOpen },
             { id: 'responsibilities', name: 'Tanggungjawab', icon: Briefcase },
             { id: 'groups', name: 'Kumpulan & Jadual', icon: Users },
+            { id: 'cloud', name: 'Google Sheets & Drive', icon: Cloud },
             { id: 'system', name: 'Sistem & Set Semula', icon: RotateCcw }
           ].map((tab) => {
             const Icon = tab.icon;
@@ -287,11 +296,11 @@ export default function AdminSettings({
                 onClick={() => setActiveSubTab(tab.id as any)}
                 className={`flex items-center gap-2.5 px-4 py-3 text-xs font-bold rounded-xl transition duration-200 whitespace-nowrap lg:whitespace-normal shrink-0 ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-100'
-                    : 'bg-white text-gray-600 border border-gray-100/50 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-lime-core text-[#0a0f08] shadow-sm shadow-lime-core/20'
+                    : 'bg-white/5 text-soft hover:bg-white/5 hover:text-bright'
                 }`}
               >
-                <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-[#0a0f08]' : 'text-faint'}`} />
                 {tab.name}
               </button>
             );
@@ -299,51 +308,51 @@ export default function AdminSettings({
         </div>
 
         {/* Content detail segment */}
-        <div className="lg:col-span-9 bg-white border border-gray-100 rounded-3xl p-6 shadow-sm min-h-[480px]">
+        <div className="lg:col-span-9 glass p-6 min-h-[480px]">
           
           {/* 1. GENERAL SETTINGS */}
           {activeSubTab === 'general' && (
             <div className="space-y-6">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Maklumat Am Sekolah & Aplikasi</h3>
-                <p className="text-[11px] text-gray-500 mt-0.5">Ubah tajuk kepala sekolah, rujukan singkat, dan teks hak cipta / versi di bahagian kaki.</p>
+              <div className="border-b border-white/8 pb-3">
+                <h3 className="text-sm font-black text-bright uppercase tracking-wider">Maklumat Am Sekolah & Aplikasi</h3>
+                <p className="text-[11px] text-muted mt-0.5">Ubah tajuk kepala sekolah, rujukan singkat, dan teks hak cipta / versi di bahagian kaki.</p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 block">Nama Penuh Sekolah (Akan terpapar pada semua sijil/laporan cetakan):</label>
+                  <label className="text-xs font-bold text-soft block">Nama Penuh Sekolah (Akan terpapar pada semua sijil/laporan cetakan):</label>
                   <input
                     type="text"
                     value={localSettings.schoolName}
                     onChange={(e) => handleGeneralChange('schoolName', e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-indigo-500 transition-colors bg-gray-50/30"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-gray-50/30"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 block">Singkatan / Kod Pengenalan Sekolah:</label>
+                  <label className="text-xs font-bold text-soft block">Singkatan / Kod Pengenalan Sekolah:</label>
                   <input
                     type="text"
                     value={localSettings.schoolShortCode}
                     onChange={(e) => handleGeneralChange('schoolShortCode', e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-indigo-500 transition-colors bg-gray-50/30"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-gray-50/30"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 block">Teks Penerangan Footer & Tahun:</label>
+                  <label className="text-xs font-bold text-soft block">Teks Penerangan Footer & Tahun:</label>
                   <input
                     type="text"
                     value={localSettings.footerText}
                     onChange={(e) => handleGeneralChange('footerText', e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-indigo-500 transition-colors bg-gray-50/30"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-gray-50/30"
                   />
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-indigo-50/40 p-4 border border-indigo-100/50 flex items-start gap-2.5">
-                <AlertCircle className="h-4.5 w-4.5 text-indigo-600 shrink-0 mt-0.5" />
-                <div className="text-[11px] text-indigo-900 leading-relaxed">
+              <div className="rounded-2xl bg-indigo-50/40 p-4 flex items-start gap-2.5">
+                <AlertCircle className="h-4.5 w-4.5 text-lime-core shrink-0 mt-0.5" />
+                <div className="text-[11px] text-lime-glow leading-relaxed">
                   <p className="font-bold">Nota Pengemaskinian Autotamat:</p>
                   <p className="mt-0.5 text-indigo-700/90">Sebarang perubahan yang anda lakukan pada input di atas disimpan secara automatik dalam simpanan peranti tempatan (Local Storage) dan sedia dipaparkan.</p>
                 </div>
@@ -352,14 +361,52 @@ export default function AdminSettings({
           )}
 
           {/* 2. CLASSES SETTINGS */}
+          {/* PELAPOR & PENYEMAK */}
+          {activeSubTab === 'officers' && (
+            <div className="space-y-8">
+              <div className="border-b border-white/8 pb-3">
+                <h3 className="text-sm font-black uppercase tracking-wider text-bright">
+                  Pelapor &amp; Penyemak Laporan
+                </h3>
+                <p className="mt-0.5 text-[11px] text-muted">
+                  Nama dan jawatan yang tercetak pada blok tandatangan laporan bergambar.
+                  Pegawai bertanda <span className="text-lime-core">Lalai</span> digunakan
+                  secara automatik.
+                </p>
+              </div>
+
+              <OfficerList
+                title="Pelapor"
+                hint="Guru yang menyediakan laporan — biasanya ketua kumpulan bertugas."
+                idPrefix="plp"
+                officers={localSettings.pelaporList ?? DEFAULT_PELAPOR}
+                onChange={(senarai: Officer[]) =>
+                  triggerSave({ ...localSettings, pelaporList: senarai })
+                }
+              />
+
+              <div className="border-t border-white/8 pt-6">
+                <OfficerList
+                  title="Penyemak"
+                  hint="Pentadbir yang menyemak dan mengesahkan laporan."
+                  idPrefix="psk"
+                  officers={localSettings.penyemakList ?? DEFAULT_PENYEMAK}
+                  onChange={(senarai: Officer[]) =>
+                    triggerSave({ ...localSettings, penyemakList: senarai })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
           {activeSubTab === 'classes' && (
             <div className="space-y-6">
-              <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+              <div className="border-b border-white/8 pb-3 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Pilihan Senarai Kelas</h3>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Ubah suai senarai kelas yang boleh dipilih semasa membuat laporan aktiviti baru.</p>
+                  <h3 className="text-sm font-black text-bright uppercase tracking-wider">Pilihan Senarai Kelas</h3>
+                  <p className="text-[11px] text-muted mt-0.5">Ubah suai senarai kelas yang boleh dipilih semasa membuat laporan aktiviti baru.</p>
                 </div>
-                <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full px-2 py-0.5">
+                <span className="text-[10px] font-bold bg-lime-core/12 text-lime-glow rounded-full px-2 py-0.5">
                   {localSettings.availableClasses.length} Kelas
                 </span>
               </div>
@@ -371,11 +418,11 @@ export default function AdminSettings({
                   placeholder="Contoh: 1 Inovatif"
                   value={newClass}
                   onChange={(e) => setNewClass(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-indigo-500 bg-gray-50/30"
+                  className="flex-1 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core bg-gray-50/30"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition flex items-center gap-1.5 shrink-0 shadow-sm"
+                  className="px-4 py-2 bg-lime-core text-[#0a0f08] rounded-xl text-xs font-bold hover:bg-lime-deep transition flex items-center gap-1.5 shrink-0 shadow-sm"
                 >
                   <Plus className="h-3.5 w-3.5" /> Tambah Kelas
                 </button>
@@ -386,13 +433,13 @@ export default function AdminSettings({
                 {localSettings.availableClasses.map((cls) => (
                   <div
                     key={cls}
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 bg-gray-50/30 group hover:border-indigo-200 transition"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/30 group hover:border-lime-core/30 transition"
                   >
-                    <span className="text-xs font-bold text-gray-800">{cls}</span>
+                    <span className="text-xs font-bold text-bright">{cls}</span>
                     <button
                       onClick={() => handleRemoveClass(cls)}
                       type="button"
-                      className="p-1 rounded-md text-red-500 hover:bg-red-50 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="p-1 rounded-md text-rose-400 hover:bg-rose-500/12 hover:text-rose-300 opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Padam Kelas"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -406,18 +453,18 @@ export default function AdminSettings({
           {/* 3. COMMON ACTIVITIES SETTINGS */}
           {activeSubTab === 'activities' && (
             <div className="space-y-6">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Aktiviti Sokongan Lazim (Autocad/Cadangan)</h3>
-                <p className="text-[11px] text-gray-500 mt-0.5">Ubah suai senarai aktiviti standard yang disyorkan semasa mengisi laporan Bahasa Melayu (BM) atau Bahasa Inggeris (BI).</p>
+              <div className="border-b border-white/8 pb-3">
+                <h3 className="text-sm font-black text-bright uppercase tracking-wider">Aktiviti Sokongan Lazim (Autocad/Cadangan)</h3>
+                <p className="text-[11px] text-muted mt-0.5">Ubah suai senarai aktiviti standard yang disyorkan semasa mengisi laporan Bahasa Melayu (BM) atau Bahasa Inggeris (BI).</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Bahasa Melayu (BM) */}
-                <div className="space-y-4 border border-gray-150 rounded-2xl p-4 bg-gray-50/20">
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                    <span className="text-xs font-black text-red-700 uppercase tracking-wide">Bahasa Melayu (BM)</span>
-                    <span className="text-[10px] font-bold bg-red-50 text-red-700 rounded-md px-1.5 py-0.5">{localSettings.commonActivitiesBm.length} Syor</span>
+                <div className="space-y-4 rounded-2xl p-4 bg-gray-50/20">
+                  <div className="flex items-center justify-between border-b border-white/8 pb-2">
+                    <span className="text-xs font-black text-rose-300 uppercase tracking-wide">Bahasa Melayu (BM)</span>
+                    <span className="text-[10px] font-bold bg-rose-500/12 text-rose-300 rounded-md px-1.5 py-0.5">{localSettings.commonActivitiesBm.length} Syor</span>
                   </div>
 
                   <form onSubmit={handleAddBmActivity} className="flex gap-1.5">
@@ -426,7 +473,7 @@ export default function AdminSettings({
                       placeholder="Tambah aktiviti BM..."
                       value={newBmActivity}
                       onChange={(e) => setNewBmActivity(e.target.value)}
-                      className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:border-red-500 bg-white"
+                      className="flex-1 px-3 py-1.5 text-xs rounded-lg focus:outline-none focus:border-red-500 bg-white/5"
                     />
                     <button type="submit" className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
                       <Plus className="h-3.5 w-3.5" />
@@ -435,12 +482,12 @@ export default function AdminSettings({
 
                   <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
                     {localSettings.commonActivitiesBm.map((act, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-white border border-gray-100 text-xs text-gray-700 hover:border-red-200 transition">
+                      <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-white/5 text-xs text-soft hover:border-rose-400/30 transition">
                         <span className="font-semibold truncate pr-2">{act}</span>
                         <button
                           onClick={() => handleRemoveBmActivity(index)}
                           type="button"
-                          className="text-red-500 hover:text-red-700 p-0.5 rounded"
+                          className="text-rose-400 hover:text-rose-300 p-0.5 rounded"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -450,10 +497,10 @@ export default function AdminSettings({
                 </div>
 
                 {/* Bahasa Inggeris (BI) */}
-                <div className="space-y-4 border border-gray-150 rounded-2xl p-4 bg-gray-50/20">
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                    <span className="text-xs font-black text-blue-700 uppercase tracking-wide">Bahasa Inggeris (BI)</span>
-                    <span className="text-[10px] font-bold bg-blue-50 text-blue-700 rounded-md px-1.5 py-0.5">{localSettings.commonActivitiesBi.length} Syor</span>
+                <div className="space-y-4 rounded-2xl p-4 bg-gray-50/20">
+                  <div className="flex items-center justify-between border-b border-white/8 pb-2">
+                    <span className="text-xs font-black text-lime-glow uppercase tracking-wide">Bahasa Inggeris (BI)</span>
+                    <span className="text-[10px] font-bold bg-lime-core/12 text-lime-glow rounded-md px-1.5 py-0.5">{localSettings.commonActivitiesBi.length} Syor</span>
                   </div>
 
                   <form onSubmit={handleAddBiActivity} className="flex gap-1.5">
@@ -462,21 +509,21 @@ export default function AdminSettings({
                       placeholder="Tambah aktiviti BI..."
                       value={newBiActivity}
                       onChange={(e) => setNewBiActivity(e.target.value)}
-                      className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:border-blue-500 bg-white"
+                      className="flex-1 px-3 py-1.5 text-xs rounded-lg focus:outline-none focus:border-lime-core bg-white/5"
                     />
-                    <button type="submit" className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                    <button type="submit" className="p-1.5 bg-lime-core hover:bg-lime-glow text-[#0a0f08] rounded-lg transition">
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   </form>
 
                   <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
                     {localSettings.commonActivitiesBi.map((act, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-white border border-gray-100 text-xs text-gray-700 hover:border-blue-200 transition">
+                      <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-white/5 text-xs text-soft hover:border-lime-core/30 transition">
                         <span className="font-semibold truncate pr-2">{act}</span>
                         <button
                           onClick={() => handleRemoveBiActivity(index)}
                           type="button"
-                          className="text-red-500 hover:text-red-700 p-0.5 rounded"
+                          className="text-rose-400 hover:text-rose-300 p-0.5 rounded"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -492,12 +539,12 @@ export default function AdminSettings({
           {/* 4. RESPONSIBILITIES SETTINGS */}
           {activeSubTab === 'responsibilities' && (
             <div className="space-y-6">
-              <div className="border-b border-gray-100 pb-3 flex justify-between items-center">
+              <div className="border-b border-white/8 pb-3 flex justify-between items-center">
                 <div>
-                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Tanggungjawab Umum Ahli Kumpulan Bertugas</h3>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Senarai panduan ini akan dipaparkan di bahagian bawah Laporan Guru Bertugas Mingguan.</p>
+                  <h3 className="text-sm font-black text-bright uppercase tracking-wider">Tanggungjawab Umum Ahli Kumpulan Bertugas</h3>
+                  <p className="text-[11px] text-muted mt-0.5">Senarai panduan ini akan dipaparkan di bahagian bawah Laporan Guru Bertugas Mingguan.</p>
                 </div>
-                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full px-2 py-0.5">
+                <span className="text-[10px] font-bold bg-emerald-400/12 text-emerald-300 rounded-full px-2 py-0.5">
                   {localSettings.tanggungjawabUmum.length} Panduan
                 </span>
               </div>
@@ -509,11 +556,11 @@ export default function AdminSettings({
                   placeholder="Contoh: Memastikan persekitaran dewan makan kantin bersih sebelum rehat berakhir."
                   value={newResponsibility}
                   onChange={(e) => setNewResponsibility(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-indigo-500 bg-gray-50/30"
+                  className="flex-1 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core bg-gray-50/30"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition flex items-center gap-1.5 shrink-0 shadow-sm"
+                  className="px-4 py-2 bg-lime-core text-[#0a0f08] rounded-xl text-xs font-bold hover:bg-lime-deep transition flex items-center gap-1.5 shrink-0 shadow-sm"
                 >
                   <Plus className="h-3.5 w-3.5" /> Tambah
                 </button>
@@ -524,10 +571,10 @@ export default function AdminSettings({
                 {localSettings.tanggungjawabUmum.map((tanggung, index) => (
                   <div
                     key={index}
-                    className="flex items-start justify-between p-3 rounded-xl border border-gray-150 bg-white hover:border-indigo-200 transition text-xs leading-relaxed text-gray-700"
+                    className="flex items-start justify-between p-3 rounded-xl bg-white/5 hover:border-lime-core/30 transition text-xs leading-relaxed text-soft"
                   >
                     <div className="flex gap-2.5">
-                      <span className="h-5 w-5 bg-indigo-50 border border-indigo-100 rounded-full text-[10px] font-extrabold text-indigo-700 flex items-center justify-center shrink-0">
+                      <span className="h-5 w-5 glass-inset bg-lime-core/10 rounded-full text-[10px] font-extrabold text-lime-glow flex items-center justify-center shrink-0">
                         {index + 1}
                       </span>
                       <p>{tanggung}</p>
@@ -535,7 +582,7 @@ export default function AdminSettings({
                     <button
                       onClick={() => handleRemoveResponsibility(index)}
                       type="button"
-                      className="text-red-500 hover:text-red-700 p-1 rounded-md hover:bg-red-50 shrink-0 ml-3"
+                      className="text-rose-400 hover:text-rose-300 p-1 rounded-md hover:bg-rose-500/12 shrink-0 ml-3"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -548,9 +595,9 @@ export default function AdminSettings({
           {/* 5. DUTY GROUPS & SCHEDULE SETTINGS */}
           {activeSubTab === 'groups' && (
             <div className="space-y-6">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Kumpulan Guru Bertugas & Jadual Mingguan</h3>
-                <p className="text-[11px] text-gray-500 mt-0.5">Sediakan giliran minggu bertugas, peranan guru bertugas khusus, serta jadual cuti peristiwa mingguan.</p>
+              <div className="border-b border-white/8 pb-3">
+                <h3 className="text-sm font-black text-bright uppercase tracking-wider">Kumpulan Guru Bertugas & Jadual Mingguan</h3>
+                <p className="text-[11px] text-muted mt-0.5">Sediakan giliran minggu bertugas, peranan guru bertugas khusus, serta jadual cuti peristiwa mingguan.</p>
               </div>
 
               {/* Selection list of duty groups */}
@@ -566,8 +613,8 @@ export default function AdminSettings({
                       }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
                         isSelected
-                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                          ? 'bg-lime-core text-[#0a0f08] border-lime-core shadow-sm'
+                          : 'bg-white/5 text-soft border-white/10 hover:bg-white/5'
                       }`}
                     >
                       {group.name} ({group.members.length} Ahli)
@@ -580,42 +627,42 @@ export default function AdminSettings({
               {localSettings.dutyGroups[selectedGroupIdx] && (() => {
                 const group = localSettings.dutyGroups[selectedGroupIdx];
                 return (
-                  <div className="space-y-6 border border-gray-100 bg-gray-50/20 rounded-2xl p-4 md:p-5">
+                  <div className="space-y-6 bg-gray-50/20 rounded-2xl p-4 md:p-5">
                     
                     {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-150 pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/8 pb-3">
                       <div>
-                        <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Konfigurasi Giliran</span>
+                        <span className="text-[10px] font-bold text-lime-core uppercase tracking-wider">Konfigurasi Giliran</span>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs font-bold text-gray-500">Nama:</span>
+                          <span className="text-xs font-bold text-muted">Nama:</span>
                           <input
                             type="text"
                             value={group.name}
                             onChange={(e) => handleUpdateGroupName(selectedGroupIdx, e.target.value)}
-                            className="bg-white border border-gray-200 rounded px-2.5 py-1 text-xs font-bold text-gray-900 focus:outline-none focus:border-indigo-500"
+                            className="bg-white/5 rounded px-2.5 py-1 text-xs font-bold text-bright focus:outline-none focus:border-lime-core"
                           />
                         </div>
                       </div>
-                      <span className="text-[10.5px] text-gray-400 font-mono">Urutan Index Kumpulan: #{selectedGroupIdx + 1}</span>
+                      <span className="text-[10.5px] text-faint font-mono">Urutan Index Kumpulan: #{selectedGroupIdx + 1}</span>
                     </div>
 
                     {/* Member & Role assignment editor */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide flex items-center gap-1.5">
-                        <Users className="h-4 w-4 text-indigo-600" />
+                      <h4 className="text-xs font-black text-bright uppercase tracking-wide flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-lime-core" />
                         Pakar Ahli & Peranan Bertugas
                       </h4>
 
                       <div className="space-y-2">
                         {group.members.map((member, mIdx) => (
-                          <div key={mIdx} className="flex flex-col sm:flex-row sm:items-center gap-2.5 bg-white border border-gray-100 p-2.5 rounded-xl shadow-sm">
+                          <div key={mIdx} className="flex flex-col sm:flex-row sm:items-center gap-2.5 bg-white/5 p-2.5 rounded-xl shadow-sm">
                             <div className="flex-1 flex items-center gap-2">
-                              <span className="text-[11px] font-bold text-gray-400 min-w-[20px]">#{mIdx + 1}</span>
+                              <span className="text-[11px] font-bold text-faint min-w-[20px]">#{mIdx + 1}</span>
                               <input
                                 type="text"
                                 value={member.name}
                                 onChange={(e) => handleUpdateMember(selectedGroupIdx, mIdx, 'name', e.target.value)}
-                                className="flex-1 bg-gray-50/50 px-2.5 py-1 rounded text-xs font-bold text-gray-800 border border-transparent hover:border-gray-200 focus:border-indigo-500"
+                                className="flex-1 bg-gray-50/50 px-2.5 py-1 rounded text-xs font-bold text-bright border border-transparent hover:border-white/10 focus:border-lime-core"
                                 placeholder="Nama Guru"
                               />
                             </div>
@@ -624,13 +671,13 @@ export default function AdminSettings({
                                 type="text"
                                 value={member.role}
                                 onChange={(e) => handleUpdateMember(selectedGroupIdx, mIdx, 'role', e.target.value)}
-                                className="bg-gray-50/50 px-2.5 py-1 rounded text-xs font-semibold text-gray-600 border border-transparent hover:border-gray-200 focus:border-indigo-500 w-36"
+                                className="bg-gray-50/50 px-2.5 py-1 rounded text-xs font-semibold text-soft border border-transparent hover:border-white/10 focus:border-lime-core w-36"
                                 placeholder="Peranan"
                               />
                               <button
                                 type="button"
                                 onClick={() => handleRemoveMember(selectedGroupIdx, mIdx)}
-                                className="p-1 rounded text-red-500 hover:bg-red-50 hover:text-red-700"
+                                className="p-1 rounded text-rose-400 hover:bg-rose-500/12 hover:text-rose-300"
                                 title="Padam Ahli"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -641,18 +688,18 @@ export default function AdminSettings({
                       </div>
 
                       {/* Add Member form inline */}
-                      <div className="flex flex-wrap sm:flex-nowrap gap-2 bg-indigo-50/20 p-2.5 border border-indigo-100/30 rounded-xl">
+                      <div className="flex flex-wrap sm:flex-nowrap gap-2 bg-indigo-50/20 p-2.5 rounded-xl">
                         <input
                           type="text"
                           placeholder="Nama guru baru..."
                           value={newMemberName}
                           onChange={(e) => setNewMemberName(e.target.value)}
-                          className="flex-1 min-w-[140px] px-2.5 py-1 text-xs rounded border border-gray-200 focus:outline-none focus:border-indigo-500 bg-white"
+                          className="flex-1 min-w-[140px] px-2.5 py-1 text-xs rounded focus:outline-none focus:border-lime-core bg-white/5"
                         />
                         <select
                           value={newMemberRole}
                           onChange={(e) => setNewMemberRole(e.target.value)}
-                          className="px-2.5 py-1 text-xs rounded border border-gray-200 focus:outline-none focus:border-indigo-500 bg-white"
+                          className="px-2.5 py-1 text-xs rounded focus:outline-none focus:border-lime-core bg-white/5"
                         >
                           <option value="Ketua/Perhimpunan">Ketua/Perhimpunan</option>
                           <option value="Kebersihan/Disiplin">Kebersihan/Disiplin</option>
@@ -664,7 +711,7 @@ export default function AdminSettings({
                         <button
                           type="button"
                           onClick={() => handleAddMember(selectedGroupIdx)}
-                          className="px-3.5 py-1 bg-indigo-600 text-white text-xs font-bold rounded hover:bg-indigo-700 transition flex items-center gap-1 shrink-0"
+                          className="px-3.5 py-1 bg-lime-core text-[#0a0f08] text-xs font-bold rounded hover:bg-lime-deep transition flex items-center gap-1 shrink-0"
                         >
                           <Plus className="h-3 w-3" /> Tambah Guru
                         </button>
@@ -672,9 +719,9 @@ export default function AdminSettings({
                     </div>
 
                     {/* Weeks Schedule dates & Holiday list */}
-                    <div className="space-y-3 pt-3 border-t border-gray-150">
-                      <h4 className="text-xs font-black text-gray-900 uppercase tracking-wide flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4 text-indigo-600" />
+                    <div className="space-y-3 pt-3 border-t border-white/8">
+                      <h4 className="text-xs font-black text-bright uppercase tracking-wide flex items-center gap-1.5">
+                        <Calendar className="h-4 w-4 text-lime-core" />
                         Senarai Minggu Bertugas & Cuti Peristiwa (2026)
                       </h4>
 
@@ -686,25 +733,25 @@ export default function AdminSettings({
                             setHolidayInputs(prev => ({ ...prev, [inputKey]: val }));
                           };
                           return (
-                            <div key={wIdx} className="bg-white border border-gray-100 p-3 rounded-xl space-y-2">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-50 pb-1.5">
-                                <span className="text-xs font-black text-indigo-950">Minggu {wk.number}</span>
+                            <div key={wIdx} className="bg-white/5 p-3 rounded-xl space-y-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/8 pb-1.5">
+                                <span className="text-xs font-black text-lime-glow">Minggu {wk.number}</span>
                                 <input
                                   type="text"
                                   value={wk.dates}
                                   onChange={(e) => handleUpdateWeekDates(selectedGroupIdx, wIdx, e.target.value)}
-                                  className="bg-gray-50 border border-transparent hover:border-gray-100 px-2 py-0.5 rounded text-[11px] font-bold text-gray-600 w-full sm:w-48 text-right focus:border-indigo-500 focus:outline-none"
+                                  className="bg-white/5 border border-transparent hover:border-white/8 px-2 py-0.5 rounded text-[11px] font-bold text-soft w-full sm:w-48 text-right focus:border-lime-core focus:outline-none"
                                 />
                               </div>
 
                               {/* Holiday management */}
                               <div className="space-y-1">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Cuti / Peristiwa Khas:</span>
+                                <span className="text-[10px] font-bold text-faint uppercase tracking-wider block">Cuti / Peristiwa Khas:</span>
                                 
                                 {wk.holidays && wk.holidays.length > 0 ? (
                                   <div className="flex flex-wrap gap-1">
                                     {wk.holidays.map((hol, holIdx) => (
-                                      <span key={holIdx} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100">
+                                      <span key={holIdx} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700">
                                         {hol}
                                         <button
                                           type="button"
@@ -717,7 +764,7 @@ export default function AdminSettings({
                                     ))}
                                   </div>
                                 ) : (
-                                  <span className="text-[10px] text-gray-400 italic block">Tiada cuti tersenarai. Minggu pengajian penuh.</span>
+                                  <span className="text-[10px] text-faint italic block">Tiada cuti tersenarai. Minggu pengajian penuh.</span>
                                 )}
 
                                 {/* Add holiday line */}
@@ -727,7 +774,7 @@ export default function AdminSettings({
                                     placeholder="Tambah cuti (Contoh: CUTI PERISTIWA)"
                                     value={holidayText}
                                     onChange={(e) => setHolidayText(e.target.value)}
-                                    className="flex-1 px-2 py-1 text-[10.5px] rounded border border-gray-100 bg-gray-50/50"
+                                    className="flex-1 px-2 py-1 text-[10.5px] rounded bg-gray-50/50"
                                   />
                                   <button
                                     type="button"
@@ -737,7 +784,7 @@ export default function AdminSettings({
                                         setHolidayText('');
                                       }
                                     }}
-                                    className="px-2 py-1 bg-gray-100 text-gray-700 font-bold text-[10px] rounded hover:bg-gray-200 shrink-0"
+                                    className="px-2 py-1 bg-white/8 text-soft font-bold text-[10px] rounded hover:bg-white/12 shrink-0"
                                   >
                                     Tambah Cuti
                                   </button>
@@ -756,29 +803,32 @@ export default function AdminSettings({
           )}
 
           {/* 6. SYSTEM RESET & CLEAR DATA */}
+          {/* GOOGLE SHEETS & DRIVE */}
+          {activeSubTab === 'cloud' && <CloudSettings activities={activities} />}
+
           {activeSubTab === 'system' && (
             <div className="space-y-6">
-              <div className="border-b border-gray-100 pb-3">
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Tetapan Sistem & Penyelenggaraan</h3>
-                <p className="text-[11px] text-gray-500 mt-0.5">Uruskan pembersihan cache, sandaran data, dan atur semula tetapan konfigurasi kepada tetapan kilang.</p>
+              <div className="border-b border-white/8 pb-3">
+                <h3 className="text-sm font-black text-bright uppercase tracking-wider">Tetapan Sistem & Penyelenggaraan</h3>
+                <p className="text-[11px] text-muted mt-0.5">Uruskan pembersihan cache, sandaran data, dan atur semula tetapan konfigurasi kepada tetapan kilang.</p>
               </div>
 
               <div className="space-y-4">
                 
                 {/* Reset settings only */}
-                <div className="rounded-2xl border border-gray-150 p-5 space-y-3 bg-white hover:border-indigo-100 transition">
+                <div className="rounded-2xl p-5 space-y-3 bg-white/5 hover:border-lime-core/25 transition">
                   <div className="flex items-center gap-2.5">
-                    <RotateCcw className="h-5 w-5 text-indigo-600" />
+                    <RotateCcw className="h-5 w-5 text-lime-core" />
                     <div>
-                      <h4 className="text-xs font-black text-gray-900 uppercase">Set Semula Tetapan Sahaja (Reset Settings Only)</h4>
-                      <p className="text-[10.5px] text-gray-500 mt-0.5">Kembalikan tajuk sekolah, senarai kelas, aktiviti lazim, dan giliran jadual bertugas kepada nilai asal.</p>
+                      <h4 className="text-xs font-black text-bright uppercase">Set Semula Tetapan Sahaja (Reset Settings Only)</h4>
+                      <p className="text-[10.5px] text-muted mt-0.5">Kembalikan tajuk sekolah, senarai kelas, aktiviti lazim, dan giliran jadual bertugas kepada nilai asal.</p>
                     </div>
                   </div>
                   <div className="pt-2">
                     <button
                       type="button"
                       onClick={triggerResetSettingsOnly}
-                      className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-black transition border border-indigo-150"
+                      className="px-4 py-2 bg-lime-core/12 hover:bg-lime-core/20 text-lime-glow rounded-xl text-xs font-black transition"
                     >
                       Kembalikan Tetapan Sekolah Lalai
                     </button>
@@ -786,12 +836,12 @@ export default function AdminSettings({
                 </div>
 
                 {/* Reset All Data (factory reset) */}
-                <div className="rounded-2xl border border-red-150 p-5 space-y-3 bg-red-50/10 hover:border-red-200 transition">
+                <div className="rounded-2xl p-5 space-y-3 bg-red-50/10 hover:border-rose-400/30 transition">
                   <div className="flex items-center gap-2.5">
-                    <X className="h-5 w-5 text-red-600 animate-pulse" />
+                    <X className="h-5 w-5 text-rose-400 animate-pulse" />
                     <div>
                       <h4 className="text-xs font-black text-red-900 uppercase">Set Semula Kilang & Padam Semua Laporan (Factory Reset All Data)</h4>
-                      <p className="text-[10.5px] text-gray-500 mt-0.5">Memadam semua rekod laporan aktiviti sokongan murid yang disimpan dalam pelayar ini secara kekal bersama tetapan konfigurasinya.</p>
+                      <p className="text-[10.5px] text-muted mt-0.5">Memadam semua rekod laporan aktiviti sokongan murid yang disimpan dalam pelayar ini secara kekal bersama tetapan konfigurasinya.</p>
                     </div>
                   </div>
                   <div className="pt-2">

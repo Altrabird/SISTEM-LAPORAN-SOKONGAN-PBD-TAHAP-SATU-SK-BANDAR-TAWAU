@@ -99,46 +99,46 @@ export default function Dashboard({
   const groupStyleHelpers = {
     getBadge: (name: string) => {
       switch (name.toLowerCase()) {
-        case 'ancala': return 'bg-blue-50 border-blue-200 text-blue-700';
-        case 'buana': return 'bg-emerald-50 border-emerald-200 text-emerald-700';
-        case 'candra': return 'bg-yellow-50 border-yellow-200 text-yellow-700';
-        case 'kencana': return 'bg-orange-50 border-orange-200 text-orange-700';
-        case 'mega': return 'bg-sky-50 border-sky-200 text-sky-700';
-        case 'pawana': return 'bg-purple-50 border-purple-200 text-purple-700';
-        default: return 'bg-gray-50 border-gray-200 text-gray-700';
+        case 'ancala': return 'bg-lime-core/12 border-lime-core/30 text-lime-glow';
+        case 'buana': return 'bg-emerald-400/12 border-emerald-400/30 text-emerald-300';
+        case 'candra': return 'bg-yellow-400/12 border-yellow-400/30 text-yellow-300';
+        case 'kencana': return 'bg-orange-400/12 border-orange-400/30 text-orange-300';
+        case 'mega': return 'bg-sky-400/12 border-sky-400/30 text-sky-300';
+        case 'pawana': return 'bg-purple-400/12 border-purple-400/30 text-purple-300';
+        default: return 'bg-white/5 border-white/10 text-soft';
       }
     },
     getCard: (name: string) => {
       switch (name.toLowerCase()) {
-        case 'ancala': return 'border-l-blue-500 bg-blue-50/5 hover:bg-blue-50/10 text-blue-900';
-        case 'buana': return 'border-l-emerald-500 bg-emerald-50/5 hover:bg-emerald-50/10 text-emerald-900';
-        case 'candra': return 'border-l-yellow-500 bg-yellow-50/5 hover:bg-yellow-50/10 text-yellow-900';
-        case 'kencana': return 'border-l-orange-500 bg-orange-50/5 hover:bg-orange-50/10 text-orange-900';
-        case 'mega': return 'border-l-sky-500 bg-sky-50/5 hover:bg-sky-50/10 text-sky-900';
-        case 'pawana': return 'border-l-purple-500 bg-purple-50/5 hover:bg-purple-50/10 text-purple-900';
-        default: return 'border-l-gray-500 bg-gray-50/5 hover:bg-gray-50/10 text-gray-900';
+        case 'ancala': return 'border-l-lime-core bg-blue-50/5 hover:bg-blue-50/10 text-lime-glow';
+        case 'buana': return 'border-l-emerald-500 bg-emerald-50/5 hover:bg-emerald-50/10 text-emerald-200';
+        case 'candra': return 'border-l-yellow-500 bg-yellow-50/5 hover:bg-yellow-50/10 text-yellow-200';
+        case 'kencana': return 'border-l-orange-500 bg-orange-50/5 hover:bg-orange-50/10 text-orange-200';
+        case 'mega': return 'border-l-sky-500 bg-sky-50/5 hover:bg-sky-50/10 text-sky-200';
+        case 'pawana': return 'border-l-purple-500 bg-purple-50/5 hover:bg-purple-50/10 text-purple-200';
+        default: return 'border-l-gray-500 bg-gray-50/5 hover:bg-gray-50/10 text-bright';
       }
     },
     getTextColor: (name: string) => {
       switch (name.toLowerCase()) {
-        case 'ancala': return 'text-blue-700';
-        case 'buana': return 'text-emerald-700';
-        case 'candra': return 'text-yellow-700';
-        case 'kencana': return 'text-orange-700';
-        case 'mega': return 'text-sky-700';
-        case 'pawana': return 'text-purple-700';
-        default: return 'text-gray-700';
+        case 'ancala': return 'text-lime-glow';
+        case 'buana': return 'text-emerald-300';
+        case 'candra': return 'text-yellow-300';
+        case 'kencana': return 'text-orange-300';
+        case 'mega': return 'text-sky-300';
+        case 'pawana': return 'text-purple-300';
+        default: return 'text-soft';
       }
     },
     getDotColor: (name: string) => {
       switch (name.toLowerCase()) {
-        case 'ancala': return 'bg-blue-500';
+        case 'ancala': return 'bg-lime-core';
         case 'buana': return 'bg-emerald-500';
         case 'candra': return 'bg-yellow-500';
         case 'kencana': return 'bg-orange-500';
         case 'mega': return 'bg-sky-500';
         case 'pawana': return 'bg-purple-500';
-        default: return 'bg-gray-500';
+        default: return 'bg-white/30';
       }
     }
   };
@@ -238,8 +238,7 @@ export default function Dashboard({
 
     return Object.entries(classMap).map(([name, count]) => ({
       className: name,
-      'Jumlah Aktiviti': count
-    })).sort((a, b) => b['Jumlah Aktiviti'] - a['Jumlah Aktiviti']);
+      'Jumlah Aktiviti': count })).sort((a, b) => b['Jumlah Aktiviti'] - a['Jumlah Aktiviti']);
   }, [activities]);
 
   // 5. Leaderboard / Active teacher & group contribution
@@ -280,28 +279,28 @@ export default function Dashboard({
         
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/30 px-3.5 py-1 text-xs font-medium text-blue-200 backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/30 px-3.5 py-1 text-xs font-medium text-lime-core/60 backdrop-blur-md">
               <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
               Sistem Pengurusan & Laporan Aktiviti Sokongan PBD
             </div>
             <h1 className="text-2xl md:text-4xl font-semibold tracking-tight">
               Aktiviti Sokongan PBD Tahap 1
             </h1>
-            <p className="text-indigo-200 text-sm md:text-base font-normal">
+            <p className="text-lime-core/60 text-sm md:text-base font-normal">
               Digitalisasi rekod bimbingan BM & BI murid untuk peningkatan Tahap Penguasaan (TP) secara bersasar dan holistik.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 shrink-0">
             <button
               onClick={() => onNavigate('form')}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-medium text-indigo-900 transition-all hover:bg-indigo-50 hover:scale-105 active:scale-95 shadow-md shadow-indigo-950/20"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-5 py-3 text-sm font-medium text-lime-glow transition-all hover:bg-lime-core/12 hover:scale-105 active:scale-95 shadow-md shadow-indigo-950/20"
             >
               Rekod Aktiviti Baru
               <ArrowRight className="h-4 w-4" />
             </button>
             <button
               onClick={() => onNavigate('integration')}
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600/40 border border-indigo-400/30 px-5 py-3 text-sm font-medium text-white backdrop-blur-md transition-all hover:bg-indigo-600/60"
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600/40 px-5 py-3 text-sm font-medium text-white backdrop-blur-md transition-all hover:bg-indigo-600/60"
             >
               Integrasi Excel & GD
             </button>
@@ -312,15 +311,15 @@ export default function Dashboard({
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Card 1 */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm transition-all hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
-          <div className="rounded-xl bg-blue-50 p-2.5 md:p-3 text-blue-600 shrink-0">
+        <div className="glass glass-hover p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <div className="rounded-xl bg-lime-core/12 p-2.5 md:p-3 text-lime-core shrink-0">
             <BookOpen className="h-5 w-5 md:h-6 md:w-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Aktiviti Direkod</p>
-            <h3 className="text-lg md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-1">{stats.totalActivities}</h3>
-            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-gray-500 mt-0.5 md:mt-1">
-              <span className="text-blue-600 font-semibold">{stats.bmCount} BM</span>
+            <p className="text-[10px] md:text-xs font-medium text-faint uppercase tracking-wider truncate">Aktiviti Direkod</p>
+            <h3 className="text-lg md:text-2xl font-bold text-bright mt-0.5 md:mt-1">{stats.totalActivities}</h3>
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted mt-0.5 md:mt-1">
+              <span className="text-lime-core font-semibold">{stats.bmCount} BM</span>
               <span className="hidden sm:inline">•</span>
               <span className="text-pink-600 font-semibold">{stats.biCount} BI</span>
             </div>
@@ -328,42 +327,42 @@ export default function Dashboard({
         </div>
 
         {/* Card 2 */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm transition-all hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
-          <div className="rounded-xl bg-pink-50 p-2.5 md:p-3 text-pink-600 shrink-0">
+        <div className="glass glass-hover p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <div className="rounded-xl bg-fuchsia-400/12 p-2.5 md:p-3 text-pink-600 shrink-0">
             <Users className="h-5 w-5 md:h-6 md:w-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Murid Terlibat</p>
-            <h3 className="text-lg md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-1">{stats.totalStudentsEngaged}</h3>
-            <p className="text-[10px] text-gray-500 mt-0.5 md:mt-1 font-medium truncate">
+            <p className="text-[10px] md:text-xs font-medium text-faint uppercase tracking-wider truncate">Murid Terlibat</p>
+            <h3 className="text-lg md:text-2xl font-bold text-bright mt-0.5 md:mt-1">{stats.totalStudentsEngaged}</h3>
+            <p className="text-[10px] text-muted mt-0.5 md:mt-1 font-medium truncate">
               ({stats.uniqueStudentsCount} individu)
             </p>
           </div>
         </div>
 
         {/* Card 3 */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm transition-all hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
-          <div className="rounded-xl bg-emerald-50 p-2.5 md:p-3 text-emerald-600 shrink-0">
+        <div className="glass glass-hover p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <div className="rounded-xl bg-emerald-400/12 p-2.5 md:p-3 text-emerald-400 shrink-0">
             <TrendingUp className="h-5 w-5 md:h-6 md:w-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Peningkatan TP Disahkan</p>
-            <h3 className="text-lg md:text-2xl font-bold text-gray-950 mt-0.5 md:mt-1">
+            <p className="text-[10px] md:text-xs font-medium text-faint uppercase tracking-wider truncate">Peningkatan TP Disahkan</p>
+            <h3 className="text-lg md:text-2xl font-bold text-bright mt-0.5 md:mt-1">
               {stats.assessedCount > 0 ? `${stats.improvementRate}%` : '—'}
             </h3>
             {stats.assessedCount > 0 ? (
-              <p className="text-[10px] text-emerald-600 mt-0.5 md:mt-1 font-semibold flex items-center gap-0.5 truncate">
+              <p className="text-[10px] text-emerald-400 mt-0.5 md:mt-1 font-semibold flex items-center gap-0.5 truncate">
                 <Award className="h-3 w-3 shrink-0" />
                 {stats.improvedStudents} daripada {stats.assessedCount} dinilai
               </p>
             ) : (
-              <p className="text-[10px] text-amber-600 mt-0.5 md:mt-1 font-semibold flex items-center gap-0.5 truncate">
+              <p className="text-[10px] text-amber-400 mt-0.5 md:mt-1 font-semibold flex items-center gap-0.5 truncate">
                 <AlertCircle className="h-3 w-3 shrink-0" />
                 Belum ada TP Selepas diisi
               </p>
             )}
             {stats.pendingAssessment > 0 && stats.assessedCount > 0 && (
-              <p className="text-[9px] text-gray-400 mt-0.5 truncate">
+              <p className="text-[9px] text-faint mt-0.5 truncate">
                 {stats.pendingAssessment} murid menunggu penilaian
               </p>
             )}
@@ -371,16 +370,16 @@ export default function Dashboard({
         </div>
 
         {/* Card 4 */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-5 shadow-sm transition-all hover:shadow-md flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
-          <div className="rounded-xl bg-amber-50 p-2.5 md:p-3 text-amber-600 shrink-0">
+        <div className="glass glass-hover p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <div className="rounded-xl bg-amber-400/12 p-2.5 md:p-3 text-amber-400 shrink-0">
             <Flame className="h-5 w-5 md:h-6 md:w-6" />
           </div>
           <div className="min-w-0 w-full">
-            <p className="text-[10px] md:text-xs font-medium text-gray-400 uppercase tracking-wider truncate">Pencapaian Aktif</p>
-            <h3 className="text-lg md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-1 truncate">
+            <p className="text-[10px] md:text-xs font-medium text-faint uppercase tracking-wider truncate">Pencapaian Aktif</p>
+            <h3 className="text-lg md:text-2xl font-bold text-bright mt-0.5 md:mt-1 truncate">
               {activities.length > 0 ? activities[0].className : '-'}
             </h3>
-            <p className="text-[10px] text-gray-500 mt-0.5 md:mt-1 truncate">
+            <p className="text-[10px] text-muted mt-0.5 md:mt-1 truncate">
               {activities.length > 0 ? activities[0].date : 'Tiada rekod'}
             </p>
           </div>
@@ -391,10 +390,10 @@ export default function Dashboard({
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         
         {/* Left Column - Shift in TP levels */}
-        <div className="xl:col-span-2 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between">
+        <div className="xl:col-span-2 glass p-6 flex flex-col justify-between">
           <div className="mb-4">
-            <h3 className="text-base font-semibold text-gray-900">Impak Pembelajaran: Peralihan Tahap Penguasaan (TP)</h3>
-            <p className="text-xs text-gray-500 mt-1">
+            <h3 className="text-base font-semibold text-bright">Impak Pembelajaran: Peralihan Tahap Penguasaan (TP)</h3>
+            <p className="text-xs text-muted mt-1">
               Membandingkan bilangan murid mengikut Tahap Penguasaan sebelum (Semasa) dan selepas (Sasaran) program sokongan dijalankan.
             </p>
           </div>
@@ -408,7 +407,7 @@ export default function Dashboard({
                   <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} tickLine={false} axisLine={false} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    labelClassName="font-semibold text-gray-800"
+                    labelClassName="font-semibold text-bright"
                   />
                   <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                   <Bar dataKey="Sebelum" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
@@ -416,7 +415,7 @@ export default function Dashboard({
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+              <div className="h-full flex flex-col items-center justify-center text-faint gap-2">
                 <Users className="h-8 w-8 stroke-1" />
                 <p className="text-sm">Tiada data murid untuk dipaparkan. Rekod aktiviti baharu.</p>
               </div>
@@ -425,10 +424,10 @@ export default function Dashboard({
         </div>
 
         {/* Right Column - Subject Breakdown */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between">
+        <div className="glass p-6 flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">Peratusan Aktiviti BM & BI</h3>
-            <p className="text-xs text-gray-500 mt-1">Nisbah pembahagian subjek bagi aktiviti yang telah dijalankan.</p>
+            <h3 className="text-base font-semibold text-bright">Peratusan Aktiviti BM & BI</h3>
+            <p className="text-xs text-muted mt-1">Nisbah pembahagian subjek bagi aktiviti yang telah dijalankan.</p>
           </div>
 
           <div className="h-56 w-full flex items-center justify-center relative mt-4">
@@ -452,7 +451,7 @@ export default function Dashboard({
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+              <div className="h-full flex flex-col items-center justify-center text-faint gap-2">
                 <BookOpen className="h-8 w-8 stroke-1" />
                 <p className="text-sm">Tiada data aktiviti.</p>
               </div>
@@ -461,8 +460,8 @@ export default function Dashboard({
             {/* Center label inside Donut */}
             {subjectChartData.length > 0 && (
               <div className="absolute flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-gray-900">{stats.totalActivities}</span>
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Aktiviti</span>
+                <span className="text-2xl font-bold text-bright">{stats.totalActivities}</span>
+                <span className="text-[10px] text-faint uppercase tracking-wider">Aktiviti</span>
               </div>
             )}
           </div>
@@ -476,9 +475,9 @@ export default function Dashboard({
                 <div key={index} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }}></span>
-                    <span className="text-gray-600 font-medium">{item.name}</span>
+                    <span className="text-soft font-medium">{item.name}</span>
                   </div>
-                  <span className="font-bold text-gray-900">{item.value} sesi ({pct}%)</span>
+                  <span className="font-bold text-bright">{item.value} sesi ({pct}%)</span>
                 </div>
               );
             })}
@@ -490,10 +489,10 @@ export default function Dashboard({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Classes Bar Chart */}
-        <div className="lg:col-span-2 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="lg:col-span-2 glass p-6">
           <div className="mb-4">
-            <h3 className="text-base font-semibold text-gray-900">Kekerapan Aktiviti Mengikut Kelas</h3>
-            <p className="text-xs text-gray-500 mt-1">Menilai penglibatan kelas Tahap 1 dalam bimbingan khas.</p>
+            <h3 className="text-base font-semibold text-bright">Kekerapan Aktiviti Mengikut Kelas</h3>
+            <p className="text-xs text-muted mt-1">Menilai penglibatan kelas Tahap 1 dalam bimbingan khas.</p>
           </div>
 
           <div className="h-56 w-full">
@@ -510,7 +509,7 @@ export default function Dashboard({
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+              <div className="h-full flex flex-col items-center justify-center text-faint gap-2">
                 <Clock className="h-8 w-8 stroke-1" />
                 <p className="text-sm">Tiada kelas direkodkan.</p>
               </div>
@@ -519,45 +518,45 @@ export default function Dashboard({
         </div>
 
         {/* Leaders and duty contribution */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col justify-between">
+        <div className="glass p-6 flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">Guru Terlibat & Kumpulan Bertugas</h3>
-            <p className="text-xs text-gray-500 mt-1">Sumbangan aktif pendidik bagi melestarikan kecemerlangan murid.</p>
+            <h3 className="text-base font-semibold text-bright">Guru Terlibat & Kumpulan Bertugas</h3>
+            <p className="text-xs text-muted mt-1">Sumbangan aktif pendidik bagi melestarikan kecemerlangan murid.</p>
           </div>
 
           <div className="space-y-4 mt-4">
             <div>
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Guru Subjek Aktif</h4>
+              <h4 className="text-xs font-semibold text-faint uppercase tracking-wider mb-2">Guru Subjek Aktif</h4>
               {activeTeachers.length > 0 ? (
                 <div className="space-y-2">
                   {activeTeachers.map((teach, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-gray-50 last:border-0">
-                      <span className="font-semibold text-gray-700">Cikgu {teach.name}</span>
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                    <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-white/8 last:border-0">
+                      <span className="font-semibold text-soft">Cikgu {teach.name}</span>
+                      <span className="rounded-full bg-lime-core/12 px-2 py-0.5 text-[10px] font-bold text-lime-core">
                         {teach.count} Aktiviti
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400">Tiada data guru.</p>
+                <p className="text-xs text-faint">Tiada data guru.</p>
               )}
             </div>
 
             <div>
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Pecahan Aktiviti Kumpulan</h4>
+              <h4 className="text-xs font-semibold text-faint uppercase tracking-wider mb-2">Pecahan Aktiviti Kumpulan</h4>
               {activeGroups.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {activeGroups.map((grp, idx) => (
-                    <div key={idx} className="inline-flex items-center gap-1.5 rounded-lg bg-gray-50 border border-gray-100 px-2.5 py-1 text-xs">
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
-                      <span className="font-semibold text-gray-700">{grp.name}</span>
-                      <span className="text-gray-400">({grp.count})</span>
+                    <div key={idx} className="inline-flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1 text-xs">
+                      <span className="h-1.5 w-1.5 rounded-full bg-lime-core"></span>
+                      <span className="font-semibold text-soft">{grp.name}</span>
+                      <span className="text-faint">({grp.count})</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400">Tiada kumpulan.</p>
+                <p className="text-xs text-faint">Tiada kumpulan.</p>
               )}
             </div>
           </div>
@@ -565,14 +564,14 @@ export default function Dashboard({
       </div>
 
       {/* Section 5: JADUAL GURU BERTUGAS MINGGUAN SIDANG PETANG SESI 2026 */}
-      <div id="jadual-guru-bertugas" className="rounded-3xl border border-gray-100 bg-white p-6 md:p-8 shadow-sm space-y-6">
-        <div className="border-b border-gray-50 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div id="jadual-guru-bertugas" className="rounded-3xl bg-white/5 p-6 md:p-8 shadow-sm space-y-6">
+        <div className="border-b border-white/8 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-gray-900 inline-flex items-center gap-2">
-              <ClipboardList className="h-5.5 w-5.5 text-indigo-600" />
+            <h3 className="text-lg font-bold text-bright inline-flex items-center gap-2">
+              <ClipboardList className="h-5.5 w-5.5 text-lime-core" />
               Jadual Guru Bertugas Mingguan (Sidang Petang 2026)
             </h3>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted">
               Rujukan rasmi tugasan mingguan, kebersihan, disiplin, kehadiran kelas, RMT/Kantin, dan Guru Penyayang.
             </p>
           </div>
@@ -582,8 +581,8 @@ export default function Dashboard({
               onClick={() => setViewMode('weeks')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
                 viewMode === 'weeks'
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  ? 'bg-lime-core text-[#0a0f08] border-lime-core shadow-sm'
+                  : 'bg-white/5 text-soft border-white/10 hover:bg-white/5'
               }`}
             >
               Susun Mengikut Minggu
@@ -592,8 +591,8 @@ export default function Dashboard({
               onClick={() => setViewMode('groups')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
                 viewMode === 'groups'
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  ? 'bg-lime-core text-[#0a0f08] border-lime-core shadow-sm'
+                  : 'bg-white/5 text-soft border-white/10 hover:bg-white/5'
               }`}
             >
               Info Mengikut Kumpulan
@@ -606,22 +605,22 @@ export default function Dashboard({
             {/* Search and Filters */}
             <div className="flex flex-col md:flex-row gap-3 items-center">
               <div className="relative w-full md:flex-1">
-                <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-faint" />
                 <input
                   type="text"
                   placeholder="Cari minggu, kumpulan, atau nama guru bertugas..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-indigo-500 transition bg-gray-50/50"
+                  className="w-full pl-10 pr-4 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core transition bg-gray-50/50"
                 />
               </div>
 
               <div className="flex items-center gap-2 w-full md:w-auto">
-                <Filter className="h-4 w-4 text-gray-400 shrink-0" />
+                <Filter className="h-4 w-4 text-faint shrink-0" />
                 <select
                   value={filterMonth}
                   onChange={(e) => setFilterMonth(e.target.value)}
-                  className="w-full md:w-44 px-3 py-2 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-indigo-500 transition"
+                  className="w-full md:w-44 px-3 py-2 text-xs rounded-xl bg-white/5 focus:outline-none focus:border-lime-core transition"
                 >
                   <option value="all">Semua Bulan</option>
                   <option value="JANUARI">Januari</option>
@@ -644,16 +643,16 @@ export default function Dashboard({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
               {/* Mobile/Tablet dropdown selector (hidden on large screens) */}
-              <div className="lg:hidden w-full bg-indigo-50/25 border border-indigo-100 p-4 rounded-2xl space-y-2.5">
+              <div className="lg:hidden w-full bg-indigo-50/25 p-4 rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="mobile-week-selector" className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4 text-indigo-600 shrink-0" />
+                  <label htmlFor="mobile-week-selector" className="text-[11px] font-bold text-lime-glow uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-lime-core shrink-0" />
                     Pilih Minggu Bertugas ({filteredWeeks.length} minggu):
                   </label>
                   {(searchQuery || filterMonth !== 'all') && (
                     <button
                       onClick={() => { setSearchQuery(''); setFilterMonth('all'); }}
-                      className="text-[10px] text-indigo-600 hover:underline capitalize font-bold"
+                      className="text-[10px] text-lime-core hover:underline capitalize font-bold"
                     >
                       Reset carian
                     </button>
@@ -663,7 +662,7 @@ export default function Dashboard({
                   id="mobile-week-selector"
                   value={selectedWeekNum}
                   onChange={(e) => setSelectedWeekNum(Number(e.target.value))}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-indigo-500 shadow-sm"
+                  className="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-bright focus:outline-none focus:border-lime-core shadow-sm"
                 >
                   {filteredWeeks.length > 0 ? (
                     filteredWeeks.map((wk) => (
@@ -679,12 +678,12 @@ export default function Dashboard({
 
               {/* Sidebar - Week list (desktop only) */}
               <div className="hidden lg:block lg:col-span-5 space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-wider px-1">
+                <div className="flex items-center justify-between text-[11px] font-bold text-faint uppercase tracking-wider px-1">
                   <span>Senarai Minggu ({filteredWeeks.length} ditemui)</span>
                   {searchQuery || filterMonth !== 'all' ? (
                     <button
                       onClick={() => { setSearchQuery(''); setFilterMonth('all'); }}
-                      className="text-indigo-600 hover:underline capitalize font-semibold"
+                      className="text-lime-core hover:underline capitalize font-semibold"
                     >
                       Reset carian
                     </button>
@@ -703,15 +702,15 @@ export default function Dashboard({
                           onClick={() => setSelectedWeekNum(wk.weekNum)}
                           className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between ${
                             isSelected
-                              ? 'border-indigo-600 bg-indigo-50/20 shadow-sm ring-1 ring-indigo-600/30'
-                              : 'border-gray-100 bg-gray-50/20 hover:bg-gray-50 hover:border-gray-200'
+                              ? 'border-lime-core bg-indigo-50/20 shadow-sm ring-1 ring-indigo-600/30'
+                              : 'border-white/8 bg-gray-50/20 hover:bg-white/5 hover:border-white/10'
                           }`}
                         >
                           <div className="space-y-0.5">
-                            <span className="text-xs font-extrabold text-gray-900 block">
+                            <span className="text-xs font-extrabold text-bright block">
                               Minggu {wk.weekNum}
                             </span>
-                            <span className="text-[11px] text-gray-500 block">
+                            <span className="text-[11px] text-muted block">
                               {wk.dates}
                             </span>
                           </div>
@@ -721,16 +720,16 @@ export default function Dashboard({
                               <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`}></span>
                               {wk.groupName}
                             </span>
-                            <ArrowRight className={`h-3.5 w-3.5 transition ${isSelected ? 'text-indigo-600 translate-x-0.5' : 'text-gray-300'}`} />
+                            <ArrowRight className={`h-3.5 w-3.5 transition ${isSelected ? 'text-lime-core translate-x-0.5' : 'text-faint'}`} />
                           </div>
                         </button>
                       );
                     })
                   ) : (
-                    <div className="text-center py-8 rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
-                      <AlertCircle className="h-6 w-6 text-gray-400 mx-auto mb-1.5" />
-                      <p className="text-xs font-bold text-gray-600">Tiada rekod minggu ditemui</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">Cuba tumpukan carian anda atau tukar bulan penapis.</p>
+                    <div className="text-center py-8 rounded-xl border border-dashed border-white/10 bg-gray-50/50">
+                      <AlertCircle className="h-6 w-6 text-faint mx-auto mb-1.5" />
+                      <p className="text-xs font-bold text-soft">Tiada rekod minggu ditemui</p>
+                      <p className="text-[10px] text-faint mt-0.5">Cuba tumpukan carian anda atau tukar bulan penapis.</p>
                     </div>
                   )}
                 </div>
@@ -739,17 +738,17 @@ export default function Dashboard({
               {/* Detail side */}
               <div className="lg:col-span-7">
                 {selectedWeekDetail ? (
-                  <div className="rounded-2xl border border-gray-100 bg-white p-5 md:p-6 shadow-sm space-y-6">
+                  <div className="glass p-5 md:p-6 space-y-6">
                     {/* Header */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-50 pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/8 pb-4">
                       <div>
-                        <span className="inline-block text-[10px] font-extrabold bg-indigo-50 text-indigo-700 rounded px-2 py-0.5 uppercase mb-1">
+                        <span className="inline-block text-[10px] font-extrabold bg-lime-core/12 text-lime-glow rounded px-2 py-0.5 uppercase mb-1">
                           Sesi Persekolahan 2026
                         </span>
-                        <h4 className="text-base font-black text-gray-900 flex items-center gap-2">
+                        <h4 className="text-base font-black text-bright flex items-center gap-2">
                           Minggu Bertugas {selectedWeekDetail.weekNum}
                         </h4>
-                        <p className="text-xs text-gray-500 font-semibold mt-0.5">
+                        <p className="text-xs text-muted font-semibold mt-0.5">
                           Tempoh: {selectedWeekDetail.dates}
                         </p>
                       </div>
@@ -764,7 +763,7 @@ export default function Dashboard({
 
                     {/* Holidays/Special events */}
                     {selectedWeekDetail.holidays && selectedWeekDetail.holidays.length > 0 && (
-                      <div className="rounded-xl border border-rose-100 bg-rose-50/30 p-3.5 flex items-start gap-2.5">
+                      <div className="rounded-xl bg-rose-50/30 p-3.5 flex items-start gap-2.5">
                         <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
                         <div>
                           <p className="text-[11px] font-bold text-rose-800 uppercase tracking-wide">Makluman Cuti / Peristiwa Khas Minggu Ini:</p>
@@ -779,23 +778,23 @@ export default function Dashboard({
 
                     {/* Duty Members */}
                     <div className="space-y-3">
-                      <h5 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <Users className="h-4 w-4 text-indigo-600" />
+                      <h5 className="text-xs font-bold text-bright uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-lime-core" />
                         Ahli Kumpulan & Tugasan Khusus
                       </h5>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {selectedWeekDetail.group!.members.map((member, mIdx) => (
-                          <div key={mIdx} className="rounded-xl border border-gray-50 bg-gray-50/30 p-3 flex items-center justify-between">
+                          <div key={mIdx} className="rounded-xl bg-gray-50/30 p-3 flex items-center justify-between">
                             <div className="space-y-0.5">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                              <span className="text-[10px] font-bold text-faint uppercase tracking-wider block">
                                 {member.role}
                               </span>
-                              <span className="text-xs font-bold text-gray-800 block">
+                              <span className="text-xs font-bold text-bright block">
                                 Cikgu {member.name}
                               </span>
                             </div>
-                            <span className="h-7 w-7 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
+                            <span className="h-7 w-7 rounded-full glass-inset bg-lime-core/10 text-lime-glow flex items-center justify-center text-xs font-bold">
                               {member.name.charAt(0)}
                             </span>
                           </div>
@@ -805,12 +804,12 @@ export default function Dashboard({
 
                     {/* Peranan Ketua Kumpulan */}
                     {selectedWeekDetail.group!.perananKetua && (
-                      <div className="space-y-2 border-t border-gray-50 pt-4">
-                        <h5 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <CheckCircle className="h-4 w-4 text-blue-600" />
+                      <div className="space-y-2 border-t border-white/8 pt-4">
+                        <h5 className="text-xs font-bold text-bright uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle className="h-4 w-4 text-lime-core" />
                           Peranan Ketua Kumpulan (Ketua Bertugas)
                         </h5>
-                        <ul className="list-decimal pl-4 text-[11px] text-gray-600 space-y-1.5 leading-relaxed">
+                        <ul className="list-decimal pl-4 text-[11px] text-soft space-y-1.5 leading-relaxed">
                           {selectedWeekDetail.group!.perananKetua.map((peranan, pIdx) => (
                             <li key={pIdx}>{peranan}</li>
                           ))}
@@ -819,12 +818,12 @@ export default function Dashboard({
                     )}
 
                     {/* Tanggungjawab Umum Ahli */}
-                    <div className="space-y-2 border-t border-gray-50 pt-4 bg-gray-50/30 rounded-xl p-3">
-                      <h5 className="text-[11px] font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <GraduationCap className="h-4 w-4 text-emerald-600" />
+                    <div className="space-y-2 border-t border-white/8 pt-4 bg-gray-50/30 rounded-xl p-3">
+                      <h5 className="text-[11px] font-bold text-bright uppercase tracking-wider flex items-center gap-1.5">
+                        <GraduationCap className="h-4 w-4 text-emerald-400" />
                         Tanggungjawab Umum Ahli Kumpulan
                       </h5>
-                      <ul className="list-disc pl-4 text-[10.5px] text-gray-500 space-y-1 leading-relaxed">
+                      <ul className="list-disc pl-4 text-[10.5px] text-muted space-y-1 leading-relaxed">
                         {tanggungjawabUmum.map((tanggung, tIdx) => (
                           <li key={tIdx}>{tanggung}</li>
                         ))}
@@ -833,10 +832,10 @@ export default function Dashboard({
 
                   </div>
                 ) : (
-                  <div className="text-center py-12 rounded-2xl border border-dashed border-gray-200 bg-gray-50/30 flex flex-col items-center justify-center">
-                    <Calendar className="h-8 w-8 text-gray-300 mb-2 animate-bounce" />
-                    <p className="text-xs font-bold text-gray-600">Sila pilih minggu di sebelah kiri</p>
-                    <p className="text-[10px] text-gray-400 mt-1">Pilih minggu bertugas untuk melihat senarai ahli, peranan ketua, dan cuti am.</p>
+                  <div className="text-center py-12 rounded-2xl border border-dashed border-white/10 bg-gray-50/30 flex flex-col items-center justify-center">
+                    <Calendar className="h-8 w-8 text-faint mb-2 animate-bounce" />
+                    <p className="text-xs font-bold text-soft">Sila pilih minggu di sebelah kiri</p>
+                    <p className="text-[10px] text-faint mt-1">Pilih minggu bertugas untuk melihat senarai ahli, peranan ketua, dan cuti am.</p>
                   </div>
                 )}
               </div>
@@ -846,7 +845,7 @@ export default function Dashboard({
         ) : (
           /* View mode: groups */
           <div className="space-y-6">
-            <p className="text-xs text-gray-500 leading-relaxed max-w-3xl">
+            <p className="text-xs text-muted leading-relaxed max-w-3xl">
               Berikut adalah rumusan giliran fasa, ahli kumpulan, serta cuti peristiwa yang diperuntukkan bagi setiap daripada 6 kumpulan Guru Bertugas bagi Sesi 2026.
             </p>
 
@@ -859,7 +858,7 @@ export default function Dashboard({
                     
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-gray-100/50 pb-2">
-                      <h4 className="text-sm font-black uppercase text-gray-900">
+                      <h4 className="text-sm font-black uppercase text-bright">
                         Kumpulan {group.name}
                       </h4>
                       <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
@@ -869,12 +868,12 @@ export default function Dashboard({
 
                     {/* Member list */}
                     <div className="space-y-2">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Ahli & Peranan:</span>
+                      <span className="text-[10px] font-bold text-faint uppercase tracking-wider block">Ahli & Peranan:</span>
                       <div className="space-y-1.5">
                         {group.members.map((m, mIdx) => (
-                          <div key={mIdx} className="text-xs flex items-center justify-between text-gray-700">
+                          <div key={mIdx} className="text-xs flex items-center justify-between text-soft">
                             <span className="font-bold">Cikgu {m.name}</span>
-                            <span className="text-[10px] bg-white/70 border border-gray-100 text-gray-500 rounded px-1.5 py-0.5">{m.role}</span>
+                            <span className="text-[10px] bg-white/70 text-muted rounded px-1.5 py-0.5">{m.role}</span>
                           </div>
                         ))}
                       </div>
@@ -882,7 +881,7 @@ export default function Dashboard({
 
                     {/* Assigned Weeks */}
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Minggu Bertugas Sesi 2026:</span>
+                      <span className="text-[10px] font-bold text-faint uppercase tracking-wider block">Minggu Bertugas Sesi 2026:</span>
                       <div className="flex flex-wrap gap-1">
                         {group.weeks.map((wk, wIdx) => (
                           <button
@@ -892,7 +891,7 @@ export default function Dashboard({
                               setViewMode('weeks');
                             }}
                             title={wk.dates}
-                            className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-gray-100 text-gray-700 hover:border-indigo-500 hover:text-indigo-600 transition"
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-soft hover:border-lime-core hover:text-lime-core transition"
                           >
                             M{wk.number}
                           </button>
@@ -902,7 +901,7 @@ export default function Dashboard({
 
                     {/* Holidays summary */}
                     {group.holidays && group.holidays.length > 0 && (
-                      <div className="text-[10px] text-rose-700 space-y-0.5 bg-rose-50/40 p-2 rounded-lg border border-rose-100/30">
+                      <div className="text-[10px] text-rose-700 space-y-0.5 bg-rose-50/40 p-2 rounded-lg">
                         <span className="font-bold uppercase block text-[9px] text-rose-800">Cuti / Peristiwa Khas:</span>
                         <ul className="list-disc pl-3">
                           {group.holidays.map((h, hIdx) => (
