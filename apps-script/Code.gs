@@ -35,7 +35,7 @@
  *
  * Kosongkan untuk kembali mencipta folder bernama PARENT_FOLDER_NAME di My Drive.
  */
-var PARENT_DRIVE_FOLDER_ID = '1A_JV5GFxvv78huTGa_VYcoaszV1H4K76';
+var PARENT_DRIVE_FOLDER_ID = '1JFWs-3tTEeep3wY66r3vPGQIr6fhFBGs';
 
 /** Digunakan hanya apabila PARENT_DRIVE_FOLDER_ID dikosongkan. */
 var PARENT_FOLDER_NAME = 'LAPORAN BERGAMBAR SOKONGAN PBD';

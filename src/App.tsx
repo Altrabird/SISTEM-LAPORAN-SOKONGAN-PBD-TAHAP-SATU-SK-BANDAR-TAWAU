@@ -10,7 +10,7 @@ import {
   DEFAULT_PENYEMAK
 } from './data';
 import { migrateInlineImages, deletePhotos, clearPhotos } from './lib/photoStore';
-import { deleteFromSheets, getWebAppUrl, getAdminToken } from './lib/sheetsSync';
+import { deleteFromSheets, syncActivity, getWebAppUrl, getAdminToken } from './lib/sheetsSync';
 import Dashboard from './components/Dashboard';
 import ActivityForm from './components/ActivityForm';
 import ActivityList from './components/ActivityList';
@@ -25,7 +25,8 @@ import {
   Settings,
   Leaf,
   Cloud,
-  CloudOff
+  CloudOff,
+  Loader
 } from 'lucide-react';
 
 /**
@@ -130,6 +131,20 @@ export default function App() {
   // Mobile navigation drawer toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  /** Status penyegerakan awan yang sedang berjalan, dipaparkan sebagai toast. */
+  const [syncState, setSyncState] = useState<{
+    status: 'idle' | 'syncing' | 'ok' | 'error';
+    message: string;
+  }>({ status: 'idle', message: '' });
+
+  // Toast kejayaan hilang sendiri; ralat kekal sehingga ditutup pengguna
+  // supaya kegagalan penyegerakan tidak terlepas pandang.
+  useEffect(() => {
+    if (syncState.status !== 'ok') return;
+    const t = setTimeout(() => setSyncState({ status: 'idle', message: '' }), 4000);
+    return () => clearTimeout(t);
+  }, [syncState]);
+
   // Load activities from localStorage on mount, memindahkan gambar base64
   // lama ke IndexedDB supaya kuota localStorage tidak lagi menjadi halangan.
   useEffect(() => {
@@ -183,12 +198,39 @@ export default function App() {
 
     setActivities(updated);
     persistActivities(updated);
-    
+
+    /*
+     * Segerakkan ke Google Sheets & Drive sebaik sahaja rekod disimpan.
+     *
+     * Sebelum ini penyegerakan HANYA berlaku apabila pengguna menekan butang
+     * "Segerakkan Rekod" dalam tetapan. Guru yang menyimpan laporan menyangka
+     * ia sudah masuk ke Sheets, sedangkan ia hanya duduk dalam pelayar —
+     * jurang paling merbahaya dalam sistem ini, kerana kegagalannya senyap.
+     *
+     * Dilangkau tanpa bunyi jika pautan Web App belum ditetapkan; simpanan
+     * setempat tidak boleh gagal hanya kerana awan belum dikonfigurasi.
+     */
+    if (getWebAppUrl()) {
+      setSyncState({ status: 'syncing', message: 'Menyegerakkan ke Google Sheets…' });
+      syncActivity(newActivity)
+        .then(hasil => {
+          setSyncState({
+            status: hasil.ok ? 'ok' : 'error',
+            message: hasil.ok
+              ? `Disegerakkan${hasil.photosSaved ? ` · ${hasil.photosSaved} foto ke Drive` : ''}`
+              : `Gagal segerak: ${hasil.message}`
+          });
+        })
+        .catch(e =>
+          setSyncState({ status: 'error', message: `Gagal segerak: ${e?.message || e}` })
+        );
+    }
+
     // Reset state and redirect
     setEditingActivity(null);
     setSelectedActivity(null);
     setActiveTab('list');
-    
+
     // Smooth scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -368,6 +410,35 @@ export default function App() {
             <p className="text-center font-mono text-[9px] text-faint">{settings.footerText}</p>
           </div>
         </aside>
+
+        {/* Toast status penyegerakan */}
+        {syncState.status !== 'idle' && (
+          <div
+            role="status"
+            aria-live="polite"
+            className={`glass animate-fade-in fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 p-4 text-xs print:hidden ${
+              syncState.status === 'error' ? 'text-rose-300' : 'text-lime-glow'
+            }`}
+          >
+            {syncState.status === 'syncing' ? (
+              <Loader className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-lime-core" />
+            ) : syncState.status === 'ok' ? (
+              <Cloud className="mt-0.5 h-4 w-4 shrink-0 text-lime-core" />
+            ) : (
+              <CloudOff className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
+            )}
+            <span className="leading-relaxed">{syncState.message}</span>
+            {syncState.status === 'error' && (
+              <button
+                onClick={() => setSyncState({ status: 'idle', message: '' })}
+                aria-label="Tutup"
+                className="ml-1 shrink-0 rounded p-0.5 text-faint transition-colors hover:text-bright cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Tirai untuk laci mudah alih */}
         {isSidebarOpen && (
