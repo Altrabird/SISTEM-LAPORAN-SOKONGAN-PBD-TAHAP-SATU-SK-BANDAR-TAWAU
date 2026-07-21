@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { ActivityLog, isAssessed, tpGain } from '../types';
 import { useResolvedImage } from '../lib/useResolvedImages';
+import { getWebAppUrl, getAdminToken } from '../lib/sheetsSync';
 import {
   Search,
   BookOpen,
@@ -97,8 +98,31 @@ export default function ActivityList({
     });
   }, [activities, searchQuery, selectedSubject, selectedClass]);
 
+  /**
+   * Pengesahan padam.
+   *
+   * Amaran menyatakan dengan tepat apa yang akan hilang, kerana akibatnya
+   * berbeza bergantung pada konfigurasi: dengan token pentadbir, baris Sheet
+   * dan folder Drive turut dibuang secara kekal. Pengguna berhak tahu skop
+   * sebenar sebelum menekan, bukan selepasnya.
+   */
   const confirmDelete = (id: string, name: string) => {
-    if (confirm(`Adakah anda pasti mahu menghapuskan rekod aktiviti "${name}"?`)) {
+    const adaAwan = Boolean(getWebAppUrl());
+    const adaToken = Boolean(getAdminToken());
+
+    let amaran = `Padam rekod aktiviti "${name}"?\n\nGambarnya dalam pelayar ini akan turut dibuang.`;
+
+    if (adaAwan && adaToken) {
+      amaran +=
+        '\n\nBaris dalam Google Sheets dan folder gambarnya dalam Google Drive ' +
+        'juga akan dipadam. Tindakan ini tidak boleh dibatalkan.';
+    } else if (adaAwan) {
+      amaran +=
+        '\n\nNOTA: baris dalam Google Sheets TIDAK akan dipadam kerana token ' +
+        'pentadbir belum ditetapkan. Anda perlu membuangnya secara manual.';
+    }
+
+    if (confirm(amaran)) {
       onDeleteActivity(id);
     }
   };

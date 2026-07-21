@@ -245,34 +245,55 @@ export default function App() {
     // Lepaskan ruang gambar milik rekod yang dipadam.
     if (dipadam?.images?.length) void deletePhotos(dipadam.images);
 
-    // Padam juga baris dalam Google Sheets. Tanpa ini, rekod yang dibuang
-    // daripada aplikasi kekal selama-lamanya dalam laporan awan — laporan
-    // rasmi akan terus memaparkan aktiviti yang sudah ditarik balik.
-    //
-    // Dilangkau secara senyap jika penyegerakan awan atau token pentadbir
-    // belum ditetapkan; padam setempat tidak sepatutnya gagal kerana itu.
-    if (dipadam && getWebAppUrl() && getAdminToken()) {
-      deleteFromSheets({
-        id: dipadam.id,
-        className: dipadam.className,
-        date: dipadam.date
-      }).then(hasil => {
-        if (!hasil.ok) {
-          alert(
-            'Rekod dipadam pada peranti ini, tetapi gagal dipadam daripada ' +
-              'Google Sheets:\n\n' + hasil.message +
-              '\n\nSila padam barisnya secara manual dalam Sheet.'
-          );
-        }
+    // Bersihkan pemilihan SEBELUM logik awan di bawah, kerana laluan itu
+    // mempunyai beberapa titik keluar awal.
+    if (selectedActivity && selectedActivity.id === id) setSelectedActivity(null);
+    if (editingActivity && editingActivity.id === id) setEditingActivity(null);
+
+    /*
+     * Padam juga baris dalam Google Sheets dan folder gambarnya dalam Drive.
+     * Tanpa ini, rekod yang dibuang daripada aplikasi kekal selama-lamanya
+     * dalam laporan awan.
+     */
+    if (!dipadam || !getWebAppUrl()) return;
+
+    if (!getAdminToken()) {
+      /*
+       * Dahulunya keadaan ini dilangkau tanpa sebarang bunyi. Pengguna melihat
+       * rekod hilang daripada senarai dan menyangka ia turut dibuang daripada
+       * Google Sheets — sedangkan barisnya masih ada di sana. Diam adalah
+       * pilihan yang salah apabila jangkaan pengguna dan realiti bercanggah.
+       */
+      setSyncState({
+        status: 'error',
+        message:
+          'Rekod dipadam pada peranti ini sahaja. Barisnya MASIH ADA dalam ' +
+          'Google Sheets kerana token pentadbir belum ditetapkan. ' +
+          'Buka Tetapan & Admin → Google Sheets & Drive untuk mengaktifkan padam automatik.'
       });
+      return;
     }
-    
-    if (selectedActivity && selectedActivity.id === id) {
-      setSelectedActivity(null);
-    }
-    if (editingActivity && editingActivity.id === id) {
-      setEditingActivity(null);
-    }
+
+    setSyncState({ status: 'syncing', message: 'Memadam daripada Google Sheets & Drive…' });
+    deleteFromSheets({
+      id: dipadam.id,
+      className: dipadam.className,
+      date: dipadam.date
+    })
+      .then(hasil => {
+        setSyncState({
+          status: hasil.ok ? 'ok' : 'error',
+          message: hasil.ok
+            ? 'Dipadam daripada Google Sheets & Drive.'
+            : `Rekod dipadam pada peranti ini, tetapi GAGAL dipadam daripada Google Sheets: ${hasil.message} — sila padam barisnya secara manual.`
+        });
+      })
+      .catch(e =>
+        setSyncState({
+          status: 'error',
+          message: `Rekod dipadam setempat, tetapi gagal menghubungi Google Sheets: ${e?.message || e}`
+        })
+      );
   };
 
   // Nav helper
