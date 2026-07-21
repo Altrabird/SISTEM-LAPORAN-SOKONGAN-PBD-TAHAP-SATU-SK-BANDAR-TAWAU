@@ -680,7 +680,7 @@ export default function Dashboard({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
               {/* Mobile/Tablet dropdown selector (hidden on large screens) */}
-              <div className="lg:hidden w-full bg-indigo-50/25 p-4 rounded-2xl space-y-2.5">
+              <div className="lg:hidden w-full bg-lime-core/10 p-4 rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between">
                   <label htmlFor="mobile-week-selector" className="text-[11px] font-bold text-lime-glow uppercase tracking-wider flex items-center gap-1.5">
                     <Calendar className="h-4 w-4 text-lime-core shrink-0" />
@@ -739,7 +739,7 @@ export default function Dashboard({
                           onClick={() => setSelectedWeekNum(wk.weekNum)}
                           className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between ${
                             isSelected
-                              ? 'border-lime-core bg-indigo-50/20 shadow-sm ring-1 ring-indigo-600/30'
+                              ? 'border-lime-core bg-lime-core/8 shadow-sm ring-1 ring-indigo-600/30'
                               : 'border-white/8 bg-white/5 hover:bg-white/5 hover:border-white/10'
                           }`}
                         >
@@ -800,7 +800,7 @@ export default function Dashboard({
 
                     {/* Holidays/Special events */}
                     {selectedWeekDetail.holidays && selectedWeekDetail.holidays.length > 0 && (
-                      <div className="rounded-xl bg-rose-50/30 p-3.5 flex items-start gap-2.5">
+                      <div className="rounded-xl bg-rose-500/10 p-3.5 flex items-start gap-2.5">
                         <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
                         <div>
                           <p className="text-[11px] font-bold text-rose-800 uppercase tracking-wide">Makluman Cuti / Peristiwa Khas Minggu Ini:</p>
@@ -938,7 +938,7 @@ export default function Dashboard({
 
                     {/* Holidays summary */}
                     {group.holidays && group.holidays.length > 0 && (
-                      <div className="text-[10px] text-rose-700 space-y-0.5 bg-rose-50/40 p-2 rounded-lg">
+                      <div className="text-[10px] text-rose-700 space-y-0.5 bg-rose-500/12 p-2 rounded-lg">
                         <span className="font-bold uppercase block text-[9px] text-rose-800">Cuti / Peristiwa Khas:</span>
                         <ul className="list-disc pl-3">
                           {group.holidays.map((h, hIdx) => (

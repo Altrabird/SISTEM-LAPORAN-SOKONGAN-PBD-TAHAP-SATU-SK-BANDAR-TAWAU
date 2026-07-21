@@ -412,7 +412,7 @@ export default function ActivityForm({
                       placeholder="Masukkan nama kumpulan"
                       value={customGroupName}
                       onChange={(e) => setCustomGroupName(e.target.value)}
-                      className="w-full rounded-xl border border-lime-core/30 bg-blue-50/10 px-3.5 py-2 text-sm focus:border-lime-core focus:outline-none"
+                      className="w-full rounded-xl border border-lime-core/30 bg-lime-core/8 px-3.5 py-2 text-sm focus:border-lime-core focus:outline-none"
                     />
                     <button
                       type="button"
@@ -498,7 +498,7 @@ export default function ActivityForm({
                       placeholder="e.g. 3 Pintar"
                       value={customClassName}
                       onChange={(e) => setCustomClassName(e.target.value)}
-                      className="w-full rounded-xl border border-lime-core/30 bg-blue-50/10 px-3.5 py-2 text-sm focus:border-lime-core focus:outline-none"
+                      className="w-full rounded-xl border border-lime-core/30 bg-lime-core/8 px-3.5 py-2 text-sm focus:border-lime-core focus:outline-none"
                     />
                     <button
                       type="button"
@@ -592,7 +592,7 @@ export default function ActivityForm({
                       placeholder="e.g. Spelling Bee Khas Tahap 1"
                       value={customActivityName}
                       onChange={(e) => setCustomActivityName(e.target.value)}
-                      className="w-full rounded-xl border border-lime-core/30 bg-blue-50/10 px-3.5 py-2.5 text-sm focus:border-lime-core focus:outline-none"
+                      className="w-full rounded-xl border border-lime-core/30 bg-lime-core/8 px-3.5 py-2.5 text-sm focus:border-lime-core focus:outline-none"
                     />
                     <button
                       type="button"
@@ -651,26 +651,37 @@ export default function ActivityForm({
               {students.map((student, index) => (
                 <div
                   key={student.id}
-                  className="p-4 rounded-xl bg-white/5 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4 relative"
+                  className="glass-inset p-3 sm:p-4 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4"
                 >
-                  <span className="absolute top-2 left-2 md:static text-xs font-bold text-faint bg-gray-200/60 rounded-full h-5 w-5 flex items-center justify-center">
-                    {index + 1}
-                  </span>
-                  
-                  {/* Name field */}
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Nama penuh murid"
-                      value={student.name}
-                      onChange={(e) => updateStudent(student.id, 'name', e.target.value)}
-                      className="field !py-1.5"
-                    />
+                  {/*
+                    Pada telefon, nombor murid diletakkan dalam aliran biasa
+                    bersebelahan medan nama. Kedudukan mutlak menyebabkannya
+                    bertindih dengan medan input apabila baris bertindan menegak.
+                  */}
+                  <div className="flex items-center gap-2 md:contents">
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-lime-core/20 text-[11px] font-bold text-lime-glow">
+                      {index + 1}
+                    </span>
+
+                    {/* Name field */}
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nama penuh murid"
+                        value={student.name}
+                        onChange={(e) => updateStudent(student.id, 'name', e.target.value)}
+                        className="field !py-1.5"
+                      />
+                    </div>
                   </div>
 
+                  {/* Tiga medan TP dibariskan bersebelahan pada telefon supaya
+                      satu murid tidak memakan skrin penuh secara menegak. */}
+                  <div className="grid grid-cols-3 gap-2 md:contents">
+
                   {/* TP Sebelum */}
-                  <div className="w-full md:w-24">
+                  <div className="md:w-24">
                     <label className="block md:hidden text-[10px] text-muted font-semibold mb-1">TP Sebelum</label>
                     <select
                       value={student.currentTp}
@@ -684,7 +695,7 @@ export default function ActivityForm({
                   </div>
 
                   {/* TP Sasaran */}
-                  <div className="w-full md:w-24">
+                  <div className="md:w-24">
                     <label className="block md:hidden text-[10px] text-muted font-semibold mb-1">TP Sasaran</label>
                     <select
                       value={student.targetTp}
@@ -707,8 +718,8 @@ export default function ActivityForm({
                     Sengaja dibiarkan "Belum dinilai" secara lalai supaya laporan
                     tidak mendakwa pencapaian yang belum disahkan oleh guru.
                   */}
-                  <div className="w-full md:w-36">
-                    <label className="block md:hidden text-[10px] text-muted font-semibold mb-1">TP Selepas (dicapai)</label>
+                  <div className="md:w-36">
+                    <label className="block md:hidden text-[10px] text-muted font-semibold mb-1 truncate">TP Selepas</label>
                     <select
                       value={student.tpAfter ?? ''}
                       onChange={(e) =>
@@ -718,12 +729,12 @@ export default function ActivityForm({
                           e.target.value === '' ? undefined : parseInt(e.target.value)
                         )
                       }
-                      className={`w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none ${
+                      className={`field !px-2 !py-1.5 ${
                         typeof student.tpAfter === 'number'
                           ? student.tpAfter > student.currentTp
-                            ? 'border-emerald-300 bg-emerald-400/12 text-emerald-300 font-bold'
-                            : 'border-white/10 bg-white/5 text-bright'
-                          : 'border-amber-400/30 bg-amber-50/60 text-amber-300'
+                            ? '!text-emerald-300 font-bold'
+                            : ''
+                          : '!text-amber-300'
                       }`}
                     >
                       <option value="">Belum dinilai</option>
@@ -731,6 +742,7 @@ export default function ActivityForm({
                         <option key={num} value={num}>TP {num} (dicapai)</option>
                       ))}
                     </select>
+                  </div>
                   </div>
 
                   {/* Student Remarks */}
@@ -881,7 +893,7 @@ export default function ActivityForm({
                           htmlFor={`image-slot-input-${idx}`}
                           className={`flex flex-col items-center justify-center gap-1.5 aspect-video rounded-lg border border-dashed bg-white/5 transition p-3 text-center ${
                             sedangMuatNaik
-                              ? 'border-lime-core/40 bg-blue-50/40 cursor-wait'
+                              ? 'border-lime-core/40 bg-lime-core/10 cursor-wait'
                               : 'border-white/10 hover:bg-white/5 hover:border-lime-core/40 cursor-pointer'
                           }`}
                         >

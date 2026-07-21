@@ -347,7 +347,7 @@ export default function AdminSettings({
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-indigo-50/40 p-4 flex items-start gap-2.5">
+              <div className="rounded-2xl bg-lime-core/10 p-4 flex items-start gap-2.5">
                 <AlertCircle className="h-4.5 w-4.5 text-lime-core shrink-0 mt-0.5" />
                 <div className="text-[11px] text-lime-glow leading-relaxed">
                   <p className="font-bold">Nota Pengemaskinian Autotamat:</p>
@@ -484,7 +484,7 @@ export default function AdminSettings({
                         <button
                           onClick={() => handleRemoveBmActivity(index)}
                           type="button"
-                          className="text-rose-400 hover:text-rose-300 p-0.5 rounded"
+                          className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/15 p-2 -m-1 rounded transition-colors cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -520,7 +520,7 @@ export default function AdminSettings({
                         <button
                           onClick={() => handleRemoveBiActivity(index)}
                           type="button"
-                          className="text-rose-400 hover:text-rose-300 p-0.5 rounded"
+                          className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/15 p-2 -m-1 rounded transition-colors cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -685,7 +685,7 @@ export default function AdminSettings({
                       </div>
 
                       {/* Add Member form inline */}
-                      <div className="flex flex-wrap sm:flex-nowrap gap-2 bg-indigo-50/20 p-2.5 rounded-xl">
+                      <div className="flex flex-wrap sm:flex-nowrap gap-2 bg-lime-core/8 p-2.5 rounded-xl">
                         <input
                           type="text"
                           placeholder="Nama guru baru..."
@@ -833,7 +833,7 @@ export default function AdminSettings({
                 </div>
 
                 {/* Reset All Data (factory reset) */}
-                <div className="rounded-2xl p-5 space-y-3 bg-red-50/10 hover:border-rose-400/30 transition">
+                <div className="rounded-2xl p-5 space-y-3 bg-rose-500/10 hover:border-rose-400/30 transition">
                   <div className="flex items-center gap-2.5">
                     <X className="h-5 w-5 text-rose-400 animate-pulse" />
                     <div>

@@ -453,7 +453,7 @@ export default function App() {
               <button
                 onClick={() => setSyncState({ status: 'idle', message: '' })}
                 aria-label="Tutup"
-                className="ml-1 shrink-0 rounded p-0.5 text-faint transition-colors hover:text-bright cursor-pointer"
+                className="ml-1 shrink-0 rounded p-2 -m-1 text-faint transition-colors hover:text-bright cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

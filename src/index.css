@@ -42,6 +42,22 @@
     color-scheme: dark;
   }
 
+  html,
+  body {
+    /*
+     * Jaring keselamatan telefon: satu elemen terlalu lebar tidak sepatutnya
+     * membolehkan keseluruhan halaman disorot ke tepi. Kandungan lebar seperti
+     * jadual laporan dibungkus dengan overflow-x-auto sendiri, jadi ia tetap
+     * boleh disorot di dalam bekasnya.
+     *
+     * `clip` digunakan, bukan `hidden`: `hidden` menjadikan body sebagai
+     * bekas skrol, yang merosakkan position:sticky pada pengepala mudah alih.
+     * `clip` memotong limpahan tanpa mencipta bekas skrol.
+     */
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
   body {
     background-color: var(--color-void);
     color: var(--color-bright);

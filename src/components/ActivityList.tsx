@@ -315,7 +315,7 @@ export default function ActivityList({
                 <div className="grid grid-cols-3 border-t border-white/8 bg-white/5 text-center">
                   <button
                     onClick={() => onViewReport(act)}
-                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-lime-core hover:bg-blue-50/50 hover:text-lime-glow transition"
+                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-lime-core hover:bg-lime-core/10 hover:text-lime-glow transition"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     Laporan

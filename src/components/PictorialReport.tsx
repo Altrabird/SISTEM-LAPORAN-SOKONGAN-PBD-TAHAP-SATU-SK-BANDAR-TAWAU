@@ -108,7 +108,7 @@ export default function PictorialReport({
       {/* A4 Printable Layout Container */}
       <div 
         id="printable-report-card" 
-        className="mx-auto max-w-[800px] border border-gray-200 bg-white p-8 md:p-12 shadow-md rounded-2xl print:shadow-none print:border-none print:p-0 print:max-w-none"
+        className="mx-auto max-w-[800px] border border-gray-200 bg-white p-4 sm:p-8 md:p-12 shadow-md rounded-2xl print:shadow-none print:border-none print:p-0 print:max-w-none"
       >
         {/* School Document Header */}
         <div className="text-center space-y-2 border-b-2 border-double border-gray-900 pb-6 mb-6">
@@ -129,7 +129,14 @@ export default function PictorialReport({
             1. Butiran Am & Sesi Pembelajaran
           </h4>
           
-          <table className="w-full text-xs border-collapse border border-gray-900 text-left">
+          {/*
+            Dibungkus dengan skrol mendatar: jadual empat lajur ini memaksa
+            keseluruhan halaman menyorot ke tepi pada skrin telefon. Skrol
+            dikurung di dalam jadual, dan dinyahaktifkan semasa cetakan kerana
+            kertas A4 sememangnya cukup lebar.
+          */}
+          <div className="overflow-x-auto print:overflow-visible">
+          <table className="w-full min-w-[520px] print:min-w-0 text-xs border-collapse border border-gray-900 text-left">
             <tbody>
               <tr className="border-b border-gray-900">
                 <th className="w-1/3 bg-gray-50 p-2.5 font-bold border-r border-gray-900">Kumpulan Guru</th>
@@ -165,6 +172,7 @@ export default function PictorialReport({
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* 2. Activity Description */}
@@ -188,7 +196,8 @@ export default function PictorialReport({
             </span>
           </div>
 
-          <table className="w-full text-xs border-collapse border border-gray-900 text-left">
+          <div className="overflow-x-auto print:overflow-visible">
+          <table className="w-full min-w-[680px] print:min-w-0 text-xs border-collapse border border-gray-900 text-left">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-900 font-bold text-gray-900">
                 <th className="w-12 text-center p-2 border-r border-gray-900">Bil.</th>
@@ -239,6 +248,7 @@ export default function PictorialReport({
               })}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* 4. Photo Gallery (Laporan Bergambar) */}
