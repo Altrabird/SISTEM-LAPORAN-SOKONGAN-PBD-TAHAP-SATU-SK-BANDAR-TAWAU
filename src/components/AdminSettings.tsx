@@ -12,14 +12,11 @@ import {
   Calendar,
   Trash2,
   Plus,
-  Save,
   RotateCcw,
   Check,
-  PlusCircle,
   X,
   AlertCircle,
   Clock,
-  ArrowRight,
   UserCheck,
   Cloud
 } from 'lucide-react';
@@ -325,7 +322,7 @@ export default function AdminSettings({
                     type="text"
                     value={localSettings.schoolName}
                     onChange={(e) => handleGeneralChange('schoolName', e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-gray-50/30"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-white/5"
                   />
                 </div>
 
@@ -335,7 +332,7 @@ export default function AdminSettings({
                     type="text"
                     value={localSettings.schoolShortCode}
                     onChange={(e) => handleGeneralChange('schoolShortCode', e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-gray-50/30"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-white/5"
                   />
                 </div>
 
@@ -345,7 +342,7 @@ export default function AdminSettings({
                     type="text"
                     value={localSettings.footerText}
                     onChange={(e) => handleGeneralChange('footerText', e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-gray-50/30"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-lime-core transition-colors bg-white/5"
                   />
                 </div>
               </div>
@@ -418,7 +415,7 @@ export default function AdminSettings({
                   placeholder="Contoh: 1 Inovatif"
                   value={newClass}
                   onChange={(e) => setNewClass(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core bg-gray-50/30"
+                  className="flex-1 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core bg-white/5"
                 />
                 <button
                   type="submit"
@@ -433,7 +430,7 @@ export default function AdminSettings({
                 {localSettings.availableClasses.map((cls) => (
                   <div
                     key={cls}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50/30 group hover:border-lime-core/30 transition"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 group hover:border-lime-core/30 transition"
                   >
                     <span className="text-xs font-bold text-bright">{cls}</span>
                     <button
@@ -461,7 +458,7 @@ export default function AdminSettings({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 {/* Bahasa Melayu (BM) */}
-                <div className="space-y-4 rounded-2xl p-4 bg-gray-50/20">
+                <div className="space-y-4 rounded-2xl p-4 bg-white/5">
                   <div className="flex items-center justify-between border-b border-white/8 pb-2">
                     <span className="text-xs font-black text-rose-300 uppercase tracking-wide">Bahasa Melayu (BM)</span>
                     <span className="text-[10px] font-bold bg-rose-500/12 text-rose-300 rounded-md px-1.5 py-0.5">{localSettings.commonActivitiesBm.length} Syor</span>
@@ -497,7 +494,7 @@ export default function AdminSettings({
                 </div>
 
                 {/* Bahasa Inggeris (BI) */}
-                <div className="space-y-4 rounded-2xl p-4 bg-gray-50/20">
+                <div className="space-y-4 rounded-2xl p-4 bg-white/5">
                   <div className="flex items-center justify-between border-b border-white/8 pb-2">
                     <span className="text-xs font-black text-lime-glow uppercase tracking-wide">Bahasa Inggeris (BI)</span>
                     <span className="text-[10px] font-bold bg-lime-core/12 text-lime-glow rounded-md px-1.5 py-0.5">{localSettings.commonActivitiesBi.length} Syor</span>
@@ -556,7 +553,7 @@ export default function AdminSettings({
                   placeholder="Contoh: Memastikan persekitaran dewan makan kantin bersih sebelum rehat berakhir."
                   value={newResponsibility}
                   onChange={(e) => setNewResponsibility(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core bg-gray-50/30"
+                  className="flex-1 px-3.5 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core bg-white/5"
                 />
                 <button
                   type="submit"
@@ -627,7 +624,7 @@ export default function AdminSettings({
               {localSettings.dutyGroups[selectedGroupIdx] && (() => {
                 const group = localSettings.dutyGroups[selectedGroupIdx];
                 return (
-                  <div className="space-y-6 bg-gray-50/20 rounded-2xl p-4 md:p-5">
+                  <div className="space-y-6 bg-white/5 rounded-2xl p-4 md:p-5">
                     
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/8 pb-3">
@@ -662,7 +659,7 @@ export default function AdminSettings({
                                 type="text"
                                 value={member.name}
                                 onChange={(e) => handleUpdateMember(selectedGroupIdx, mIdx, 'name', e.target.value)}
-                                className="flex-1 bg-gray-50/50 px-2.5 py-1 rounded text-xs font-bold text-bright border border-transparent hover:border-white/10 focus:border-lime-core"
+                                className="flex-1 bg-white/5 px-2.5 py-1 rounded text-xs font-bold text-bright border border-transparent hover:border-white/10 focus:border-lime-core"
                                 placeholder="Nama Guru"
                               />
                             </div>
@@ -671,7 +668,7 @@ export default function AdminSettings({
                                 type="text"
                                 value={member.role}
                                 onChange={(e) => handleUpdateMember(selectedGroupIdx, mIdx, 'role', e.target.value)}
-                                className="bg-gray-50/50 px-2.5 py-1 rounded text-xs font-semibold text-soft border border-transparent hover:border-white/10 focus:border-lime-core w-36"
+                                className="bg-white/5 px-2.5 py-1 rounded text-xs font-semibold text-soft border border-transparent hover:border-white/10 focus:border-lime-core w-36"
                                 placeholder="Peranan"
                               />
                               <button
@@ -774,7 +771,7 @@ export default function AdminSettings({
                                     placeholder="Tambah cuti (Contoh: CUTI PERISTIWA)"
                                     value={holidayText}
                                     onChange={(e) => setHolidayText(e.target.value)}
-                                    className="flex-1 px-2 py-1 text-[10.5px] rounded bg-gray-50/50"
+                                    className="flex-1 px-2 py-1 text-[10.5px] rounded bg-white/5"
                                   />
                                   <button
                                     type="button"

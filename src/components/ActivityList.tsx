@@ -10,10 +10,7 @@ import {
   Edit,
   Trash2,
   PlusCircle,
-  FileText,
-  Clock,
   Sparkles,
-  ChevronRight,
   Filter
 } from 'lucide-react';
 
@@ -291,7 +288,7 @@ export default function ActivityList({
                 </div>
 
                 {/* Bottom Actions Row */}
-                <div className="grid grid-cols-3 border-t border-white/8 bg-gray-50/50 text-center">
+                <div className="grid grid-cols-3 border-t border-white/8 bg-white/5 text-center">
                   <button
                     onClick={() => onViewReport(act)}
                     className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-lime-core hover:bg-blue-50/50 hover:text-lime-glow transition"

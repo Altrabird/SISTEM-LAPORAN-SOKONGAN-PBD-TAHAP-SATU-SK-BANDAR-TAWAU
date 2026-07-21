@@ -6,23 +6,18 @@ import {
   MALAYSIAN_DAYS,
   AVAILABLE_CLASSES,
   COMMON_ACTIVITIES_BM,
-  COMMON_ACTIVITIES_BI,
-  PLACEHOLDER_IMAGES
+  COMMON_ACTIVITIES_BI
 } from '../data';
 import {
   Trash2,
   Plus,
-  Image as ImageIcon,
   Calendar,
   User,
-  Users,
   Check,
   Sparkles,
   Upload,
   X,
-  BookOpen,
-  HelpCircle,
-  FileText
+  BookOpen
 } from 'lucide-react';
 
 interface ActivityFormProps {
@@ -50,7 +45,9 @@ export default function ActivityForm({
   const [teacherOnDuty, setTeacherOnDuty] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [day, setDay] = useState('Isnin');
-  const [className, setClassName] = useState('3 Kritis');
+  // Kelas lalai diambil daripada senarai tetapan; '3 Kritis' berkod keras
+  // akan menghasilkan pilihan tidak sah jika sekolah menukar senarai kelas.
+  const [className, setClassName] = useState(availableClasses[0] ?? '');
   const [customClassName, setCustomClassName] = useState('');
   const [isCustomClass, setIsCustomClass] = useState(false);
 
@@ -146,7 +143,7 @@ export default function ActivityForm({
     } else {
       // Set some nice initial defaults for a new record
       setTeacherOnDuty('');
-      setSubjectTeacher('Samsiah Sundu');
+      setSubjectTeacher('');
       setActivityDesc('');
       setNotes('');
       setImages(['', '', '', '']);
@@ -249,26 +246,6 @@ export default function ActivityForm({
     } finally {
       setUploadingSlot(null);
     }
-  };
-
-  // Load beautiful pre-set mock images for all 4 slots
-  const loadMockImages = () => {
-    const contoh = [
-      PLACEHOLDER_IMAGES.classroom1,
-      PLACEHOLDER_IMAGES.groupLearning,
-      PLACEHOLDER_IMAGES.classroom3,
-      PLACEHOLDER_IMAGES.classroom2
-    ];
-    // Gambar contoh kekal sebagai URL/base64 asal — resolveImage() melepaskannya
-    // tanpa perubahan, jadi tiada keperluan menyimpannya ke IndexedDB.
-    setImages(contoh);
-    setImagePreviews(contoh);
-    setImageCaptions([
-      'Sesi penerangan awal tajuk dan objektif pembelajaran oleh guru bertugas.',
-      'Murid-murid bekerjasama melakonkan dialog dan watak.',
-      'Bimbingan rapat secara bersemuka (intervensi) diberikan kepada murid sasaran.',
-      'Murid membuat simulasi pembentangan hasil tugasan di hadapan kelas.'
-    ]);
   };
 
   const removeImageSlot = (index: number) => {
@@ -540,7 +517,7 @@ export default function ActivityForm({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Samsiah Sundu"
+                  placeholder="Nama guru subjek"
                   value={subjectTeacher}
                   onChange={(e) => setSubjectTeacher(e.target.value)}
                   className="w-full rounded-xl bg-white/5 px-3.5 py-2.5 text-sm text-bright focus:border-lime-core focus:bg-white/5 focus:outline-none transition"
@@ -674,7 +651,7 @@ export default function ActivityForm({
               {students.map((student, index) => (
                 <div
                   key={student.id}
-                  className="p-4 rounded-xl bg-gray-50/50 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4 relative"
+                  className="p-4 rounded-xl bg-white/5 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4 relative"
                 >
                   <span className="absolute top-2 left-2 md:static text-xs font-bold text-faint bg-gray-200/60 rounded-full h-5 w-5 flex items-center justify-center">
                     {index + 1}
@@ -685,7 +662,7 @@ export default function ActivityForm({
                     <input
                       type="text"
                       required
-                      placeholder="Nama Murid (e.g. Akram)"
+                      placeholder="Nama penuh murid"
                       value={student.name}
                       onChange={(e) => updateStudent(student.id, 'name', e.target.value)}
                       className="w-full rounded-lg bg-white/5 px-3 py-1.5 text-xs text-bright focus:border-lime-core focus:outline-none"
@@ -808,16 +785,14 @@ export default function ActivityForm({
               </h3>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch gap-2">
-              <button
-                type="button"
-                onClick={loadMockImages}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-lime-core/30 bg-indigo-50/40 hover:bg-lime-core/12 px-3 py-2 text-xs font-bold text-lime-glow transition"
-              >
-                <Sparkles className="h-4 w-4" />
-                Guna Contoh Foto Lengkap (4 Fasa)
-              </button>
-              {images.some(img => img !== '') && (
+            {/*
+              Butang "Guna Contoh Foto Lengkap" dibuang — ia memuatkan empat foto
+              stok Unsplash ke dalam rekod. Gambar itu bukan bukti pelaksanaan
+              sebenar, dan sebuah laporan rasmi yang ditandatangani GPK tidak
+              sepatutnya boleh diisi dengan foto rekaan hanya dengan satu klik.
+            */}
+            {images.some(img => img !== '') && (
+              <div className="flex justify-end">
                 <button
                   type="button"
                   onClick={() => {
@@ -825,12 +800,12 @@ export default function ActivityForm({
                     setImagePreviews(['', '', '', '']);
                     setImageCaptions(['', '', '', '']);
                   }}
-                  className="rounded-xl border border-rose-400/30 bg-rose-500/12 hover:bg-rose-500/20 px-3 py-2 text-xs font-bold text-rose-300 transition"
+                  className="btn-danger !py-2 !text-xs"
                 >
-                  Kosongkan
+                  Kosongkan Semua Foto
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <p className="text-xs text-muted leading-relaxed">
               Sila muat naik foto bagi setiap daripada 4 fasa bimbingan berikut untuk melengkapkan helaian laporan bergambar formal:
@@ -849,7 +824,7 @@ export default function ActivityForm({
                 const sedangMuatNaik = uploadingSlot === idx;
 
                 return (
-                  <div key={idx} className="rounded-xl p-3 bg-gray-50/30 space-y-2.5 transition hover:border-white/10">
+                  <div key={idx} className="rounded-xl p-3 bg-white/5 space-y-2.5 transition hover:border-white/10">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-bright flex items-center gap-1.5">
                         <span className="h-4 w-4 rounded-full bg-lime-core/20 text-lime-glow font-bold flex items-center justify-center text-[10px]">
@@ -907,7 +882,7 @@ export default function ActivityForm({
                           className={`flex flex-col items-center justify-center gap-1.5 aspect-video rounded-lg border border-dashed bg-white/5 transition p-3 text-center ${
                             sedangMuatNaik
                               ? 'border-lime-core/40 bg-blue-50/40 cursor-wait'
-                              : 'border-white/10 hover:bg-gray-50/50 hover:border-lime-core/40 cursor-pointer'
+                              : 'border-white/10 hover:bg-white/5 hover:border-lime-core/40 cursor-pointer'
                           }`}
                         >
                           {sedangMuatNaik ? (

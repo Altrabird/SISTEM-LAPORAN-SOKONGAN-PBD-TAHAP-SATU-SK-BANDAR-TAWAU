@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ActivityLog, AppSettings } from './types';
 import {
-  INITIAL_ACTIVITIES,
   AVAILABLE_CLASSES,
   COMMON_ACTIVITIES_BM,
   COMMON_ACTIVITIES_BI,
@@ -91,7 +90,7 @@ export default function App() {
     localStorage.removeItem('lapor_pbd_activities');
     localStorage.removeItem('lapor_pbd_settings');
     void clearPhotos(); // buang juga gambar dalam IndexedDB
-    setActivities(INITIAL_ACTIVITIES);
+    setActivities([]);
     const defaultVal = {
       schoolName: 'SK BANDAR TAWAU',
       schoolShortCode: 'SKBT',
@@ -105,7 +104,7 @@ export default function App() {
       penyemakList: DEFAULT_PENYEMAK
     };
     setSettings(defaultVal);
-    persistActivities(INITIAL_ACTIVITIES);
+    persistActivities([]);
     localStorage.setItem('lapor_pbd_settings', JSON.stringify(defaultVal));
     setActiveTab('dashboard');
   };
@@ -136,8 +135,8 @@ export default function App() {
   useEffect(() => {
     const saved = localStorage.getItem('lapor_pbd_activities');
     if (!saved) {
-      setActivities(INITIAL_ACTIVITIES);
-      persistActivities(INITIAL_ACTIVITIES);
+      setActivities([]);
+      persistActivities([]);
       return;
     }
 
@@ -146,7 +145,7 @@ export default function App() {
       dimuat = JSON.parse(saved);
     } catch (e) {
       console.error('Error loading saved activities, falling back to defaults', e);
-      setActivities(INITIAL_ACTIVITIES);
+      setActivities([]);
       return;
     }
 
@@ -341,9 +340,18 @@ export default function App() {
             {senaraiNav}
           </div>
 
-          {/* Kaki panel — status awan sebenar, bukan hiasan */}
+          {/*
+            Kaki panel — status awan sebenar, dan boleh diklik.
+            Sebelum ini ia hanya paparan mati; kini ia membawa terus ke tetapan
+            yang perlu diisi, iaitu tindakan yang sememangnya dicari pengguna
+            apabila melihat "Belum ditetapkan".
+          */}
           <div className="mt-auto space-y-3 pt-5">
-            <div className="glass glass-hover flex items-center gap-2.5 p-3">
+            <button
+              onClick={() => handleTabChange('admin')}
+              title="Buka tetapan Google Sheets & Drive"
+              className="glass glass-hover flex w-full items-center gap-2.5 p-3 text-left cursor-pointer"
+            >
               {awanAktif ? (
                 <Cloud className="h-4.5 w-4.5 shrink-0 text-lime-core" />
               ) : (
@@ -355,7 +363,7 @@ export default function App() {
                   {awanAktif ? 'Tersambung' : 'Belum ditetapkan'}
                 </span>
               </div>
-            </div>
+            </button>
 
             <p className="text-center font-mono text-[9px] text-faint">{settings.footerText}</p>
           </div>

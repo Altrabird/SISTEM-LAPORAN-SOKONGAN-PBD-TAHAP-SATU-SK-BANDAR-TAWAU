@@ -2,6 +2,17 @@ import { useState, useMemo } from 'react';
 import { ActivityLog, Student, DutyGroup, isAssessed, tpGain } from '../types';
 import { OFFICIAL_DUTY_GROUPS, TANGGUNGJAWAB_UMUM } from '../data';
 import {
+  WARNA_SUBJEK,
+  WARNA_TP,
+  warnaSiri,
+  GRID_STROKE,
+  TICK,
+  TOOLTIP_STYLE,
+  TOOLTIP_LABEL_STYLE,
+  TOOLTIP_CURSOR,
+  LEGEND_STYLE
+} from '../lib/chartTheme';
+import {
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -27,7 +38,6 @@ import {
   ClipboardList,
   GraduationCap,
   Info,
-  HelpCircle,
   Search,
   Filter,
   CheckCircle,
@@ -110,13 +120,13 @@ export default function Dashboard({
     },
     getCard: (name: string) => {
       switch (name.toLowerCase()) {
-        case 'ancala': return 'border-l-lime-core bg-blue-50/5 hover:bg-blue-50/10 text-lime-glow';
-        case 'buana': return 'border-l-emerald-500 bg-emerald-50/5 hover:bg-emerald-50/10 text-emerald-200';
-        case 'candra': return 'border-l-yellow-500 bg-yellow-50/5 hover:bg-yellow-50/10 text-yellow-200';
-        case 'kencana': return 'border-l-orange-500 bg-orange-50/5 hover:bg-orange-50/10 text-orange-200';
-        case 'mega': return 'border-l-sky-500 bg-sky-50/5 hover:bg-sky-50/10 text-sky-200';
-        case 'pawana': return 'border-l-purple-500 bg-purple-50/5 hover:bg-purple-50/10 text-purple-200';
-        default: return 'border-l-gray-500 bg-gray-50/5 hover:bg-gray-50/10 text-bright';
+        case 'ancala': return 'border-l-lime-core hover:bg-lime-core/8 text-lime-glow';
+        case 'buana': return 'border-l-emerald-400 hover:bg-emerald-400/8 text-emerald-200';
+        case 'candra': return 'border-l-yellow-400 hover:bg-yellow-400/8 text-yellow-200';
+        case 'kencana': return 'border-l-orange-400 hover:bg-orange-400/8 text-orange-200';
+        case 'mega': return 'border-l-sky-400 hover:bg-sky-400/8 text-sky-200';
+        case 'pawana': return 'border-l-purple-400 hover:bg-purple-400/8 text-purple-200';
+        default: return 'border-l-white/30 hover:bg-white/8 text-bright';
       }
     },
     getTextColor: (name: string) => {
@@ -192,8 +202,8 @@ export default function Dashboard({
   // 2. Data for Subject Breakdown (BM vs BI)
   const subjectChartData = useMemo(() => {
     return [
-      { name: 'Bahasa Melayu (BM)', value: stats.bmCount, color: '#3b82f6' }, // Blue
-      { name: 'English (BI)', value: stats.biCount, color: '#ec4899' }       // Pink
+      { name: 'Bahasa Melayu (BM)', value: stats.bmCount, color: WARNA_SUBJEK.BM },
+      { name: 'English (BI)', value: stats.biCount, color: WARNA_SUBJEK.BI }
     ].filter(item => item.value > 0);
   }, [stats]);
 
@@ -273,36 +283,33 @@ export default function Dashboard({
   return (
     <div className="space-y-8">
       {/* Hero Welcome banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-800 to-indigo-950 p-6 md:p-8 text-white shadow-xl">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/3 -mb-20 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl"></div>
-        
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-lime-dark/50 via-abyss to-void p-6 md:p-8 shadow-xl">
+        {/* Cahaya latar — memberi kedalaman tanpa mengaburkan teks */}
+        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-lime-core/18 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 -mb-20 h-72 w-72 rounded-full bg-lime-deep/10 blur-3xl" />
+
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/30 px-3.5 py-1 text-xs font-medium text-lime-core/60 backdrop-blur-md">
-              <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
-              Sistem Pengurusan & Laporan Aktiviti Sokongan PBD
+            <div className="inline-flex items-center gap-2 rounded-full bg-lime-core/15 px-3.5 py-1 text-xs font-semibold text-lime-glow backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 text-lime-core" />
+              Sistem Pengurusan &amp; Laporan Aktiviti Sokongan PBD
             </div>
-            <h1 className="text-2xl md:text-4xl font-semibold tracking-tight">
+            <h1 className="font-display text-2xl md:text-4xl font-bold tracking-tight text-bright">
               Aktiviti Sokongan PBD Tahap 1
             </h1>
-            <p className="text-lime-core/60 text-sm md:text-base font-normal">
-              Digitalisasi rekod bimbingan BM & BI murid untuk peningkatan Tahap Penguasaan (TP) secara bersasar dan holistik.
+            <p className="text-sm md:text-base font-normal text-soft">
+              Digitalisasi rekod bimbingan BM &amp; BI murid untuk peningkatan Tahap
+              Penguasaan (TP) secara bersasar dan holistik.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 shrink-0">
-            <button
-              onClick={() => onNavigate('form')}
-              className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-5 py-3 text-sm font-medium text-lime-glow transition-all hover:bg-lime-core/12 hover:scale-105 active:scale-95 shadow-md shadow-indigo-950/20"
-            >
+            {/*
+              Butang "Integrasi Excel & GD" dibuang di sini — tab itu sudah
+              digugurkan, jadi ia menghala ke paparan yang tidak wujud lagi.
+            */}
+            <button onClick={() => onNavigate('form')} className="btn-primary !px-5 !py-3 !text-sm">
               Rekod Aktiviti Baru
               <ArrowRight className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => onNavigate('integration')}
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600/40 px-5 py-3 text-sm font-medium text-white backdrop-blur-md transition-all hover:bg-indigo-600/60"
-            >
-              Integrasi Excel & GD
             </button>
           </div>
         </div>
@@ -394,30 +401,50 @@ export default function Dashboard({
           <div className="mb-4">
             <h3 className="text-base font-semibold text-bright">Impak Pembelajaran: Peralihan Tahap Penguasaan (TP)</h3>
             <p className="text-xs text-muted mt-1">
-              Membandingkan bilangan murid mengikut Tahap Penguasaan sebelum (Semasa) dan selepas (Sasaran) program sokongan dijalankan.
+              Membandingkan bilangan murid mengikut TP sebelum dan TP selepas yang
+              benar-benar dicapai. Murid yang belum dinilai tidak dikira.
             </p>
           </div>
-          
+
           <div className="h-72 w-full mt-2">
-            {stats.totalStudentsEngaged > 0 ? (
+            {/*
+              Syarat berasaskan assessedCount, bukan totalStudentsEngaged.
+              Carta ini hanya memplot murid yang mempunyai TP Selepas; menggunakan
+              jumlah murid keseluruhan menyebabkan paksi kosong dilukis apabila
+              rekod wujud tetapi belum dinilai — kelihatan seperti carta rosak.
+            */}
+            {stats.assessedCount > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={tpShiftChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                  <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
+                  <XAxis dataKey="name" tick={TICK} tickLine={false} axisLine={false} />
+                  <YAxis tick={TICK} tickLine={false} axisLine={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    contentStyle={TOOLTIP_STYLE}
+                    labelStyle={TOOLTIP_LABEL_STYLE}
+                    cursor={TOOLTIP_CURSOR}
                     labelClassName="font-semibold text-bright"
                   />
-                  <Legend iconSize={10} iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                  <Bar dataKey="Sebelum" fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={20} />
-                  <Bar dataKey="Selepas (Dicapai)" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={20} />
+                  <Legend iconSize={10} iconType="circle" wrapperStyle={LEGEND_STYLE} />
+                  <Bar dataKey="Sebelum" fill={WARNA_TP.sebelum} radius={[4, 4, 0, 0]} barSize={20} />
+                  <Bar dataKey="Selepas (Dicapai)" fill={WARNA_TP.selepas} radius={[4, 4, 0, 0]} barSize={20} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-faint gap-2">
-                <Users className="h-8 w-8 stroke-1" />
-                <p className="text-sm">Tiada data murid untuk dipaparkan. Rekod aktiviti baharu.</p>
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+                <Users className="h-8 w-8 stroke-1 text-faint" />
+                {stats.totalStudentsEngaged === 0 ? (
+                  <p className="max-w-xs text-sm text-muted">
+                    Belum ada rekod aktiviti. Carta ini akan terisi setelah sesi
+                    pertama direkodkan.
+                  </p>
+                ) : (
+                  <p className="max-w-xs text-sm text-muted">
+                    {stats.totalStudentsEngaged} murid direkodkan, tetapi{' '}
+                    <span className="text-amber-300">TP Selepas belum diisi</span>.
+                    Sunting rekod dan isi TP Selepas untuk melihat impak sebenar.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -447,7 +474,11 @@ export default function Dashboard({
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value} Sesi`, 'Kekerapan']} />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    labelStyle={TOOLTIP_LABEL_STYLE}
+                    formatter={(value) => [`${value} Sesi`, 'Kekerapan']}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -499,13 +530,19 @@ export default function Dashboard({
             {classChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={classChartData} layout="vertical" margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
-                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
-                  <YAxis type="category" dataKey="className" tickLine={false} axisLine={false} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={GRID_STROKE} />
+                  <XAxis type="number" tickLine={false} axisLine={false} tick={TICK} />
+                  <YAxis type="category" dataKey="className" tickLine={false} axisLine={false} tick={TICK} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                    contentStyle={TOOLTIP_STYLE}
+                    labelStyle={TOOLTIP_LABEL_STYLE}
+                    cursor={TOOLTIP_CURSOR}
                   />
-                  <Bar dataKey="Jumlah Aktiviti" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={15} />
+                  <Bar dataKey="Jumlah Aktiviti" radius={[0, 4, 4, 0]} barSize={15}>
+                    {classChartData.map((_, i) => (
+                      <Cell key={i} fill={warnaSiri(i)} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -611,7 +648,7 @@ export default function Dashboard({
                   placeholder="Cari minggu, kumpulan, atau nama guru bertugas..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core transition bg-gray-50/50"
+                  className="w-full pl-10 pr-4 py-2 text-xs rounded-xl focus:outline-none focus:border-lime-core transition bg-white/5"
                 />
               </div>
 
@@ -703,7 +740,7 @@ export default function Dashboard({
                           className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between ${
                             isSelected
                               ? 'border-lime-core bg-indigo-50/20 shadow-sm ring-1 ring-indigo-600/30'
-                              : 'border-white/8 bg-gray-50/20 hover:bg-white/5 hover:border-white/10'
+                              : 'border-white/8 bg-white/5 hover:bg-white/5 hover:border-white/10'
                           }`}
                         >
                           <div className="space-y-0.5">
@@ -726,7 +763,7 @@ export default function Dashboard({
                       );
                     })
                   ) : (
-                    <div className="text-center py-8 rounded-xl border border-dashed border-white/10 bg-gray-50/50">
+                    <div className="text-center py-8 rounded-xl border border-dashed border-white/10 bg-white/5">
                       <AlertCircle className="h-6 w-6 text-faint mx-auto mb-1.5" />
                       <p className="text-xs font-bold text-soft">Tiada rekod minggu ditemui</p>
                       <p className="text-[10px] text-faint mt-0.5">Cuba tumpukan carian anda atau tukar bulan penapis.</p>
@@ -785,7 +822,7 @@ export default function Dashboard({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {selectedWeekDetail.group!.members.map((member, mIdx) => (
-                          <div key={mIdx} className="rounded-xl bg-gray-50/30 p-3 flex items-center justify-between">
+                          <div key={mIdx} className="rounded-xl bg-white/5 p-3 flex items-center justify-between">
                             <div className="space-y-0.5">
                               <span className="text-[10px] font-bold text-faint uppercase tracking-wider block">
                                 {member.role}
@@ -818,7 +855,7 @@ export default function Dashboard({
                     )}
 
                     {/* Tanggungjawab Umum Ahli */}
-                    <div className="space-y-2 border-t border-white/8 pt-4 bg-gray-50/30 rounded-xl p-3">
+                    <div className="space-y-2 border-t border-white/8 pt-4 bg-white/5 rounded-xl p-3">
                       <h5 className="text-[11px] font-bold text-bright uppercase tracking-wider flex items-center gap-1.5">
                         <GraduationCap className="h-4 w-4 text-emerald-400" />
                         Tanggungjawab Umum Ahli Kumpulan
@@ -832,7 +869,7 @@ export default function Dashboard({
 
                   </div>
                 ) : (
-                  <div className="text-center py-12 rounded-2xl border border-dashed border-white/10 bg-gray-50/30 flex flex-col items-center justify-center">
+                  <div className="text-center py-12 rounded-2xl border border-dashed border-white/10 bg-white/5 flex flex-col items-center justify-center">
                     <Calendar className="h-8 w-8 text-faint mb-2 animate-bounce" />
                     <p className="text-xs font-bold text-soft">Sila pilih minggu di sebelah kiri</p>
                     <p className="text-[10px] text-faint mt-1">Pilih minggu bertugas untuk melihat senarai ahli, peranan ketua, dan cuti am.</p>

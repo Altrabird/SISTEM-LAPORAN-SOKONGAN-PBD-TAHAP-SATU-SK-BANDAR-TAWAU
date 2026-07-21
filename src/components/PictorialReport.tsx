@@ -4,13 +4,6 @@ import { TAHAP_PENGUASAAN_DESCS } from '../data';
 import {
   Printer,
   ChevronLeft,
-  Calendar,
-  Users,
-  Award,
-  Sparkles,
-  Bookmark,
-  Building,
-  ArrowRight,
   Info
 } from 'lucide-react';
 
@@ -53,31 +46,30 @@ export default function PictorialReport({
     <div className="space-y-6">
       
       {/* Interactive Controls Bar - Hidden on print */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-100 pb-5 print:hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/8 pb-5 print:hidden">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-gray-500 hover:text-gray-900 transition"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-muted transition hover:text-bright cursor-pointer"
         >
           <ChevronLeft className="h-4 w-4" />
           Kembali ke Senarai
         </button>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition"
-          >
-            <Printer className="h-4.5 w-4.5" />
-            Cetak / Simpan PDF
-          </button>
-        </div>
+        <button onClick={handlePrint} className="btn-primary !px-5 !py-2.5 !text-sm">
+          <Printer className="h-4 w-4" />
+          Cetak / Simpan PDF
+        </button>
       </div>
 
-      {/* Info Warning - Hidden on print */}
-      <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 flex gap-3 text-xs text-blue-800 leading-relaxed print:hidden">
-        <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+      {/* Nota cetakan — tersembunyi semasa mencetak */}
+      <div className="glass-inset flex gap-3 p-4 text-xs leading-relaxed text-soft print:hidden">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-lime-core" />
         <div>
-          <span className="font-bold">Tips Mencetak:</span> Pilih <span className="font-bold">"Save as PDF"</span> di dalam dialog pencetak untuk menyimpan laporan bertema ini secara digital. Sila aktifkan pilihan <span className="font-bold">"Background graphics"</span> di dalam tetapan cetakan pelayar anda untuk mengekalkan warna tema dan garis sempadan laporan yang kemas.
+          <span className="font-bold text-bright">Tips mencetak:</span> pilih{' '}
+          <span className="font-bold text-lime-core">Save as PDF</span> dalam dialog pencetak
+          untuk menyimpan laporan secara digital. Laporan sengaja dicetak hitam atas putih —
+          tema gelap adalah untuk skrin sahaja, dan mencetaknya akan membazir dakwat serta
+          menghasilkan dokumen rasmi yang sukar dibaca.
         </div>
       </div>
 
