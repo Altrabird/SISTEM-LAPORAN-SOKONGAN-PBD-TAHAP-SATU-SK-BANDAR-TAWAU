@@ -16,15 +16,33 @@
 
 import { ActivityLog } from '../types';
 import { resolveImages } from './photoStore';
+import { DEFAULT_WEBAPP_URL, DEFAULT_ADMIN_TOKEN } from '../config';
 
 export const KUNCI_URL_API = 'pbd_appscript_url';
 export const KUNCI_TOKEN = 'pbd_admin_token';
 
+/**
+ * Pautan Web App yang sedang digunakan.
+ *
+ * Tetapan setempat diutamakan supaya sekolah lain yang menyalin sistem ini —
+ * atau pentadbir yang menukar deployment — boleh menimpa nilai terbina tanpa
+ * perlu membina semula aplikasi. Jika tiada, ia jatuh kembali kepada URL
+ * terbina supaya guru mendapat sambungan tanpa sebarang tetapan.
+ */
 export const getWebAppUrl = (): string =>
-  localStorage.getItem(KUNCI_URL_API)?.trim() || '';
+  localStorage.getItem(KUNCI_URL_API)?.trim() || DEFAULT_WEBAPP_URL.trim();
+
+/** Adakah pautan semasa datang daripada tetapan pengguna, bukan nilai terbina? */
+export const isCustomWebAppUrl = (): boolean =>
+  Boolean(localStorage.getItem(KUNCI_URL_API)?.trim());
 
 export const setWebAppUrl = (url: string): void => {
-  localStorage.setItem(KUNCI_URL_API, url.trim());
+  const bersih = url.trim();
+  // Mengosongkan medan mengembalikan nilai terbina, bukan mematikan
+  // penyegerakan — jika tidak, guru yang tersalah padam akan hilang sambungan
+  // tanpa cara mudah untuk memulihkannya.
+  if (bersih) localStorage.setItem(KUNCI_URL_API, bersih);
+  else localStorage.removeItem(KUNCI_URL_API);
 };
 
 /**
@@ -35,7 +53,7 @@ export const setWebAppUrl = (url: string): void => {
  * sekali pada peranti masing-masing.
  */
 export const getAdminToken = (): string =>
-  localStorage.getItem(KUNCI_TOKEN)?.trim() || '';
+  localStorage.getItem(KUNCI_TOKEN)?.trim() || DEFAULT_ADMIN_TOKEN.trim();
 
 export const setAdminToken = (token: string): void => {
   const bersih = token.trim();

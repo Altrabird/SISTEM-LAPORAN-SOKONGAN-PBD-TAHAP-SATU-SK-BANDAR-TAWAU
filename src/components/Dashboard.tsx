@@ -300,13 +300,11 @@ export default function Dashboard({
           <CloudOff className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-amber-300">
-              Google Sheets belum disambungkan pada peranti ini
+              Google Sheets belum disambungkan
             </p>
             <p className="mt-1 text-xs leading-relaxed text-muted">
               Rekod yang disimpan hanya akan berada dalam pelayar ini dan tidak
-              masuk ke Sheets atau Drive. Pautan Web App disimpan setiap peranti
-              secara berasingan, jadi ia perlu ditampal sekali di sini walaupun
-              sudah ditetapkan pada komputer lain.
+              masuk ke Sheets atau Drive.
             </p>
             <p className="mt-2 text-xs font-bold text-lime-core">
               Ketik untuk membuka tetapan →
