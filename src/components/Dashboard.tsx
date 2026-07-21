@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { ActivityLog, Student, DutyGroup, isAssessed, tpGain } from '../types';
 import { OFFICIAL_DUTY_GROUPS, TANGGUNGJAWAB_UMUM } from '../data';
+import { getWebAppUrl } from '../lib/sheetsSync';
 import {
   WARNA_SUBJEK,
   WARNA_TP,
@@ -41,7 +42,8 @@ import {
   Search,
   Filter,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  CloudOff
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -282,6 +284,37 @@ export default function Dashboard({
 
   return (
     <div className="space-y-8">
+      {/*
+        Amaran sambungan awan.
+        Pautan Web App disimpan dalam localStorage, yang terikat pada satu
+        pelayar pada satu peranti. Guru yang membuka sistem pada telefon selepas
+        menetapkannya di komputer akan mendapati penyegerakan mati tanpa sebarang
+        petunjuk — status di bar sisi tersembunyi di dalam menu hamburger pada
+        skrin kecil. Amaran ini menjadikan keadaan itu jelas dan boleh ditindaki.
+      */}
+      {!getWebAppUrl() && (
+        <button
+          onClick={() => onNavigate('admin')}
+          className="glass glass-hover flex w-full items-start gap-3 p-4 text-left cursor-pointer"
+        >
+          <CloudOff className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-amber-300">
+              Google Sheets belum disambungkan pada peranti ini
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              Rekod yang disimpan hanya akan berada dalam pelayar ini dan tidak
+              masuk ke Sheets atau Drive. Pautan Web App disimpan setiap peranti
+              secara berasingan, jadi ia perlu ditampal sekali di sini walaupun
+              sudah ditetapkan pada komputer lain.
+            </p>
+            <p className="mt-2 text-xs font-bold text-lime-core">
+              Ketik untuk membuka tetapan →
+            </p>
+          </div>
+        </button>
+      )}
+
       {/* Hero Welcome banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-lime-dark/50 via-abyss to-void p-6 md:p-8 shadow-xl">
         {/* Cahaya latar — memberi kedalaman tanpa mengaburkan teks */}
