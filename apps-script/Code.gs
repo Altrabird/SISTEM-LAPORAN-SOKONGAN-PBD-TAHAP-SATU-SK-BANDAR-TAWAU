@@ -43,24 +43,23 @@ var PARENT_FOLDER_NAME = 'LAPORAN BERGAMBAR SOKONGAN PBD';
 /**
  * Token rahsia yang melindungi operasi PADAM.
  *
- * ┌──────────────────────────────────────────────────────────────────────┐
- * │  JANGAN commit token sebenar ke repositori awam.                     │
- * │  Tetapkan nilai ini dalam salinan Apps Script ANDA sahaja.           │
- * └──────────────────────────────────────────────────────────────────────┘
+ * ⚠️  NILAI INI TURUT DIBENAMKAN DALAM BUNDLE AWAM APLIKASI
+ *     (src/config.ts), atas keputusan sekolah supaya guru tidak perlu
+ *     menampal apa-apa. Ia BUKAN lagi rahsia: sesiapa yang membuka tapak
+ *     boleh membacanya melalui DevTools.
  *
- * Deployment ini dikongsi sebagai "Anyone", bermakna sesiapa yang menjumpai
- * URL /exec boleh menghantar permintaan. Menulis rekod boleh diterima —
- * paling teruk menghasilkan baris sampah yang mudah dibuang. Memadam pula
- * memusnahkan data, jadi ia mesti dilindungi secara berasingan.
+ * Ini bermakna perlindungan yang asalnya dibina di sini kini berfungsi
+ * sebagai halangan tidak sengaja sahaja, bukan kawalan keselamatan sebenar.
+ * Ia menghalang permintaan rawak yang tidak membawa token, tetapi tidak
+ * menghalang sesiapa yang benar-benar berniat menyalahgunakannya.
+ *
+ * Sekolah menerima risiko ini kerana ramai guru bukan pengguna ICT mahir.
+ * Jika berlaku penyalahgunaan: jalankan janaAdminToken(), kemas kini token
+ * di SINI dan dalam src/config.ts, kemudian deploy versi baharu.
  *
  * Dibiarkan kosong = fungsi padam DIMATIKAN sepenuhnya (gagal-tertutup).
- * Ini nilai lalai yang selamat: sesiapa yang menyalin repo ini tidak
- * mewarisi endpoint pemusnah data yang terdedah.
- *
- * Untuk mengaktifkan: jana rangkaian rawak yang panjang (contoh melalui
- * Utilities.getUuid() dalam editor) dan tampal di bawah.
  */
-var ADMIN_TOKEN = '';
+var ADMIN_TOKEN = 'c9d0168cdb671969e8323cf5edc500f4e0987600';
 
 var HEADERS = [
   'ID_Aktiviti', 'Cap_Masa_Segerak', 'Tarikh', 'Hari', 'Kumpulan', 'Guru_Bertugas',

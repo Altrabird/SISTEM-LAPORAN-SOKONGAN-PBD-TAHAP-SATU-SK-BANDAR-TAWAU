@@ -33,16 +33,24 @@ export const DEFAULT_WEBAPP_URL =
   'https://script.google.com/macros/s/AKfycbzXl5W25HDCT9jiZmlSdsvurjGvDd0rj7cbIdoQBlPvAvmutTnZYYM6p1WzAEeNewxg/exec';
 
 /**
- * Token pentadbir SENGAJA dibiarkan kosong.
+ * Token pentadbir terbina.
  *
- * Token ini membenarkan pemadaman kekal baris Google Sheet dan penghantaran
- * folder gambar ke tong sampah Drive. Membenamkannya di sini bermakna sesiapa
- * yang membuka tapak boleh memusnahkan keseluruhan rekod laporan sekolah —
- * dan lebih buruk lagi, ia menghasilkan rasa selamat yang palsu kerana
- * perlindungan itu kelihatan wujud sedangkan ia sudah tidak bermakna.
+ * ⚠️  RISIKO YANG DITERIMA SECARA SEDAR OLEH SEKOLAH
  *
- * Guru tidak memerlukan keupayaan ini. Hanya pentadbir yang memadam rekod,
- * dan beliau boleh menampal token sekali pada perantinya sendiri melalui
- * Tetapan & Admin.
+ * Token ini membenarkan pemadaman KEKAL baris Google Sheet dan penghantaran
+ * folder gambar ke tong sampah Drive. Kerana ia berada dalam bundle awam,
+ * sesiapa yang membuka tapak boleh membacanya melalui DevTools dan memadam
+ * keseluruhan rekod laporan sekolah.
+ *
+ * Keputusan ini dibuat kerana ramai guru bukan pengguna ICT mahir, dan
+ * meminta setiap seorang menampal token pada setiap peranti menyebabkan
+ * fungsi padam tidak digunakan langsung. Sekolah menilai kemudahan itu lebih
+ * bernilai daripada risiko berkenaan.
+ *
+ * Nilai ini MESTI sepadan dengan ADMIN_TOKEN dalam apps-script/Code.gs.
+ *
+ * JIKA TOKEN INI DISALAHGUNAKAN: jana token baharu melalui janaAdminToken()
+ * dalam editor Apps Script, kemas kini KEDUA-DUA fail ini dan Code.gs,
+ * kemudian deploy versi baharu. Token lama akan terus ditolak.
  */
-export const DEFAULT_ADMIN_TOKEN = '';
+export const DEFAULT_ADMIN_TOKEN = 'c9d0168cdb671969e8323cf5edc500f4e0987600';
