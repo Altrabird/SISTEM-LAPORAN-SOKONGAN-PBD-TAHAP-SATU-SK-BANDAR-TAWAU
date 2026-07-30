@@ -18,6 +18,7 @@ import {
   PRESET_CATATAN_IMPAK,
   isiCatatan
 } from '../data';
+import { cariPresetAktiviti } from '../activityPresets';
 import {
   Trash2,
   Plus,
@@ -35,7 +36,9 @@ import {
   BookMarked,
   Info,
   Settings,
-  BookmarkPlus
+  BookmarkPlus,
+  Wand2,
+  RotateCcw
 } from 'lucide-react';
 
 interface ActivityFormProps {
@@ -259,10 +262,29 @@ export default function ActivityForm({
   const [activityName, setActivityName] = useState(commonActivitiesBm[0] ?? '');
   const [customActivityName, setCustomActivityName] = useState('');
   const [isCustomActivity, setIsCustomActivity] = useState(false);
-  const [activityDesc, setActivityDesc] = useState('');
+  const [activityDesc, setActivityDesc] = useState(() =>
+    initialActivity ? '' : cariPresetAktiviti(commonActivitiesBm[0] ?? '')?.deskripsi ?? ''
+  );
   const [subjectTeacher, setSubjectTeacher] = useState('');
 
   const [notes, setNotes] = useState('');
+
+  /*
+   * Adakah medan ini masih memegang teks preset, atau sudah disunting guru?
+   *
+   * Auto-isi tidak boleh menimpa taipan guru. Sebaik sahaja guru menyunting
+   * salah satu medan ini, bendera berkenaan dimatikan dan menukar aktiviti
+   * tidak lagi menggantikan kandungannya — sebaliknya butang "Guna preset"
+   * ditawarkan supaya keputusan itu kekal di tangan guru.
+   *
+   * Bendera bermula MATI apabila rekod tersimpan dibuka. Menetapkannya kepada
+   * `true` di sini dan mematikannya kemudian di dalam efek tidak mencukupi:
+   * efek auto-isi berjalan dengan nilai yang ditangkap pada render pertama,
+   * jadi ia akan menulis ganti catatan rekod yang sudah ditandatangani sebelum
+   * bendera itu sempat dimatikan.
+   */
+  const [deskripsiAuto, setDeskripsiAuto] = useState(!initialActivity);
+  const [impakAuto, setImpakAuto] = useState(!initialActivity);
   /** Rujukan gambar yang akan disimpan bersama rekod ("idb:<id>"). */
   const [images, setImages] = useState<string[]>(['', '', '', '']);
   /** Data URL untuk paparan sahaja — tidak pernah disimpan ke localStorage. */
@@ -310,12 +332,17 @@ export default function ActivityForm({
       setCustomClassName('');
       setIsCustomClass(false);
       setSubject('BM');
-      setActivityName(commonActivitiesBm[0] ?? '');
+      const aktivitiLalai = commonActivitiesBm[0] ?? '';
+      setActivityName(aktivitiLalai);
       setCustomActivityName('');
       setIsCustomActivity(false);
-      setActivityDesc('');
+      // Deskripsi dan langkah aktiviti lalai terus diisi — rekod baharu
+      // sepatutnya sudah separuh lengkap sebelum guru menaip apa-apa.
+      setActivityDesc(cariPresetAktiviti(aktivitiLalai)?.deskripsi ?? '');
       setSubjectTeacher('');
       setNotes('');
+      setDeskripsiAuto(true);
+      setImpakAuto(true);
       setStudents([]);
       setImages(['', '', '', '']);
       setImagePreviews(['', '', '', '']);
@@ -360,6 +387,16 @@ export default function ActivityForm({
     setNotes(initialActivity.notes);
     setStudents(initialActivity.students);
 
+    /*
+     * Rekod tersimpan ialah sumber kebenaran — auto-isi dimatikan.
+     *
+     * Teks dalam rekod yang sudah ditandatangani tidak boleh ditulis semula
+     * oleh preset hanya kerana guru membuka semula rekod itu untuk mengisi
+     * TP Selepas. Guru masih boleh menekan "Guna preset" jika mahu.
+     */
+    setDeskripsiAuto(false);
+    setImpakAuto(false);
+
     const loadedImages = ['', '', '', ''];
     const loadedCaptions = ['', '', '', ''];
     initialActivity.images?.forEach((img, i) => {
@@ -378,12 +415,48 @@ export default function ActivityForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialActivity]);
 
+  /**
+   * Tukar aktiviti dan isikan deskripsi preset yang berkaitan.
+   *
+   * Deskripsi hanya ditulis semula jika ia masih teks preset. Jika guru sudah
+   * menyuntingnya, kandungannya dibiarkan dan butang "Guna preset" muncul.
+   */
+  const handleActivityChange = (namaBaharu: string) => {
+    setActivityName(namaBaharu);
+    if (deskripsiAuto) {
+      setActivityDesc(cariPresetAktiviti(namaBaharu)?.deskripsi ?? '');
+    }
+  };
+
+  /**
+   * Beralih kepada aktiviti khas yang ditaip sendiri.
+   *
+   * Deskripsi preset dikosongkan. Membiarkannya bermakna laporan aktiviti khas
+   * akan membawa langkah pelaksanaan aktiviti yang LAIN sepenuhnya — teks yang
+   * kelihatan sah tetapi memerihalkan sesi yang tidak pernah berlaku.
+   */
+  const handleGunaAktivitiKhas = () => {
+    setIsCustomActivity(true);
+    if (deskripsiAuto) setActivityDesc('');
+  };
+
+  /** Kembali kepada senarai aktiviti lazim, dan pulihkan preset jika perlu. */
+  const handleKembaliSenaraiAktiviti = () => {
+    setIsCustomActivity(false);
+    if (deskripsiAuto) {
+      setActivityDesc(cariPresetAktiviti(activityName)?.deskripsi ?? '');
+    }
+  };
+
   const handleSubjectChange = (newSubject: 'BM' | 'BI') => {
     setSubject(newSubject);
     setIsCustomActivity(false);
-    setActivityName(
-      (newSubject === 'BM' ? commonActivitiesBm[0] : commonActivitiesBi[0]) || ''
-    );
+    const aktivitiLalai =
+      (newSubject === 'BM' ? commonActivitiesBm[0] : commonActivitiesBi[0]) || '';
+    setActivityName(aktivitiLalai);
+    if (deskripsiAuto) {
+      setActivityDesc(cariPresetAktiviti(aktivitiLalai)?.deskripsi ?? '');
+    }
   };
 
   /* ----------------------------------------------------------------------
@@ -548,11 +621,46 @@ export default function ActivityForm({
     subjek: subject
   };
 
+  /** Preset kandungan bagi aktiviti yang sedang dipilih, jika ada. */
+  const presetAktivitiTerpilih = useMemo(
+    () => cariPresetAktiviti(finalActivityName),
+    [finalActivityName]
+  );
+  const adaDeskripsiPreset = Boolean(presetAktivitiTerpilih);
+
+  /** Catatan impak lalai bagi aktiviti terpilih, ruang ganti sudah diisi. */
+  const impakPreset = useMemo(() => {
+    const preset = cariPresetAktiviti(finalActivityName);
+    return preset ? isiCatatan(preset.impak, konteksCatatan) : '';
+    // konteksCatatan dibina semula setiap render; kebergantungan disenaraikan
+    // secara nilai supaya efek di bawah tidak berjalan tanpa henti.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    finalActivityName,
+    finalClassName,
+    subject,
+    konteksCatatan.bil,
+    konteksCatatan.bilNaik
+  ]);
+
+  /*
+   * Kekalkan catatan impak selari dengan rekod, selagi guru belum menyuntingnya.
+   *
+   * Catatan menyebut bilangan murid dan nama kelas, jadi teks yang ditulis
+   * ketika baru dua murid ditanda akan menjadi tidak benar sebaik sahaja guru
+   * menanda murid ketiga. Selagi bendera auto masih hidup, teks dikira semula;
+   * sebaik guru menaip sendiri, ia dibiarkan sepenuhnya.
+   */
+  useEffect(() => {
+    if (impakAuto) setNotes(impakPreset);
+  }, [impakAuto, impakPreset]);
+
   const handlePilihPresetImpak = (teks: string) => {
     if (!teks) return;
     const diisi = isiCatatan(teks, konteksCatatan);
-    // Ditambah kepada catatan sedia ada, bukan menggantikannya — guru sering
-    // menggabungkan dua atau tiga ayat rumusan.
+    // Menambah ayat pilihan bermakna guru mengarang catatan sendiri — auto-isi
+    // dimatikan supaya ayat yang baru ditambah tidak dihapuskan semula.
+    setImpakAuto(false);
     setNotes(prev => (prev.trim() ? `${prev.trim()} ${diisi}` : diisi));
   };
 
@@ -669,7 +777,8 @@ export default function ActivityForm({
               {initialActivity ? 'Kemaskini Rekod Aktiviti' : 'Rekod Aktiviti Baharu'}
             </h1>
             <p className="mt-1 text-[11px] leading-snug text-[#d9c9b4]">
-              Tanda setiap hidangan di bawah sehingga siap — seperti senarai pesanan.
+              Pilih aktiviti — deskripsi, langkah dan catatan impak terisi sendiri.
+              Anda hanya perlu isi maklumat asas, nama murid dan foto.
             </p>
           </div>
 
@@ -914,8 +1023,8 @@ export default function ActivityForm({
                 <select
                   value={activityName}
                   onChange={e => {
-                    if (e.target.value === 'CUSTOM') setIsCustomActivity(true);
-                    else setActivityName(e.target.value);
+                    if (e.target.value === 'CUSTOM') handleGunaAktivitiKhas();
+                    else handleActivityChange(e.target.value);
                   }}
                   className="resto-field font-semibold"
                 >
@@ -937,7 +1046,7 @@ export default function ActivityForm({
                   />
                   <button
                     type="button"
-                    onClick={() => setIsCustomActivity(false)}
+                    onClick={handleKembaliSenaraiAktiviti}
                     className="shrink-0 px-2 text-xs font-bold text-[#e0503a] underline"
                   >
                     Senarai
@@ -946,21 +1055,52 @@ export default function ActivityForm({
               )}
             </div>
 
-            {/* Deskripsi */}
+            {/* Deskripsi & langkah — diisi automatik daripada aktiviti */}
             <div>
-              <label className="resto-label">Deskripsi & Langkah Pelaksanaan</label>
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-1.5">
+                <label className="resto-label !mb-0">Deskripsi &amp; Langkah Pelaksanaan</label>
+                {deskripsiAuto && adaDeskripsiPreset ? (
+                  <span className="resto-chip !bg-[#e3f5ea] !border-[#b9e2c9] !text-[#1f6b41]">
+                    <Wand2 className="h-3 w-3" />
+                    Diisi automatik
+                  </span>
+                ) : (
+                  adaDeskripsiPreset && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActivityDesc(presetAktivitiTerpilih?.deskripsi ?? '');
+                        setDeskripsiAuto(true);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg bg-[#fff2dc] px-2 py-1 text-[10.5px] font-extrabold text-[#8a5a12] transition hover:bg-[#ffe9c9]"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Guna teks preset
+                    </button>
+                  )
+                )}
+              </div>
               <textarea
-                rows={4}
+                rows={9}
                 required
                 value={activityDesc}
-                onChange={e => setActivityDesc(e.target.value)}
+                onChange={e => {
+                  setActivityDesc(e.target.value);
+                  // Suntingan pertama guru mematikan auto-isi bagi medan ini.
+                  setDeskripsiAuto(false);
+                }}
                 placeholder={
                   subject === 'BM'
                     ? 'Contoh: Murid melakonkan dialog di hadapan kelas secara berkumpulan. Bimbingan diberikan kepada murid yang lemah sebutan.'
-                    : 'Contoh: Students spin the Wheel of Phonics to read sound combinations. Extra attention given to short vowel segmentation.'
+                    : 'Contoh: Murid memutar Phonics Wheel dan menyebut gabungan bunyi. Tumpuan diberikan kepada blending perkataan CVC.'
                 }
-                className="resto-field resize-none leading-relaxed"
+                className="resto-field resize-y leading-relaxed"
               />
+              <p className="mt-1 text-[10.5px] leading-relaxed text-[#7b6553]">
+                {adaDeskripsiPreset
+                  ? 'Deskripsi dan langkah pelaksanaan disediakan mengikut aktiviti yang dipilih. Sunting mana-mana bahagian jika pelaksanaan sebenar berbeza.'
+                  : 'Aktiviti khas ini belum mempunyai teks preset — sila tulis deskripsi dan langkah pelaksanaannya.'}
+              </p>
             </div>
           </div>
         </div>
@@ -1143,14 +1283,53 @@ export default function ActivityForm({
             nombor={4}
             ikon={ChefHat}
             tajuk="Catatan Impak / Refleksi"
-            kapsyen="Rumusan keseluruhan sesi — pilih preset atau taip sendiri."
+            kapsyen="Rumusan sesi — sudah disediakan, ubah jika sesi berjalan lain."
             selesai={siap.catatan}
           />
 
           <div className="space-y-3 p-4">
             <div>
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-1.5">
+                <label className="resto-label !mb-0">Catatan Impak Keseluruhan</label>
+                {impakAuto && impakPreset ? (
+                  <span className="resto-chip !bg-[#e3f5ea] !border-[#b9e2c9] !text-[#1f6b41]">
+                    <Wand2 className="h-3 w-3" />
+                    Diisi automatik
+                  </span>
+                ) : (
+                  impakPreset && (
+                    <button
+                      type="button"
+                      onClick={() => setImpakAuto(true)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-[#fff2dc] px-2 py-1 text-[10.5px] font-extrabold text-[#8a5a12] transition hover:bg-[#ffe9c9]"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Guna teks preset
+                    </button>
+                  )
+                )}
+              </div>
+              <textarea
+                rows={6}
+                value={notes}
+                onChange={e => {
+                  setNotes(e.target.value);
+                  setImpakAuto(false);
+                }}
+                placeholder="Contoh: Semua murid berjaya melakonkan watak masing-masing dengan penuh yakin. Tiga murid menunjukkan sebutan yang lebih jelas berbanding sesi lepas."
+                className="resto-field resize-y leading-relaxed"
+              />
+              <p className="mt-1 text-[10.5px] leading-relaxed text-[#7b6553]">
+                {impakAuto && impakPreset
+                  ? 'Catatan ini dijana daripada aktiviti yang dipilih, dan nama kelas serta bilangan murid dikemas kini sendiri. Impak dirangka positif — jika sesi tidak berjalan seperti dirancang, terus taip pandangan anda di sini.'
+                  : 'Catatan ini ditulis oleh anda dan tidak akan diubah oleh sistem.'}
+              </p>
+            </div>
+
+            {/* Ayat tambahan daripada senarai preset umum */}
+            <div>
               <label className="resto-label">
-                Preset Catatan Impak · {catatanImpakPresets.length} set
+                Tambah Ayat Lain · {catatanImpakPresets.length} preset umum
               </label>
               <select
                 value=""
@@ -1160,29 +1339,13 @@ export default function ActivityForm({
                 }}
                 className="resto-field !bg-[#fff2dc] font-semibold !text-[#8a5a12]"
               >
-                <option value="">＋ Pilih ayat rumusan siap sedia…</option>
+                <option value="">＋ Sambung satu ayat rumusan lagi…</option>
                 {catatanImpakPresets.map((p, i) => (
                   <option key={i} value={p}>
                     {i + 1}. {isiCatatan(p, konteksCatatan)}
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-[10.5px] leading-relaxed text-[#7b6553]">
-                Preset yang dipilih akan disambung kepada catatan sedia ada, dan nama
-                aktiviti, kelas serta bilangan murid diisi secara automatik. Anda masih boleh
-                menyuntingnya selepas itu.
-              </p>
-            </div>
-
-            <div>
-              <label className="resto-label">Catatan Impak Keseluruhan</label>
-              <textarea
-                rows={5}
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Contoh: Semua murid berjaya melakonkan watak masing-masing dengan penuh yakin. Tiga murid menunjukkan sebutan yang lebih jelas berbanding sesi lepas."
-                className="resto-field resize-none leading-relaxed"
-              />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -1190,7 +1353,10 @@ export default function ActivityForm({
                 <>
                   <button
                     type="button"
-                    onClick={() => setNotes('')}
+                    onClick={() => {
+                      setNotes('');
+                      setImpakAuto(false);
+                    }}
                     className="rounded-lg bg-[#fdeae5] px-3 py-1.5 text-[11px] font-extrabold text-[#b8331f] transition hover:bg-[#fad6cd]"
                   >
                     Kosongkan Catatan
