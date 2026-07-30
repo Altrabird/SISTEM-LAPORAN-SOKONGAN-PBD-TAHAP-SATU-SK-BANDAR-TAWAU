@@ -1,12 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { ActivityLog, Student } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  ActivityLog,
+  Student,
+  StudentRosterEntry,
+  PILIHAN_TP_ASAL,
+  PILIHAN_TP_PENUH
+} from '../types';
 import { compressImage, savePhoto, resolveImages } from '../lib/photoStore';
+import { muridDalamKelas } from '../lib/roster';
 import {
   AVAILABLE_GROUPS,
   MALAYSIAN_DAYS,
   AVAILABLE_CLASSES,
   COMMON_ACTIVITIES_BM,
-  COMMON_ACTIVITIES_BI
+  COMMON_ACTIVITIES_BI,
+  PRESET_CATATAN_MURID,
+  PRESET_CATATAN_IMPAK,
+  isiCatatan
 } from '../data';
 import {
   Trash2,
@@ -14,10 +24,18 @@ import {
   Calendar,
   User,
   Check,
-  Sparkles,
   Upload,
   X,
-  BookOpen
+  ClipboardList,
+  UtensilsCrossed,
+  ChefHat,
+  Camera,
+  Users,
+  Sparkles,
+  BookMarked,
+  Info,
+  Settings,
+  BookmarkPlus
 } from 'lucide-react';
 
 interface ActivityFormProps {
@@ -27,17 +45,205 @@ interface ActivityFormProps {
   availableClasses?: string[];
   commonActivitiesBm?: string[];
   commonActivitiesBi?: string[];
+  /** Senarai induk nama murid — sumber checklist murid. */
+  studentRoster?: StudentRosterEntry[];
+  catatanMuridPresets?: string[];
+  catatanImpakPresets?: string[];
+  /** Buka Tetapan & Admin — dipanggil apabila senarai murid masih kosong. */
+  onOpenAdmin?: () => void;
+  /** Simpan catatan impak yang ditaip guru sebagai preset baharu. */
+  onAddImpakPreset?: (teks: string) => void;
 }
 
+/** Nama dinormalkan untuk perbandingan (ruang berganda, huruf besar/kecil). */
+const kunciNama = (nama: string) => nama.trim().replace(/\s+/g, ' ').toUpperCase();
+
+/**
+ * Pilihan TP Asal bagi satu murid.
+ *
+ * Hanya TP 1 dan 2 ditawarkan. Rekod lama mungkin menyimpan nilai yang lebih
+ * tinggi; nilai itu tetap dimasukkan ke dalam senarai supaya senarai juntai
+ * tidak memaparkan pilihan kosong dan menukar data lama tanpa disedari.
+ */
+function pilihanTpAsal(nilai: number): number[] {
+  return PILIHAN_TP_ASAL.includes(nilai)
+    ? PILIHAN_TP_ASAL
+    : [...PILIHAN_TP_ASAL, nilai].sort((a, b) => a - b);
+}
+
+/*
+ * KepalaKad dan ButiranMurid ditakrif pada peringkat modul, BUKAN di dalam
+ * ActivityForm.
+ *
+ * Komponen yang ditakrif di dalam komponen lain menjadi jenis (type) yang
+ * baharu pada setiap render, jadi React melihatnya sebagai komponen berlainan
+ * dan memasang semula seluruh subpokoknya. Akibatnya medan input kehilangan
+ * fokus selepas setiap kekunci ditekan — menaip satu catatan murid menjadi
+ * mustahil. Menakrifnya di luar mengekalkan identiti jenis antara render.
+ */
+
+/** Kepala kad bernombor dengan penanda siap. */
+function KepalaKad({
+  nombor,
+  ikon: Ikon,
+  tajuk,
+  kapsyen,
+  selesai,
+  hujung
+}: {
+  nombor: number;
+  ikon: React.ElementType;
+  tajuk: string;
+  kapsyen: string;
+  selesai: boolean;
+  hujung?: React.ReactNode;
+}) {
+  return (
+    <div className="resto-head">
+      {selesai ? (
+        <span className="resto-num-done" aria-label="Seksyen ini sudah diisi">
+          <Check className="h-4 w-4" strokeWidth={3} />
+        </span>
+      ) : (
+        <span className="resto-num">{nombor}</span>
+      )}
+      <div className="min-w-0 flex-1">
+        <h3 className="flex items-center gap-1.5 text-sm font-extrabold leading-tight text-[#33291f]">
+          <Ikon className="h-4 w-4 shrink-0 text-[#e0503a]" />
+          {tajuk}
+        </h3>
+        <p className="mt-0.5 text-[11px] leading-snug text-[#7b6553]">{kapsyen}</p>
+      </div>
+      {hujung}
+    </div>
+  );
+}
+
+/** Tiga senarai juntai TP + catatan kemajuan bagi seorang murid. */
+function ButiranMurid({
+  murid,
+  presetCatatan,
+  onUbah
+}: {
+  murid: Student;
+  presetCatatan: string[];
+  onUbah: (id: string, field: keyof Student, value: any) => void;
+}) {
+  return (
+    <div className="space-y-2.5 rounded-xl bg-[#fffdf8] p-3">
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <label className="resto-label !mb-1 !text-[9.5px]">TP Asal</label>
+          <select
+            value={murid.currentTp}
+            onChange={e => onUbah(murid.id, 'currentTp', parseInt(e.target.value))}
+            className="resto-field !min-h-0 !px-2 !py-1.5"
+          >
+            {pilihanTpAsal(murid.currentTp).map(n => (
+              <option key={n} value={n}>
+                TP {n}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="resto-label !mb-1 !text-[9.5px]">TP Sasaran</label>
+          <select
+            value={murid.targetTp}
+            onChange={e => onUbah(murid.id, 'targetTp', parseInt(e.target.value))}
+            className="resto-field !min-h-0 !px-2 !py-1.5"
+          >
+            {PILIHAN_TP_PENUH.map(n => (
+              <option key={n} value={n}>
+                TP {n}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="resto-label !mb-1 !text-[9.5px]">TP Selepas</label>
+          <select
+            value={murid.tpAfter ?? ''}
+            onChange={e =>
+              onUbah(
+                murid.id,
+                'tpAfter',
+                e.target.value === '' ? undefined : parseInt(e.target.value)
+              )
+            }
+            className={`resto-field !min-h-0 !px-2 !py-1.5 font-bold ${
+              typeof murid.tpAfter === 'number'
+                ? murid.tpAfter > murid.currentTp
+                  ? '!border-[#2f8f5b] !bg-[#e3f5ea] !text-[#1f6b41]'
+                  : ''
+                : '!text-[#8a5a12]'
+            }`}
+          >
+            <option value="">Belum</option>
+            {PILIHAN_TP_PENUH.map(n => (
+              <option key={n} value={n}>
+                TP {n}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="resto-label !mb-1 !text-[9.5px]">Catatan Kemajuan Murid</label>
+        <input
+          type="text"
+          value={murid.notes || ''}
+          onChange={e => onUbah(murid.id, 'notes', e.target.value)}
+          placeholder="Pilih preset di bawah atau taip sendiri…"
+          className="resto-field !min-h-0 !py-2"
+        />
+        <select
+          value=""
+          onChange={e => {
+            if (e.target.value) onUbah(murid.id, 'notes', e.target.value);
+          }}
+          className="resto-field !mt-1.5 !min-h-0 !bg-[#fff2dc] !py-1.5 font-semibold !text-[#8a5a12]"
+        >
+          <option value="">＋ Pilih catatan pantas ({presetCatatan.length} preset)</option>
+          {presetCatatan.map((p, i) => (
+            <option key={i} value={p}>
+              {i + 1}. {p}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Borang rekod aktiviti — susunan senarai pesanan restoran.
+ *
+ * Bentuk ini dipilih kerana ia sepadan dengan cara borang ini digunakan:
+ * guru berdiri di dalam kelas dengan telefon, menanda apa yang sudah selesai
+ * satu demi satu. Kad bernombor, tanda siap pada setiap seksyen, dan senarai
+ * murid dalam bentuk checklist menjadikan "apa lagi yang belum diisi" jelas
+ * tanpa perlu menatal ke bawah dan mengagak.
+ *
+ * Temanya cerah dan berasingan daripada tema gelap aplikasi — lihat blok
+ * `.resto` dalam index.css untuk sebabnya.
+ */
 export default function ActivityForm({
   onSave,
   initialActivity,
   onCancel,
   availableClasses = AVAILABLE_CLASSES,
   commonActivitiesBm = COMMON_ACTIVITIES_BM,
-  commonActivitiesBi = COMMON_ACTIVITIES_BI
+  commonActivitiesBi = COMMON_ACTIVITIES_BI,
+  studentRoster = [],
+  catatanMuridPresets = PRESET_CATATAN_MURID,
+  catatanImpakPresets = PRESET_CATATAN_IMPAK,
+  onOpenAdmin,
+  onAddImpakPreset
 }: ActivityFormProps) {
-  // Main form states
   const [groupName, setGroupName] = useState('Ancala');
   const [customGroupName, setCustomGroupName] = useState('');
   const [isCustomGroup, setIsCustomGroup] = useState(false);
@@ -45,19 +251,17 @@ export default function ActivityForm({
   const [teacherOnDuty, setTeacherOnDuty] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [day, setDay] = useState('Isnin');
-  // Kelas lalai diambil daripada senarai tetapan; '3 Kritis' berkod keras
-  // akan menghasilkan pilihan tidak sah jika sekolah menukar senarai kelas.
   const [className, setClassName] = useState(availableClasses[0] ?? '');
   const [customClassName, setCustomClassName] = useState('');
   const [isCustomClass, setIsCustomClass] = useState(false);
 
   const [subject, setSubject] = useState<'BM' | 'BI'>('BM');
-  const [activityName, setActivityName] = useState('');
+  const [activityName, setActivityName] = useState(commonActivitiesBm[0] ?? '');
   const [customActivityName, setCustomActivityName] = useState('');
   const [isCustomActivity, setIsCustomActivity] = useState(false);
   const [activityDesc, setActivityDesc] = useState('');
   const [subjectTeacher, setSubjectTeacher] = useState('');
-  
+
   const [notes, setNotes] = useState('');
   /** Rujukan gambar yang akan disimpan bersama rekod ("idb:<id>"). */
   const [images, setImages] = useState<string[]>(['', '', '', '']);
@@ -66,142 +270,210 @@ export default function ActivityForm({
   const [imageCaptions, setImageCaptions] = useState<string[]>(['', '', '', '']);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
 
-  // Student list state
-  const [students, setStudents] = useState<Student[]>([
-    { id: 'stud-temp-1', name: '', currentTp: 2, targetTp: 3, notes: '' }
-  ]);
+  /** Rekod baharu bermula tanpa murid — guru menanda nama daripada senarai. */
+  const [students, setStudents] = useState<Student[]>([]);
 
-  // Handle auto-day detection when date changes
+  // Auto-kira hari daripada tarikh
   useEffect(() => {
-    if (date) {
-      const selectedDate = new Date(date);
-      const dayIndex = selectedDate.getDay(); // 0 is Ahad, 1 is Isnin, etc.
-      if (dayIndex >= 0 && dayIndex < MALAYSIAN_DAYS.length) {
-        setDay(MALAYSIAN_DAYS[dayIndex]);
-      }
+    if (!date) return;
+    const dayIndex = new Date(date).getDay();
+    if (dayIndex >= 0 && dayIndex < MALAYSIAN_DAYS.length) {
+      setDay(MALAYSIAN_DAYS[dayIndex]);
     }
   }, [date]);
 
-  // Set default values if we are editing an activity
+  /*
+   * Muatkan rekod yang sedang disunting.
+   *
+   * Kebergantungan sengaja HANYA `initialActivity`. Senarai tetapan (kelas,
+   * aktiviti, preset) dahulunya turut disenaraikan di sini — jadi menyimpan
+   * preset catatan baharu semasa mengisi borang akan mencipta tatasusunan
+   * baharu, mencetuskan efek ini, dan mengosongkan borang yang sedang diisi.
+   */
   useEffect(() => {
-    if (initialActivity) {
-      if (AVAILABLE_GROUPS.includes(initialActivity.groupName)) {
-        setGroupName(initialActivity.groupName);
-        setIsCustomGroup(false);
-      } else {
-        setCustomGroupName(initialActivity.groupName);
-        setIsCustomGroup(true);
-      }
-      
-      setTeacherOnDuty(initialActivity.teacherOnDuty);
-      setDate(initialActivity.date);
-      setDay(initialActivity.day);
-
-      if (availableClasses.includes(initialActivity.className)) {
-        setClassName(initialActivity.className);
-        setIsCustomClass(false);
-      } else {
-        setCustomClassName(initialActivity.className);
-        setIsCustomClass(true);
-      }
-
-      setSubject(initialActivity.subject);
-      
-      const commonActs = initialActivity.subject === 'BM' ? commonActivitiesBm : commonActivitiesBi;
-      if (commonActs.includes(initialActivity.activityName)) {
-        setActivityName(initialActivity.activityName);
-        setIsCustomActivity(false);
-      } else {
-        setCustomActivityName(initialActivity.activityName);
-        setIsCustomActivity(true);
-      }
-
-      setActivityDesc(initialActivity.activityDesc);
-      setSubjectTeacher(initialActivity.subjectTeacher);
-      setNotes(initialActivity.notes);
-      setStudents(initialActivity.students);
-      
-      const loadedImages = ['', '', '', ''];
-      const loadedCaptions = ['', '', '', ''];
-      if (initialActivity.images) {
-        initialActivity.images.forEach((img, i) => {
-          if (i < 4) loadedImages[i] = img;
-        });
-      }
-      if (initialActivity.imageCaptions) {
-        initialActivity.imageCaptions.forEach((cap, i) => {
-          if (i < 4) loadedCaptions[i] = cap;
-        });
-      }
-      setImages(loadedImages);
-      setImageCaptions(loadedCaptions);
-
-      // Gambar disimpan sebagai rujukan IndexedDB — muatkan semula untuk pratonton.
-      resolveImages(loadedImages)
-        .then(setImagePreviews)
-        .catch(() => setImagePreviews(loadedImages));
-    } else {
-      // Set some nice initial defaults for a new record
+    if (!initialActivity) {
+      /*
+       * Kosongkan borang apabila bertukar daripada "sunting" kepada "baharu".
+       *
+       * Komponen ini kekal terpasang apabila guru menekan nav "Rekod Aktiviti
+       * Baharu" semasa sedang menyunting rekod lain — tab sudah berada pada
+       * 'form', jadi React mengekalkan keadaannya. Tanpa set semula di sini,
+       * borang "baharu" itu muncul lengkap dengan data rekod terdahulu dan
+       * disimpan sebagai rekod pendua di bawah ID baharu.
+       */
+      setGroupName('Ancala');
+      setCustomGroupName('');
+      setIsCustomGroup(false);
       setTeacherOnDuty('');
-      setSubjectTeacher('');
+      setDate(new Date().toISOString().split('T')[0]);
+      setClassName(availableClasses[0] ?? '');
+      setCustomClassName('');
+      setIsCustomClass(false);
+      setSubject('BM');
+      setActivityName(commonActivitiesBm[0] ?? '');
+      setCustomActivityName('');
+      setIsCustomActivity(false);
       setActivityDesc('');
+      setSubjectTeacher('');
       setNotes('');
+      setStudents([]);
       setImages(['', '', '', '']);
       setImagePreviews(['', '', '', '']);
       setImageCaptions(['', '', '', '']);
-      setStudents([{ id: 'stud-temp-1', name: '', currentTp: 2, targetTp: 3, notes: '' }]);
-      
-      // Default activity based on subject
-      if (subject === 'BM') {
-        setActivityName(commonActivitiesBm[0] || '');
-      } else {
-        setActivityName(commonActivitiesBi[0] || '');
-      }
+      return;
     }
-  }, [initialActivity, availableClasses, commonActivitiesBm, commonActivitiesBi]);
 
-  // Reset default activity selection when subject changes
+    if (AVAILABLE_GROUPS.includes(initialActivity.groupName)) {
+      setGroupName(initialActivity.groupName);
+      setIsCustomGroup(false);
+    } else {
+      setCustomGroupName(initialActivity.groupName);
+      setIsCustomGroup(true);
+    }
+
+    setTeacherOnDuty(initialActivity.teacherOnDuty);
+    setDate(initialActivity.date);
+    setDay(initialActivity.day);
+
+    if (availableClasses.includes(initialActivity.className)) {
+      setClassName(initialActivity.className);
+      setIsCustomClass(false);
+    } else {
+      setCustomClassName(initialActivity.className);
+      setIsCustomClass(true);
+    }
+
+    setSubject(initialActivity.subject);
+
+    const commonActs =
+      initialActivity.subject === 'BM' ? commonActivitiesBm : commonActivitiesBi;
+    if (commonActs.includes(initialActivity.activityName)) {
+      setActivityName(initialActivity.activityName);
+      setIsCustomActivity(false);
+    } else {
+      setCustomActivityName(initialActivity.activityName);
+      setIsCustomActivity(true);
+    }
+
+    setActivityDesc(initialActivity.activityDesc);
+    setSubjectTeacher(initialActivity.subjectTeacher);
+    setNotes(initialActivity.notes);
+    setStudents(initialActivity.students);
+
+    const loadedImages = ['', '', '', ''];
+    const loadedCaptions = ['', '', '', ''];
+    initialActivity.images?.forEach((img, i) => {
+      if (i < 4) loadedImages[i] = img;
+    });
+    initialActivity.imageCaptions?.forEach((cap, i) => {
+      if (i < 4) loadedCaptions[i] = cap;
+    });
+    setImages(loadedImages);
+    setImageCaptions(loadedCaptions);
+
+    // Gambar disimpan sebagai rujukan IndexedDB — muatkan semula untuk pratonton.
+    resolveImages(loadedImages)
+      .then(setImagePreviews)
+      .catch(() => setImagePreviews(loadedImages));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialActivity]);
+
   const handleSubjectChange = (newSubject: 'BM' | 'BI') => {
     setSubject(newSubject);
     setIsCustomActivity(false);
-    if (newSubject === 'BM') {
-      setActivityName(commonActivitiesBm[0] || '');
-    } else {
-      setActivityName(commonActivitiesBi[0] || '');
-    }
+    setActivityName(
+      (newSubject === 'BM' ? commonActivitiesBm[0] : commonActivitiesBi[0]) || ''
+    );
   };
 
-  // Add a new student to roster
-  const addStudent = () => {
-    const newId = `stud-temp-${Date.now()}`;
-    setStudents([
-      ...students,
-      { id: newId, name: '', currentTp: 2, targetTp: 3, notes: '' }
-    ]);
-  };
+  /* ----------------------------------------------------------------------
+     Murid
+     ---------------------------------------------------------------------- */
 
-  // Remove a student from roster
-  const removeStudent = (id: string) => {
-    if (students.length === 1) {
-      alert('Sila tinggalkan sekurang-kurangnya seorang murid dalam senarai.');
-      return;
-    }
-    setStudents(students.filter(s => s.id !== id));
-  };
+  const finalClassName = isCustomClass ? customClassName.trim() : className;
+  const finalActivityName = isCustomActivity ? customActivityName.trim() : activityName;
+  const finalGroupName = isCustomGroup ? customGroupName.trim() : groupName;
 
-  // Update specific student field
-  const updateStudent = (id: string, field: keyof Student, value: any) => {
-    setStudents(students.map(s => s.id === id ? { ...s, [field]: value } : s));
-  };
+  const rosterKelas = useMemo(
+    () => (finalClassName ? muridDalamKelas(studentRoster, finalClassName) : []),
+    [studentRoster, finalClassName]
+  );
+
+  const namaDalamRoster = useMemo(
+    () => new Set(rosterKelas.map(m => kunciNama(m.name))),
+    [rosterKelas]
+  );
+
+  const petaDipilih = useMemo(() => {
+    const peta = new Map<string, Student>();
+    for (const s of students) peta.set(kunciNama(s.name), s);
+    return peta;
+  }, [students]);
 
   /**
-   * Muat naik gambar untuk satu slot.
+   * Murid yang tiada dalam senarai induk kelas ini.
    *
-   * Gambar dimampatkan terlebih dahulu (1280px / JPEG q0.72) kemudian disimpan
-   * ke IndexedDB. Rekod aktiviti hanya memegang rujukan ringkas, jadi kuota
-   * localStorage tidak lagi boleh dilanggar oleh gambar.
+   * Merangkumi nama yang ditaip sendiri dan — apabila guru menukar kelas
+   * selepas menanda murid — murid daripada kelas terdahulu. Mereka dipaparkan
+   * secara berasingan dan bukan dibuang senyap: kerja yang sudah dimasukkan
+   * tidak sepatutnya hilang hanya kerana satu senarai juntai bertukar.
    */
-  const handleImageSlotChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const muridLain = useMemo(
+    () => students.filter(s => !namaDalamRoster.has(kunciNama(s.name))),
+    [students, namaDalamRoster]
+  );
+
+  const buatMurid = (nama: string): Student => ({
+    id: `stud-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+    name: nama,
+    currentTp: 1,
+    targetTp: 2,
+    notes: ''
+  });
+
+  const toggleMuridRoster = (nama: string) => {
+    const kunci = kunciNama(nama);
+    setStudents(prev =>
+      prev.some(s => kunciNama(s.name) === kunci)
+        ? prev.filter(s => kunciNama(s.name) !== kunci)
+        : [...prev, buatMurid(nama)]
+    );
+  };
+
+  const tandaSemuaKelas = () => {
+    setStudents(prev => {
+      const ada = new Set(prev.map(s => kunciNama(s.name)));
+      const tambahan = rosterKelas
+        .filter(m => !ada.has(kunciNama(m.name)))
+        .map(m => buatMurid(m.name));
+      return [...prev, ...tambahan];
+    });
+  };
+
+  const buangSemuaKelas = () => {
+    setStudents(prev => prev.filter(s => !namaDalamRoster.has(kunciNama(s.name))));
+  };
+
+  const addStudentManual = () => {
+    setStudents(prev => [...prev, buatMurid('')]);
+  };
+
+  const removeStudent = (id: string) => {
+    setStudents(prev => prev.filter(s => s.id !== id));
+  };
+
+  const updateStudent = (id: string, field: keyof Student, value: any) => {
+    setStudents(prev => prev.map(s => (s.id === id ? { ...s, [field]: value } : s)));
+  };
+
+  /* ----------------------------------------------------------------------
+     Gambar
+     ---------------------------------------------------------------------- */
+
+  const handleImageSlotChange = async (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     const file = files[0];
@@ -227,17 +499,16 @@ export default function ActivityForm({
         baharu[index] = dataUrl;
         return baharu;
       });
-
       setImageCaptions(prev => {
         if (prev[index]) return prev;
-        const defaultCaptions = [
+        const lalai = [
           'Sesi penerangan awal tajuk dan objektif pembelajaran oleh guru bertugas.',
           'Murid-murid berbincang dan bekerjasama dalam kumpulan kecil.',
           'Bimbingan rapat secara bersemuka (intervensi) diberikan kepada murid sasaran.',
           'Murid membuat simulasi pembentangan hasil tugasan di hadapan kelas.'
         ];
         const baharu = [...prev];
-        baharu[index] = defaultCaptions[index] ?? '';
+        baharu[index] = lalai[index] ?? '';
         return baharu;
       });
     } catch (err: any) {
@@ -249,70 +520,109 @@ export default function ActivityForm({
   };
 
   const removeImageSlot = (index: number) => {
-    const newImages = [...images];
-    newImages[index] = '';
-    setImages(newImages);
-
-    const newPreviews = [...imagePreviews];
-    newPreviews[index] = '';
-    setImagePreviews(newPreviews);
-
     // Gambar dalam IndexedDB tidak dipadam di sini — jika pengguna membatalkan
     // suntingan, rekod asal masih memerlukannya. App.handleSaveActivity yang
     // membuang gambar yatim selepas simpanan disahkan.
-    const newCaptions = [...imageCaptions];
-    newCaptions[index] = '';
-    setImageCaptions(newCaptions);
+    setImages(prev => prev.map((v, i) => (i === index ? '' : v)));
+    setImagePreviews(prev => prev.map((v, i) => (i === index ? '' : v)));
+    setImageCaptions(prev => prev.map((v, i) => (i === index ? '' : v)));
   };
 
   const handleCaptionSlotChange = (index: number, text: string) => {
-    const newCaptions = [...imageCaptions];
-    newCaptions[index] = text;
-    setImageCaptions(newCaptions);
+    setImageCaptions(prev => prev.map((v, i) => (i === index ? text : v)));
   };
 
-  // Submit handler
+  /* ----------------------------------------------------------------------
+     Catatan impak — preset dengan ruang ganti diisi daripada rekod semasa
+     ---------------------------------------------------------------------- */
+
+  const muridBernama = students.filter(s => s.name.trim());
+
+  const konteksCatatan = {
+    aktiviti: finalActivityName,
+    kelas: finalClassName,
+    bil: muridBernama.length,
+    bilNaik: muridBernama.filter(
+      s => typeof s.tpAfter === 'number' && s.tpAfter > s.currentTp
+    ).length,
+    subjek: subject
+  };
+
+  const handlePilihPresetImpak = (teks: string) => {
+    if (!teks) return;
+    const diisi = isiCatatan(teks, konteksCatatan);
+    // Ditambah kepada catatan sedia ada, bukan menggantikannya — guru sering
+    // menggabungkan dua atau tiga ayat rumusan.
+    setNotes(prev => (prev.trim() ? `${prev.trim()} ${diisi}` : diisi));
+  };
+
+  const handleSimpanPresetImpak = () => {
+    const bersih = notes.trim();
+    if (!bersih) return;
+    if (catatanImpakPresets.some(p => p.trim() === bersih)) {
+      alert('Ayat ini sudah ada dalam senarai preset.');
+      return;
+    }
+    onAddImpakPreset?.(bersih);
+    alert('Catatan disimpan sebagai preset. Ia kini boleh dipilih pada rekod lain.');
+  };
+
+  /* ----------------------------------------------------------------------
+     Kemajuan seksyen — penanda siap pada setiap kad
+     ---------------------------------------------------------------------- */
+
+  const siap = {
+    pentadbiran: Boolean(
+      finalGroupName && teacherOnDuty.trim() && date && finalClassName && subjectTeacher.trim()
+    ),
+    aktiviti: Boolean(finalActivityName && activityDesc.trim()),
+    murid: muridBernama.length > 0,
+    catatan: notes.trim().length > 0,
+    foto: images.some(img => img !== '')
+  };
+  const bilSiap = Object.values(siap).filter(Boolean).length;
+
+  /* ----------------------------------------------------------------------
+     Hantar
+     ---------------------------------------------------------------------- */
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validations
-    const finalGroupName = isCustomGroup ? customGroupName.trim() : groupName;
-    const finalClassName = isCustomClass ? customClassName.trim() : className;
-    const finalActivityName = isCustomActivity ? customActivityName.trim() : activityName;
+    if (!finalGroupName) return alert('Sila masukkan atau pilih Kumpulan.');
+    if (!teacherOnDuty.trim()) return alert('Sila masukkan nama Guru Bertugas.');
+    if (!finalClassName) return alert('Sila masukkan atau pilih Kelas.');
+    if (!subjectTeacher.trim()) return alert('Sila masukkan nama Guru BM/BI yang terlibat.');
+    if (!finalActivityName) return alert('Sila masukkan atau pilih Nama Aktiviti.');
+    if (!activityDesc.trim()) return alert('Sila masukkan deskripsi ringkas aktiviti.');
 
-    if (!finalGroupName) {
-      alert('Sila masukkan atau pilih Kumpulan.');
-      return;
+    if (students.length === 0) {
+      return alert(
+        'Sila tanda sekurang-kurangnya seorang murid daripada senarai kelas, ' +
+          'atau tambah nama murid secara manual.'
+      );
     }
-    if (!teacherOnDuty.trim()) {
-      alert('Sila masukkan nama Guru Bertugas.');
-      return;
-    }
-    if (!finalClassName) {
-      alert('Sila masukkan atau pilih Kelas.');
-      return;
-    }
-    if (!finalActivityName) {
-      alert('Sila masukkan atau pilih Nama Aktiviti.');
-      return;
-    }
-    if (!activityDesc.trim()) {
-      alert('Sila masukkan deskripsi ringkas aktiviti.');
-      return;
-    }
-    if (!subjectTeacher.trim()) {
-      alert('Sila masukkan nama Guru BM/BI yang terlibat.');
-      return;
+    if (students.some(s => !s.name.trim())) {
+      return alert('Ada baris murid tanpa nama. Sila isi namanya atau buang baris tersebut.');
     }
 
-    // Check students
-    const invalidStudents = students.filter(s => !s.name.trim());
-    if (invalidStudents.length > 0) {
-      alert('Sila masukkan nama untuk semua murid yang tersenarai atau buang baris kosong.');
-      return;
-    }
+    const gambarAkhir = images.filter(img => img !== '');
 
-    const activityData: ActivityLog = {
+    /*
+     * ID gambar Drive hanya dikekalkan jika senarai gambar TIDAK berubah.
+     *
+     * driveImages dipadankan dengan images mengikut kedudukan. Jika guru
+     * menanggalkan atau menukar satu foto, ID lama akan menunjuk kepada fail
+     * yang salah — jadi lebih baik ia dilupuskan dan dibina semula oleh
+     * penyegerakan seterusnya. Jika gambar tidak disentuh, mengekalkannya
+     * bermakna peranti lain tidak kehilangan foto hanya kerana teks disunting.
+     */
+    const gambarAsal = initialActivity?.images ?? [];
+    const gambarTidakBerubah =
+      gambarAsal.length === gambarAkhir.length &&
+      gambarAsal.every((img, i) => img === gambarAkhir[i]);
+
+    onSave({
       id: initialActivity?.id || `act-${Date.now()}`,
       groupName: finalGroupName,
       teacherOnDuty: teacherOnDuty.trim(),
@@ -329,480 +639,596 @@ export default function ActivityForm({
         notes: s.notes?.trim() || ''
       })),
       notes: notes.trim(),
-      images: images.filter(img => img !== ''),
+      images: gambarAkhir,
       imageCaptions: imageCaptions.filter((_, idx) => images[idx] !== ''),
-      createdAt: initialActivity?.createdAt || new Date().toISOString()
-    };
-
-    onSave(activityData);
+      createdAt: initialActivity?.createdAt || new Date().toISOString(),
+      driveImages: gambarTidakBerubah ? initialActivity?.driveImages : undefined,
+      syncedAt: initialActivity?.syncedAt
+    });
   };
 
   const activeCommonActivities = subject === 'BM' ? commonActivitiesBm : commonActivitiesBi;
 
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 pb-12">
-      {/* Header Form */}
-      <div className="flex items-center justify-between border-b border-white/8 pb-5">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-bright">
-            {initialActivity ? 'Kemaskini Laporan Aktiviti' : 'Daftar & Rekod Aktiviti Sokongan PBD'}
-          </h1>
-          <p className="text-xs text-muted mt-1">
-            Isikan borang maklumat di bawah untuk menjana laporan bergambar dan statistik interaktif.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-muted hover:text-soft bg-white/5 hover:bg-white/8 rounded-xl transition"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-lime-core px-5 py-2 text-sm font-medium text-[#0a0f08] transition hover:bg-lime-deep shadow-sm"
-          >
-            <Check className="h-4 w-4" />
-            Simpan Rekod
-          </button>
-        </div>
-      </div>
-
-      {/* Main Form Fields */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Columns - Core Details */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Section 1: Maklumat Am & Pentadbiran */}
-          <div className="glass p-6 space-y-4">
-            <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-white/8 pb-2">
-              <span className="h-4 w-1 rounded-full bg-lime-core"></span>
-              1. Maklumat Pentadbiran & Bertugas
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Group Name Selector */}
-              <div>
-                <label className="block text-xs font-semibold text-soft uppercase mb-1">Kumpulan Guru</label>
-                {!isCustomGroup ? (
-                  <div className="flex gap-2">
-                    <select
-                      value={groupName}
-                      onChange={(e) => {
-                        if (e.target.value === 'CUSTOM') {
-                          setIsCustomGroup(true);
-                        } else {
-                          setGroupName(e.target.value);
-                        }
-                      }}
-                      className="field !text-sm"
-                    >
-                      {AVAILABLE_GROUPS.map(grp => (
-                        <option key={grp} value={grp}>{grp}</option>
-                      ))}
-                      <option value="CUSTOM">+ Kumpulan Lain...</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Masukkan nama kumpulan"
-                      value={customGroupName}
-                      onChange={(e) => setCustomGroupName(e.target.value)}
-                      className="w-full rounded-xl border border-lime-core/30 bg-lime-core/8 px-3.5 py-2 text-sm focus:border-lime-core focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomGroup(false)}
-                      className="px-2.5 text-xs text-lime-core hover:underline"
-                    >
-                      Senarai
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Teacher on duty */}
-              <div>
-                <label className="block text-xs font-semibold text-soft uppercase mb-1">Guru Bertugas Utama</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-faint">
-                    <User className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Siti Noraidah / Ahmad"
-                    value={teacherOnDuty}
-                    onChange={(e) => setTeacherOnDuty(e.target.value)}
-                    className="field !text-sm !pl-10"
-                  />
-                </div>
-              </div>
-
-              {/* Date selection */}
-              <div>
-                <label className="block text-xs font-semibold text-soft uppercase mb-1">Tarikh Aktiviti</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-faint">
-                    <Calendar className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="date"
-                    required
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="field !text-sm !pl-10"
-                  />
-                </div>
-              </div>
-
-              {/* Day selection */}
-              <div>
-                <label className="block text-xs font-semibold text-soft uppercase mb-1">Hari (Auto-Kira)</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={day}
-                  className="w-full rounded-xl bg-white/8 py-2.5 px-3.5 text-sm text-muted font-medium cursor-not-allowed focus:outline-none"
-                />
-              </div>
-
-              {/* Class Selector */}
-              <div>
-                <label className="block text-xs font-semibold text-soft uppercase mb-1">Kelas</label>
-                {!isCustomClass ? (
-                  <select
-                    value={className}
-                    onChange={(e) => {
-                      if (e.target.value === 'CUSTOM') {
-                        setIsCustomClass(true);
-                      } else {
-                        setClassName(e.target.value);
-                      }
-                    }}
-                    className="field !text-sm"
-                  >
-                    {availableClasses.map(cls => (
-                      <option key={cls} value={cls}>{cls}</option>
-                    ))}
-                    <option value="CUSTOM">+ Kelas Lain...</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. 3 Pintar"
-                      value={customClassName}
-                      onChange={(e) => setCustomClassName(e.target.value)}
-                      className="w-full rounded-xl border border-lime-core/30 bg-lime-core/8 px-3.5 py-2 text-sm focus:border-lime-core focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomClass(false)}
-                      className="px-2.5 text-xs text-lime-core hover:underline"
-                    >
-                      Senarai
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Subject teacher involved */}
-              <div>
-                <label className="block text-xs font-semibold text-soft uppercase mb-1">Guru BM/BI yang terlibat</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Nama guru subjek"
-                  value={subjectTeacher}
-                  onChange={(e) => setSubjectTeacher(e.target.value)}
-                  className="field !text-sm"
-                />
-              </div>
+    <form onSubmit={handleSubmit} className="resto mx-auto max-w-3xl">
+      <div className="resto-shell space-y-4 p-3.5 pb-28 sm:p-5 sm:pb-24">
+        {/* ================================================================
+            Kepala — bil pesanan
+            ================================================================ */}
+        <div className="resto-card overflow-hidden">
+          <div className="bg-[#33291f] px-4 py-3.5 text-center text-[#fffaf2]">
+            <div className="flex items-center justify-center gap-2">
+              <UtensilsCrossed className="h-4 w-4 text-[#f2a33c]" />
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#f2a33c]">
+                Bil Pesanan PBD
+              </span>
+              <UtensilsCrossed className="h-4 w-4 text-[#f2a33c]" />
             </div>
-          </div>
-
-          {/* Section 2: Maklumat Subjek & Aktiviti */}
-          <div className="glass p-6 space-y-4">
-            <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-white/8 pb-2">
-              <span className="h-4 w-1 rounded-full bg-lime-core"></span>
-              2. Butiran Aktiviti Akademik PBD
-            </h3>
-
-            {/* Subject Selector Buttons */}
-            <div>
-              <label className="block text-xs font-semibold text-soft uppercase mb-2">Pilih Subjek Sokongan</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleSubjectChange('BM')}
-                  className={`flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold border text-sm transition-all ${
-                    subject === 'BM'
-                      ? 'bg-lime-core/12 border-lime-core text-lime-glow shadow-sm shadow-lime-core/20'
-                      : 'bg-white/5 border-white/8 text-soft hover:bg-white/8'
-                  }`}
-                >
-                  <BookOpen className="h-4.5 w-4.5" />
-                  Bahasa Melayu (BM)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSubjectChange('BI')}
-                  className={`flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl font-bold border text-sm transition-all ${
-                    subject === 'BI'
-                      ? 'bg-fuchsia-400/12 border-pink-500 text-fuchsia-300 shadow-sm shadow-pink-100'
-                      : 'bg-white/5 border-white/8 text-soft hover:bg-white/8'
-                  }`}
-                >
-                  <Sparkles className="h-4.5 w-4.5" />
-                  Bahasa Inggeris (BI)
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4 mt-2">
-              {/* Activity name */}
-              <div>
-                <label className="block text-xs font-semibold text-soft uppercase mb-1">Nama Aktiviti</label>
-                {!isCustomActivity ? (
-                  <select
-                    value={activityName}
-                    onChange={(e) => {
-                      if (e.target.value === 'CUSTOM') {
-                        setIsCustomActivity(true);
-                      } else {
-                        setActivityName(e.target.value);
-                      }
-                    }}
-                    className="field !text-sm"
-                  >
-                    {activeCommonActivities.map(act => (
-                      <option key={act} value={act}>{act}</option>
-                    ))}
-                    <option value="CUSTOM">+ Aktiviti Khas Lain...</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. Spelling Bee Khas Tahap 1"
-                      value={customActivityName}
-                      onChange={(e) => setCustomActivityName(e.target.value)}
-                      className="w-full rounded-xl border border-lime-core/30 bg-lime-core/8 px-3.5 py-2.5 text-sm focus:border-lime-core focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomActivity(false)}
-                      className="px-2.5 text-xs text-lime-core hover:underline"
-                    >
-                      Cadangan
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Activity description */}
-              <div>
-                <label className="block text-xs font-semibold text-soft uppercase mb-1">Deskripsi Aktiviti & Langkah Pelaksanaan</label>
-                <textarea
-                  rows={4}
-                  required
-                  placeholder={
-                    subject === 'BM'
-                      ? "e.g. Murid melakonkan dialog di hadapan kelas secara berkumpulan. Bimbingan diberikan kepada murid yang gagap sebutan."
-                      : "e.g. Students spin the Wheel of Phonics to read sound combinations. Special attention was given to short vowels segmentation."
-                  }
-                  value={activityDesc}
-                  onChange={(e) => setActivityDesc(e.target.value)}
-                  className="field !text-sm resize-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Senarai Murid Terlibat & Pencapaian TP */}
-          <div className="glass p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/8 pb-3">
-              <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2">
-                <span className="h-4 w-1 rounded-full bg-lime-core"></span>
-                3. Murid Terlibat & Rekod TP PBD (Tahap Penguasaan)
-              </h3>
-              <button
-                type="button"
-                onClick={addStudent}
-                className="inline-flex items-center gap-1 text-xs font-bold text-lime-core glass-inset bg-lime-core/10 px-3 py-1.5 rounded-xl hover:bg-lime-core/20 transition"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Tambah Murid
-              </button>
-            </div>
-
-            <p className="text-xs text-muted">
-              Masukkan <strong>TP Sebelum</strong> (tahap ketika aktiviti bermula) dan <strong>TP Sasaran</strong> semasa merancang.
-              Selepas sesi tamat, kembali ke rekod ini dan isi <strong>TP Selepas</strong> — itulah tahap sebenar yang dicapai murid.
-              Hanya TP Selepas dikira sebagai bukti impak dalam papan pemuka dan laporan rasmi.
+            <h1 className="mt-1.5 font-display text-lg font-extrabold leading-tight sm:text-xl">
+              {initialActivity ? 'Kemaskini Rekod Aktiviti' : 'Rekod Aktiviti Baharu'}
+            </h1>
+            <p className="mt-1 text-[11px] leading-snug text-[#d9c9b4]">
+              Tanda setiap hidangan di bawah sehingga siap — seperti senarai pesanan.
             </p>
+          </div>
 
-            <div className="space-y-3">
-              {students.map((student, index) => (
-                <div
-                  key={student.id}
-                  className="glass-inset p-3 sm:p-4 space-y-3 md:space-y-0 md:flex md:items-center md:gap-4"
-                >
-                  {/*
-                    Pada telefon, nombor murid diletakkan dalam aliran biasa
-                    bersebelahan medan nama. Kedudukan mutlak menyebabkannya
-                    bertindih dengan medan input apabila baris bertindan menegak.
-                  */}
-                  <div className="flex items-center gap-2 md:contents">
-                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-lime-core/20 text-[11px] font-bold text-lime-glow">
-                      {index + 1}
-                    </span>
-
-                    {/* Name field */}
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        required
-                        placeholder="Nama penuh murid"
-                        value={student.name}
-                        onChange={(e) => updateStudent(student.id, 'name', e.target.value)}
-                        className="field !py-1.5"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tiga medan TP dibariskan bersebelahan pada telefon supaya
-                      satu murid tidak memakan skrin penuh secara menegak. */}
-                  <div className="grid grid-cols-3 gap-2 md:contents">
-
-                  {/* TP Sebelum */}
-                  <div className="md:w-24">
-                    <label className="block md:hidden text-[10px] text-muted font-semibold mb-1">TP Sebelum</label>
-                    <select
-                      value={student.currentTp}
-                      onChange={(e) => updateStudent(student.id, 'currentTp', parseInt(e.target.value))}
-                      className="field !px-2 !py-1.5"
-                    >
-                      {[1, 2, 3, 4, 5, 6].map(num => (
-                        <option key={num} value={num}>TP {num}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* TP Sasaran */}
-                  <div className="md:w-24">
-                    <label className="block md:hidden text-[10px] text-muted font-semibold mb-1">TP Sasaran</label>
-                    <select
-                      value={student.targetTp}
-                      onChange={(e) => updateStudent(student.id, 'targetTp', parseInt(e.target.value))}
-                      className="field !px-2 !py-1.5"
-                    >
-                      {[1, 2, 3, 4, 5, 6].map(num => (
-                        <option key={num} value={num}>TP {num}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Icon separator arrow */}
-                  <div className="hidden md:block text-faint">
-                    <Check className="h-4 w-4" />
-                  </div>
-
-                  {/*
-                    TP Selepas — keputusan sebenar selepas aktiviti.
-                    Sengaja dibiarkan "Belum dinilai" secara lalai supaya laporan
-                    tidak mendakwa pencapaian yang belum disahkan oleh guru.
-                  */}
-                  <div className="md:w-36">
-                    <label className="block md:hidden text-[10px] text-muted font-semibold mb-1 truncate">TP Selepas</label>
-                    <select
-                      value={student.tpAfter ?? ''}
-                      onChange={(e) =>
-                        updateStudent(
-                          student.id,
-                          'tpAfter',
-                          e.target.value === '' ? undefined : parseInt(e.target.value)
-                        )
-                      }
-                      className={`field !px-2 !py-1.5 ${
-                        typeof student.tpAfter === 'number'
-                          ? student.tpAfter > student.currentTp
-                            ? '!text-emerald-300 font-bold'
-                            : ''
-                          : '!text-amber-300'
-                      }`}
-                    >
-                      <option value="">Belum dinilai</option>
-                      {[1, 2, 3, 4, 5, 6].map(num => (
-                        <option key={num} value={num}>TP {num} (dicapai)</option>
-                      ))}
-                    </select>
-                  </div>
-                  </div>
-
-                  {/* Student Remarks */}
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      placeholder="Catatan kemajuan murid..."
-                      value={student.notes || ''}
-                      onChange={(e) => updateStudent(student.id, 'notes', e.target.value)}
-                      className="field !py-1.5"
-                    />
-                  </div>
-
-                  {/* Delete button */}
-                  <button
-                    type="button"
-                    onClick={() => removeStudent(student.id)}
-                    className="absolute top-2 right-2 md:static p-1.5 text-faint hover:text-rose-400 hover:bg-rose-500/12 rounded-lg transition"
-                    title="Hapus Murid"
+          {/* Jalur kemajuan */}
+          <div className="space-y-2 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#7b6553]">
+                Kemajuan Pesanan
+              </span>
+              <span className="resto-chip">{bilSiap} / 5 siap</span>
+            </div>
+            <div className="flex gap-1.5">
+              {[
+                { k: siap.pentadbiran, l: 'Meja' },
+                { k: siap.aktiviti, l: 'Menu' },
+                { k: siap.murid, l: 'Tetamu' },
+                { k: siap.catatan, l: 'Catatan' },
+                { k: siap.foto, l: 'Foto' }
+              ].map((s, i) => (
+                <div key={i} className="flex-1 space-y-1 text-center">
+                  <div
+                    className={`h-1.5 rounded-full transition-colors ${
+                      s.k ? 'bg-[#2f8f5b]' : 'bg-[#eadfc8]'
+                    }`}
+                  />
+                  <span
+                    className={`block text-[9px] font-bold uppercase ${
+                      s.k ? 'text-[#2f8f5b]' : 'text-[#b0a08c]'
+                    }`}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                    {s.l}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Section 4: Catatan Keseluruhan */}
-          <div className="glass p-6 space-y-4">
-            <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2 mb-2 border-b border-white/8 pb-2">
-              <span className="h-4 w-1 rounded-full bg-lime-core"></span>
-              4. Catatan Impak / Catatan Refleksi Keseluruhan
-            </h3>
-            <textarea
-              rows={3}
-              placeholder="e.g. Semua murid yang terlibat berjaya melakonkan watak berdasarkan dialog masing-masing dengan penuh seronok. Tiga murid menunjukkan kebolehan bertutur dengan sebutan yang jelas."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="field !text-sm resize-none"
-            />
-          </div>
-
         </div>
 
-        {/* Right Column - Images Upload & Pictorial Section */}
-        <div className="space-y-6">
-          <div className="glass p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/8 pb-2.5">
-              <h3 className="text-sm font-bold text-bright uppercase tracking-wider flex items-center gap-2">
-                <span className="h-4 w-1 rounded-full bg-lime-core"></span>
-                5. Foto Laporan Bergambar (4 Panel)
-              </h3>
+        {/* ================================================================
+            1. Meja & Waktu
+            ================================================================ */}
+        <div className="resto-card">
+          <KepalaKad
+            nombor={1}
+            ikon={ClipboardList}
+            tajuk="Meja & Waktu"
+            kapsyen="Kumpulan bertugas, tarikh dan kelas yang dilayan."
+            selesai={siap.pentadbiran}
+          />
+
+          <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+            {/* Kumpulan */}
+            <div>
+              <label className="resto-label">Kumpulan Guru</label>
+              {!isCustomGroup ? (
+                <select
+                  value={groupName}
+                  onChange={e => {
+                    if (e.target.value === 'CUSTOM') setIsCustomGroup(true);
+                    else setGroupName(e.target.value);
+                  }}
+                  className="resto-field"
+                >
+                  {AVAILABLE_GROUPS.map(grp => (
+                    <option key={grp} value={grp}>
+                      {grp}
+                    </option>
+                  ))}
+                  <option value="CUSTOM">＋ Kumpulan lain…</option>
+                </select>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nama kumpulan"
+                    value={customGroupName}
+                    onChange={e => setCustomGroupName(e.target.value)}
+                    className="resto-field"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomGroup(false)}
+                    className="shrink-0 px-2 text-xs font-bold text-[#e0503a] underline"
+                  >
+                    Senarai
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/*
-              Butang "Guna Contoh Foto Lengkap" dibuang — ia memuatkan empat foto
-              stok Unsplash ke dalam rekod. Gambar itu bukan bukti pelaksanaan
-              sebenar, dan sebuah laporan rasmi yang ditandatangani GPK tidak
-              sepatutnya boleh diisi dengan foto rekaan hanya dengan satu klik.
-            */}
+            {/* Guru bertugas */}
+            <div>
+              <label className="resto-label">Guru Bertugas Utama</label>
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#b0a08c]">
+                  <User className="h-4 w-4" />
+                </span>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nama guru bertugas"
+                  value={teacherOnDuty}
+                  onChange={e => setTeacherOnDuty(e.target.value)}
+                  className="resto-field !pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Tarikh */}
+            <div>
+              <label className="resto-label">Tarikh Aktiviti</label>
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#b0a08c]">
+                  <Calendar className="h-4 w-4" />
+                </span>
+                <input
+                  type="date"
+                  required
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="resto-field !pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Hari */}
+            <div>
+              <label className="resto-label">Hari (auto-kira)</label>
+              <input type="text" readOnly value={day} className="resto-field font-bold" />
+            </div>
+
+            {/* Kelas */}
+            <div>
+              <label className="resto-label">Kelas</label>
+              {!isCustomClass ? (
+                <select
+                  value={className}
+                  onChange={e => {
+                    if (e.target.value === 'CUSTOM') setIsCustomClass(true);
+                    else setClassName(e.target.value);
+                  }}
+                  className="resto-field font-bold"
+                >
+                  {availableClasses.map(cls => (
+                    <option key={cls} value={cls}>
+                      {cls}
+                    </option>
+                  ))}
+                  <option value="CUSTOM">＋ Kelas lain…</option>
+                </select>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Contoh: 3 PATRIOTIK"
+                    value={customClassName}
+                    onChange={e => setCustomClassName(e.target.value)}
+                    className="resto-field"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomClass(false)}
+                    className="shrink-0 px-2 text-xs font-bold text-[#e0503a] underline"
+                  >
+                    Senarai
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Guru subjek */}
+            <div>
+              <label className="resto-label">Guru BM / BI Terlibat</label>
+              <input
+                type="text"
+                required
+                placeholder="Nama guru subjek"
+                value={subjectTeacher}
+                onChange={e => setSubjectTeacher(e.target.value)}
+                className="resto-field"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ================================================================
+            2. Pilih Menu — subjek & aktiviti
+            ================================================================ */}
+        <div className="resto-card">
+          <KepalaKad
+            nombor={2}
+            ikon={BookMarked}
+            tajuk="Pilih Menu Aktiviti"
+            kapsyen="Subjek sokongan dan aktiviti yang dihidangkan hari ini."
+            selesai={siap.aktiviti}
+          />
+
+          <div className="space-y-3.5 p-4">
+            {/* Subjek */}
+            <div>
+              <label className="resto-label">Subjek Sokongan</label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleSubjectChange('BM')}
+                  aria-pressed={subject === 'BM'}
+                  className={`flex min-h-[3.25rem] flex-col items-center justify-center rounded-xl border-2 font-extrabold transition ${
+                    subject === 'BM'
+                      ? 'border-[#e0503a] bg-[#fdeae5] text-[#b8331f] shadow-[0_2px_0_0_#f5c6bb]'
+                      : 'border-[#eadfc8] bg-[#fffdf8] text-[#7b6553]'
+                  }`}
+                >
+                  <span className="text-sm">Bahasa Melayu</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">
+                    BM
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSubjectChange('BI')}
+                  aria-pressed={subject === 'BI'}
+                  className={`flex min-h-[3.25rem] flex-col items-center justify-center rounded-xl border-2 font-extrabold transition ${
+                    subject === 'BI'
+                      ? 'border-[#7c4fa1] bg-[#f3ecf9] text-[#5d3580] shadow-[0_2px_0_0_#d9c7e8]'
+                      : 'border-[#eadfc8] bg-[#fffdf8] text-[#7b6553]'
+                  }`}
+                >
+                  <span className="text-sm">Bahasa Inggeris</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">
+                    BI
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Nama aktiviti */}
+            <div>
+              <label className="resto-label">
+                Nama Aktiviti · {activeCommonActivities.length} pilihan lazim
+              </label>
+              {!isCustomActivity ? (
+                <select
+                  value={activityName}
+                  onChange={e => {
+                    if (e.target.value === 'CUSTOM') setIsCustomActivity(true);
+                    else setActivityName(e.target.value);
+                  }}
+                  className="resto-field font-semibold"
+                >
+                  {activeCommonActivities.map(act => (
+                    <option key={act} value={act}>
+                      {act}
+                    </option>
+                  ))}
+                  <option value="CUSTOM">＋ Aktiviti khas lain…</option>
+                </select>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Contoh: Spelling Bee Khas Tahap 1"
+                    value={customActivityName}
+                    onChange={e => setCustomActivityName(e.target.value)}
+                    className="resto-field"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomActivity(false)}
+                    className="shrink-0 px-2 text-xs font-bold text-[#e0503a] underline"
+                  >
+                    Senarai
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Deskripsi */}
+            <div>
+              <label className="resto-label">Deskripsi & Langkah Pelaksanaan</label>
+              <textarea
+                rows={4}
+                required
+                value={activityDesc}
+                onChange={e => setActivityDesc(e.target.value)}
+                placeholder={
+                  subject === 'BM'
+                    ? 'Contoh: Murid melakonkan dialog di hadapan kelas secara berkumpulan. Bimbingan diberikan kepada murid yang lemah sebutan.'
+                    : 'Contoh: Students spin the Wheel of Phonics to read sound combinations. Extra attention given to short vowel segmentation.'
+                }
+                className="resto-field resize-none leading-relaxed"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ================================================================
+            3. Senarai Tetamu — checklist murid
+            ================================================================ */}
+        <div className="resto-card">
+          <KepalaKad
+            nombor={3}
+            ikon={Users}
+            tajuk="Senarai Tetamu (Murid)"
+            kapsyen="Tanda nama murid yang mengikuti sesi bimbingan ini."
+            selesai={siap.murid}
+            hujung={
+              <span className="resto-chip shrink-0">{muridBernama.length} murid</span>
+            }
+          />
+
+          <div className="space-y-3 p-4">
+            {/* Panduan TP */}
+            <div className="flex items-start gap-2 rounded-xl bg-[#fff2dc] p-3 text-[11px] leading-relaxed text-[#8a5a12]">
+              <Info className="mt-px h-3.5 w-3.5 shrink-0" />
+              <p>
+                <strong>TP Asal</strong> hanya TP 1 atau TP 2 — aktiviti sokongan
+                disasarkan kepada murid yang belum menguasai. <strong>TP Sasaran</strong> boleh
+                TP 1 hingga TP 6. Isi <strong>TP Selepas</strong> hanya setelah murid dinilai;
+                itulah angka yang dikira sebagai bukti impak.
+              </p>
+            </div>
+
+            {/* Checklist kelas */}
+            {finalClassName && rosterKelas.length > 0 ? (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wide text-[#7b6553]">
+                    Senarai Kelas {finalClassName} ({rosterKelas.length} nama)
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={tandaSemuaKelas}
+                      className="rounded-lg bg-[#e3f5ea] px-2.5 py-1 text-[10.5px] font-extrabold text-[#1f6b41] transition hover:bg-[#cfeeda]"
+                    >
+                      Tanda Semua
+                    </button>
+                    <button
+                      type="button"
+                      onClick={buangSemuaKelas}
+                      className="rounded-lg bg-[#fdeae5] px-2.5 py-1 text-[10.5px] font-extrabold text-[#b8331f] transition hover:bg-[#fad6cd]"
+                    >
+                      Kosongkan
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {rosterKelas.map(murid => {
+                    const dipilih = petaDipilih.get(kunciNama(murid.name));
+                    return (
+                      <div key={murid.id} className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleMuridRoster(murid.name)}
+                          className={dipilih ? 'resto-check-on' : 'resto-check'}
+                          aria-pressed={Boolean(dipilih)}
+                        >
+                          <span
+                            className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition ${
+                              dipilih
+                                ? 'border-[#2f8f5b] bg-[#2f8f5b] text-white'
+                                : 'border-[#d8c8ab] bg-white'
+                            }`}
+                          >
+                            {dipilih && <Check className="h-3.5 w-3.5" strokeWidth={3.5} />}
+                          </span>
+                          <span
+                            className={`min-w-0 flex-1 text-[13.5px] font-bold leading-tight ${
+                              dipilih ? 'text-[#1f6b41]' : 'text-[#4a3c2e]'
+                            }`}
+                          >
+                            {murid.name}
+                          </span>
+                          {dipilih && (
+                            <span className="shrink-0 rounded-md bg-white px-1.5 py-0.5 text-[10px] font-extrabold text-[#2f8f5b]">
+                              TP {dipilih.currentTp} → {dipilih.tpAfter ?? dipilih.targetTp}
+                            </span>
+                          )}
+                        </button>
+
+                        {dipilih && (
+                          <ButiranMurid
+                            murid={dipilih}
+                            presetCatatan={catatanMuridPresets}
+                            onUbah={updateStudent}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5 rounded-xl bg-[#fff3e0] p-4 text-center">
+                <Users className="mx-auto h-7 w-7 text-[#c9b393]" strokeWidth={1.5} />
+                <p className="text-[12.5px] font-bold text-[#6b5a48]">
+                  {finalClassName
+                    ? `Tiada nama murid tersimpan untuk kelas ${finalClassName}.`
+                    : 'Pilih kelas dahulu untuk memaparkan senarai nama murid.'}
+                </p>
+                <p className="mx-auto max-w-sm text-[11px] leading-relaxed text-[#7b6553]">
+                  Masukkan senarai nama murid sekali sahaja dalam Tetapan &amp; Admin →
+                  Senarai Murid (boleh tampal pukal), dan selepas itu ia akan muncul di sini
+                  sebagai senarai tanda.
+                </p>
+                {onOpenAdmin && (
+                  <button
+                    type="button"
+                    onClick={onOpenAdmin}
+                    className="resto-btn-alt !min-h-0 !py-2 !text-[12.5px]"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                    Buka Senarai Murid
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Murid ditaip sendiri / dari kelas lain */}
+            {muridLain.length > 0 && (
+              <div className="space-y-2 border-t border-dashed border-[#e3d5ba] pt-3">
+                <span className="text-[11px] font-extrabold uppercase tracking-wide text-[#7b6553]">
+                  Nama Ditaip Sendiri ({muridLain.length})
+                </span>
+                {muridLain.map(murid => (
+                  <div key={murid.id} className="space-y-2 rounded-xl bg-[#fff3e0] p-2.5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={murid.name}
+                        onChange={e => updateStudent(murid.id, 'name', e.target.value)}
+                        placeholder="Nama penuh murid"
+                        className="resto-field !min-h-0 !py-2 font-bold"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeStudent(murid.id)}
+                        className="shrink-0 rounded-lg p-2 text-[#b0a08c] transition hover:bg-[#fdeae5] hover:text-[#e0503a]"
+                        title="Buang murid"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <ButiranMurid
+                      murid={murid}
+                      presetCatatan={catatanMuridPresets}
+                      onUbah={updateStudent}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={addStudentManual}
+              className="resto-btn-alt w-full !text-[13px]"
+            >
+              <Plus className="h-4 w-4" />
+              Tambah Nama Murid Secara Manual
+            </button>
+          </div>
+        </div>
+
+        {/* ================================================================
+            4. Catatan Chef — impak / refleksi
+            ================================================================ */}
+        <div className="resto-card">
+          <KepalaKad
+            nombor={4}
+            ikon={ChefHat}
+            tajuk="Catatan Impak / Refleksi"
+            kapsyen="Rumusan keseluruhan sesi — pilih preset atau taip sendiri."
+            selesai={siap.catatan}
+          />
+
+          <div className="space-y-3 p-4">
+            <div>
+              <label className="resto-label">
+                Preset Catatan Impak · {catatanImpakPresets.length} set
+              </label>
+              <select
+                value=""
+                onChange={e => {
+                  handlePilihPresetImpak(e.target.value);
+                  e.target.value = '';
+                }}
+                className="resto-field !bg-[#fff2dc] font-semibold !text-[#8a5a12]"
+              >
+                <option value="">＋ Pilih ayat rumusan siap sedia…</option>
+                {catatanImpakPresets.map((p, i) => (
+                  <option key={i} value={p}>
+                    {i + 1}. {isiCatatan(p, konteksCatatan)}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10.5px] leading-relaxed text-[#7b6553]">
+                Preset yang dipilih akan disambung kepada catatan sedia ada, dan nama
+                aktiviti, kelas serta bilangan murid diisi secara automatik. Anda masih boleh
+                menyuntingnya selepas itu.
+              </p>
+            </div>
+
+            <div>
+              <label className="resto-label">Catatan Impak Keseluruhan</label>
+              <textarea
+                rows={5}
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Contoh: Semua murid berjaya melakonkan watak masing-masing dengan penuh yakin. Tiga murid menunjukkan sebutan yang lebih jelas berbanding sesi lepas."
+                className="resto-field resize-none leading-relaxed"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {notes.trim() && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setNotes('')}
+                    className="rounded-lg bg-[#fdeae5] px-3 py-1.5 text-[11px] font-extrabold text-[#b8331f] transition hover:bg-[#fad6cd]"
+                  >
+                    Kosongkan Catatan
+                  </button>
+                  {onAddImpakPreset && (
+                    <button
+                      type="button"
+                      onClick={handleSimpanPresetImpak}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#e3f5ea] px-3 py-1.5 text-[11px] font-extrabold text-[#1f6b41] transition hover:bg-[#cfeeda]"
+                    >
+                      <BookmarkPlus className="h-3.5 w-3.5" />
+                      Simpan Sebagai Preset
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ================================================================
+            5. Album Hidangan — 4 foto
+            ================================================================ */}
+        <div className="resto-card">
+          <KepalaKad
+            nombor={5}
+            ikon={Camera}
+            tajuk="Album Foto Laporan (4 Panel)"
+            kapsyen="Foto bagi setiap fasa bimbingan untuk laporan bergambar."
+            selesai={siap.foto}
+            hujung={
+              <span className="resto-chip shrink-0">
+                {images.filter(Boolean).length} / 4
+              </span>
+            }
+          />
+
+          <div className="space-y-3 p-4">
             {images.some(img => img !== '') && (
               <div className="flex justify-end">
                 <button
@@ -812,111 +1238,109 @@ export default function ActivityForm({
                     setImagePreviews(['', '', '', '']);
                     setImageCaptions(['', '', '', '']);
                   }}
-                  className="btn-danger !py-2 !text-xs"
+                  className="rounded-lg bg-[#fdeae5] px-3 py-1.5 text-[11px] font-extrabold text-[#b8331f] transition hover:bg-[#fad6cd]"
                 >
                   Kosongkan Semua Foto
                 </button>
               </div>
             )}
 
-            <p className="text-xs text-muted leading-relaxed">
-              Sila muat naik foto bagi setiap daripada 4 fasa bimbingan berikut untuk melengkapkan helaian laporan bergambar formal:
-            </p>
-
-            {/* 4 Panels List */}
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[
-                { label: 'Fasa 1: Set Induksi (Permulaan)', desc: 'Sesi penerangan awal tajuk dan modul.' },
-                { label: 'Fasa 2: Aktiviti Utama (Kumpulan)', desc: 'Murid bekerjasama dalam kumpulan/tugasan.' },
-                { label: 'Fasa 3: Sesi Bimbingan (Intervensi)', desc: 'Bimbingan personal rapat bersemuka dengan murid.' },
-                { label: 'Fasa 4: Hasil Kerja (Penutup)', desc: 'Murid mementaskan dialog atau hasil kerja.' }
+                {
+                  label: 'Fasa 1: Set Induksi',
+                  desc: 'Sesi penerangan awal tajuk dan modul.'
+                },
+                {
+                  label: 'Fasa 2: Aktiviti Utama',
+                  desc: 'Murid bekerjasama dalam kumpulan/tugasan.'
+                },
+                {
+                  label: 'Fasa 3: Sesi Bimbingan',
+                  desc: 'Bimbingan rapat bersemuka dengan murid.'
+                },
+                {
+                  label: 'Fasa 4: Hasil Kerja',
+                  desc: 'Murid mementaskan dialog atau hasil kerja.'
+                }
               ].map((panel, idx) => {
                 const img = imagePreviews[idx];
                 const caption = imageCaptions[idx];
                 const sedangMuatNaik = uploadingSlot === idx;
 
                 return (
-                  <div key={idx} className="rounded-xl p-3 bg-white/5 space-y-2.5 transition hover:border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-bright flex items-center gap-1.5">
-                        <span className="h-4 w-4 rounded-full bg-lime-core/20 text-lime-glow font-bold flex items-center justify-center text-[10px]">
-                          {idx + 1}
-                        </span>
-                        {panel.label}
+                  <div key={idx} className="space-y-2 rounded-xl bg-[#fffdf8] p-2.5">
+                    <span className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#4a3c2e]">
+                      <span className="grid h-4 w-4 place-items-center rounded-full bg-[#f2a33c] text-[9px] font-extrabold text-white">
+                        {idx + 1}
                       </span>
-                    </div>
-                    
+                      {panel.label}
+                    </span>
+
                     {img ? (
                       <div className="space-y-2">
-                        {/* Image Preview */}
-                        <div className="relative aspect-video rounded-lg overflow-hidden bg-white/8 shadow-sm">
+                        <div className="relative aspect-video overflow-hidden rounded-lg bg-[#f2ead9]">
                           <img
                             src={img}
-                            alt={`Preview ${panel.label}`}
-                            className="w-full h-full object-cover"
+                            alt={`Pratonton ${panel.label}`}
+                            className="h-full w-full object-cover"
                             referrerPolicy="no-referrer"
                           />
                           <button
                             type="button"
                             onClick={() => removeImageSlot(idx)}
-                            className="absolute top-1.5 right-1.5 p-1 bg-black/70 hover:bg-black/90 text-white rounded-full transition shadow-sm"
-                            title="Padam Foto"
+                            className="absolute right-1.5 top-1.5 rounded-full bg-[#33291f]/80 p-1.5 text-white transition hover:bg-[#33291f]"
+                            title="Padam foto"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-3.5 w-3.5" />
                           </button>
                         </div>
-
-                        {/* Caption input */}
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-faint uppercase">Kapsyen Foto {idx + 1}</label>
-                          <input
-                            type="text"
-                            required
-                            value={caption || ''}
-                            onChange={(e) => handleCaptionSlotChange(idx, e.target.value)}
-                            placeholder={panel.desc}
-                            className="field !py-1.5"
-                          />
-                        </div>
+                        <input
+                          type="text"
+                          required
+                          value={caption || ''}
+                          onChange={e => handleCaptionSlotChange(idx, e.target.value)}
+                          placeholder={panel.desc}
+                          className="resto-field !min-h-0 !py-2"
+                        />
                       </div>
                     ) : (
-                      <div>
-                        {/* File upload click zone */}
+                      <>
                         <input
                           id={`image-slot-input-${idx}`}
                           type="file"
                           accept="image/*"
-                          onChange={(e) => handleImageSlotChange(idx, e)}
+                          onChange={e => handleImageSlotChange(idx, e)}
                           className="hidden"
                         />
                         <label
                           htmlFor={`image-slot-input-${idx}`}
-                          className={`flex flex-col items-center justify-center gap-1.5 aspect-video rounded-lg border border-dashed bg-white/5 transition p-3 text-center ${
+                          className={`flex aspect-video flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed p-3 text-center transition ${
                             sedangMuatNaik
-                              ? 'border-lime-core/40 bg-lime-core/10 cursor-wait'
-                              : 'border-white/10 hover:bg-white/5 hover:border-lime-core/40 cursor-pointer'
+                              ? 'cursor-wait border-[#f2a33c] bg-[#fff2dc]'
+                              : 'cursor-pointer border-[#e0d2b6] bg-white hover:border-[#f2a33c] hover:bg-[#fffaf0]'
                           }`}
                         >
                           {sedangMuatNaik ? (
                             <>
-                              <Upload className="h-5 w-5 text-lime-core animate-pulse" />
-                              <span className="text-[11px] font-bold text-lime-glow block">
+                              <Upload className="h-5 w-5 animate-pulse text-[#f2a33c]" />
+                              <span className="text-[11px] font-extrabold text-[#8a5a12]">
                                 Memampat &amp; menyimpan…
                               </span>
                             </>
                           ) : (
                             <>
-                              <Upload className="h-5 w-5 text-faint" />
-                              <div>
-                                <span className="text-[11px] font-bold text-soft block">Muat Naik Foto {idx + 1}</span>
-                                <span className="text-[10px] text-faint block max-w-[180px] mx-auto leading-tight mt-0.5">
-                                  {panel.desc}
-                                </span>
-                              </div>
+                              <Camera className="h-6 w-6 text-[#c9b393]" strokeWidth={1.5} />
+                              <span className="text-[12px] font-extrabold text-[#6b5a48]">
+                                Muat Naik Foto {idx + 1}
+                              </span>
+                              <span className="text-[10px] leading-tight text-[#82705c]">
+                                {panel.desc}
+                              </span>
                             </>
                           )}
                         </label>
-                      </div>
+                      </>
                     )}
                   </div>
                 );
@@ -925,24 +1349,29 @@ export default function ActivityForm({
           </div>
         </div>
 
+        {/* Nota kaki resit */}
+        <p className="flex items-center justify-center gap-1.5 px-2 text-center text-[10.5px] leading-relaxed text-[#7b6553]">
+          <Sparkles className="h-3 w-3 shrink-0 text-[#f2a33c]" />
+          Rekod disimpan dalam peranti ini dan disegerakkan ke Google Sheets jika sambungan
+          awan telah ditetapkan.
+        </p>
       </div>
 
-      {/* Sticky Bottom Actions Bar */}
-      <div className="border-t border-white/8 pt-6 flex items-center justify-end gap-3 bg-white/80 backdrop-blur-md py-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-5 py-2.5 text-sm font-medium text-muted hover:text-soft bg-white/5 hover:bg-white/8 rounded-xl transition"
-        >
-          Kembali Ke Senarai
-        </button>
-        <button
-          type="submit"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-lime-core px-6 py-2.5 text-sm font-bold text-[#0a0f08] transition hover:bg-lime-deep shadow-md shadow-lime-core/25"
-        >
-          <Check className="h-4.5 w-4.5" />
-          Simpan Laporan Aktiviti
-        </button>
+      {/* ==================================================================
+          Bar tindakan melekat — sentiasa dalam jangkauan ibu jari
+          ================================================================== */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-[#eadfc8] bg-[#fffaf2]/95 px-3 py-3 backdrop-blur-md md:left-64 print:hidden">
+        <div className="mx-auto flex max-w-3xl items-center gap-2.5">
+          <button type="button" onClick={onCancel} className="resto-btn-alt shrink-0">
+            <X className="h-4 w-4" />
+            <span className="hidden sm:inline">Batal</span>
+          </button>
+          <button type="submit" className="resto-btn flex-1">
+            <Check className="h-4.5 w-4.5" strokeWidth={3} />
+            {initialActivity ? 'Kemaskini Rekod' : 'Simpan Rekod'}
+            <span className="text-[11px] font-bold text-[#f2a33c]">({bilSiap}/5)</span>
+          </button>
+        </div>
       </div>
     </form>
   );

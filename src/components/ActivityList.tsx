@@ -249,8 +249,17 @@ export default function ActivityList({
                       alt={act.activityName}
                     />
                   ) : (
+                    /*
+                      Latar tempat letak dahulunya kecerunan biru/merah jambu
+                      hampir putih dengan teks lime atau fuchsia di atasnya —
+                      teks cerah di atas latar cerah, jadi "Tiada Gambar
+                      Laporan" hampir tidak kelihatan. Kini latar gelap bertona
+                      subjek.
+                    */
                     <div className={`w-full h-full flex flex-col items-center justify-center gap-1.5 ${
-                      isBM ? 'bg-gradient-to-br from-blue-50 to-indigo-100/70 text-lime-glow' : 'bg-gradient-to-br from-pink-50 to-rose-100/70 text-fuchsia-300'
+                      isBM
+                        ? 'bg-gradient-to-br from-lime-core/12 to-lime-dark/10 text-lime-glow'
+                        : 'bg-gradient-to-br from-fuchsia-400/12 to-purple-500/10 text-fuchsia-300'
                     }`}>
                       <BookOpen className="h-8 w-8 stroke-1.5" />
                       <span className="text-xs font-semibold">Tiada Gambar Laporan</span>
@@ -264,7 +273,14 @@ export default function ActivityList({
                     }`}>
                       {isBM ? 'Bahasa Melayu' : 'English (BI)'}
                     </span>
-                    <span className="inline-flex items-center rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-bright shadow-sm">
+                    {/*
+                      bg-white/95 + text-bright bermakna teks hampir putih di
+                      atas kepingan hampir putih — nama kelas tidak kelihatan
+                      sama sekali. Kepingan gelap legap dipilih kerana ia
+                      terletak di atas foto, jadi ia perlu berfungsi tanpa
+                      mengira warna gambar di belakangnya.
+                    */}
+                    <span className="inline-flex items-center rounded-lg bg-void/80 backdrop-blur-md px-2.5 py-1 text-[10px] font-bold text-bright shadow-sm">
                       {act.className}
                     </span>
                   </div>
@@ -333,7 +349,7 @@ export default function ActivityList({
                   </button>
                   <button
                     onClick={() => onEditActivity(act)}
-                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-soft border-x border-white/8 hover:bg-gray-150/50 hover:text-bright transition"
+                    className="inline-flex items-center justify-center gap-1 py-3 text-xs font-semibold text-soft border-x border-white/8 hover:bg-white/8 hover:text-bright transition"
                   >
                     <Edit className="h-3.5 w-3.5" />
                     Ubah
@@ -374,7 +390,7 @@ export default function ActivityList({
             )}
             <button
               onClick={onAddNew}
-              className="px-4 py-2 text-xs font-bold text-white bg-lime-core hover:bg-lime-glow rounded-xl transition"
+              className="px-4 py-2 text-xs font-bold text-[#0a0f08] bg-lime-core hover:bg-lime-glow rounded-xl transition"
             >
               Daftar Rekod Baru
             </button>

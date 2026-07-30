@@ -1,7 +1,20 @@
+/**
+ * Pilihan TP Asal (sebelum aktiviti) — hanya TP 1 dan TP 2.
+ *
+ * Aktiviti sokongan PBD disasarkan kepada murid yang BELUM menguasai. Murid
+ * pada TP 3 dan ke atas tidak berada dalam kumpulan sasaran, jadi menawarkan
+ * TP 3-6 di ruangan "asal" hanya membuka ruang salah pilih dan menghasilkan
+ * statistik intervensi yang tidak benar.
+ */
+export const PILIHAN_TP_ASAL = [1, 2];
+
+/** Pilihan TP Sasaran dan TP Selepas — keseluruhan skala PBD. */
+export const PILIHAN_TP_PENUH = [1, 2, 3, 4, 5, 6];
+
 export interface Student {
   id: string;
   name: string;
-  currentTp: number; // TP Sebelum — tahap penguasaan sebelum aktiviti (1-6)
+  currentTp: number; // TP Asal — tahap penguasaan sebelum aktiviti (1-2)
   targetTp: number;  // TP Sasaran — tahap yang disasarkan oleh guru (1-6)
   /**
    * TP Selepas — tahap penguasaan yang BENAR-BENAR dicapai selepas aktiviti (1-6).
@@ -103,6 +116,19 @@ export interface Officer {
   isDefault?: boolean;
 }
 
+/**
+ * Seorang murid dalam senarai induk sekolah.
+ *
+ * Senarai ini diisi sekali (secara tampal pukal) dan kemudian digunakan
+ * semula pada setiap laporan: guru menanda murid daripada senarai kelas
+ * berkenaan, bukan menaip nama penuh setiap kali pada telefon.
+ */
+export interface StudentRosterEntry {
+  id: string;
+  name: string;
+  className: string;
+}
+
 export interface AppSettings {
   schoolName: string;
   schoolShortCode: string;
@@ -116,6 +142,20 @@ export interface AppSettings {
   pelaporList?: Officer[];
   /** Pentadbir yang menyemak dan mengesahkan laporan. */
   penyemakList?: Officer[];
+  /** Senarai induk nama murid, dikumpulkan mengikut kelas. */
+  studentRoster?: StudentRosterEntry[];
+  /** Preset catatan kemajuan bagi seorang murid. */
+  catatanMuridPresets?: string[];
+  /** Preset catatan impak / refleksi keseluruhan sesi. */
+  catatanImpakPresets?: string[];
+  /**
+   * Versi skema tetapan yang tersimpan.
+   *
+   * Tetapan disimpan dalam localStorage, jadi guru yang pernah membuka sistem
+   * ini akan terus melihat senarai lama (termasuk kelas rekaan) walaupun kod
+   * telah dikemas kini. Nombor ini membolehkan migrasi dijalankan sekali.
+   */
+  settingsVersion?: number;
 }
 
 /** Pegawai lalai bagi senarai, atau yang pertama jika tiada ditanda. */

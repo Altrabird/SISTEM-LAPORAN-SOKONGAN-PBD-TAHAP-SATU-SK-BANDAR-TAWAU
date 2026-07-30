@@ -1,6 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ActivityLog, Student, DutyGroup, isAssessed, tpGain } from '../types';
 import { OFFICIAL_DUTY_GROUPS, TANGGUNGJAWAB_UMUM } from '../data';
+import {
+  senaraiMinggu,
+  cariMingguSemasa,
+  cutiPadaHari,
+  tarikhPanjang,
+  awalHari
+} from '../lib/dutySchedule';
 import {
   WARNA_SUBJEK,
   WARNA_TP,
@@ -57,27 +64,79 @@ export default function Dashboard({
   dutyGroups = OFFICIAL_DUTY_GROUPS,
   tanggungjawabUmum = TANGGUNGJAWAB_UMUM
 }: DashboardProps) {
-  // State for Duty Schedule Interactive Panel
-  const [selectedWeekNum, setSelectedWeekNum] = useState<number>(25); // Default to Week 25 (20 - 24 Julai, Pawana) as it falls close to July 19th 2026!
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'weeks' | 'groups'>('weeks');
 
-  // Helper lists & selectors
-  const allWeeks = useMemo(() => {
-    const list: { weekNum: number; dates: string; groupName: string; holidays?: string[] }[] = [];
-    dutyGroups.forEach(group => {
-      group.weeks.forEach(wk => {
-        list.push({
-          weekNum: wk.number,
-          dates: wk.dates,
-          groupName: group.name,
-          holidays: wk.holidays
-        });
-      });
-    });
-    return list.sort((a, b) => a.weekNum - b.weekNum);
-  }, [dutyGroups]);
+  /*
+   * Tarikh hari ini, disimpan sebagai keadaan supaya paparan boleh dikemas
+   * kini sendiri.
+   *
+   * Guru meninggalkan papan pemuka terbuka pada komputer bilik guru selama
+   * beberapa hari. Tanpa keadaan ini, `new Date()` hanya dinilai sekali pada
+   * muat pertama dan "minggu semasa" beku pada hari tab itu dibuka.
+   */
+  const [hariIni, setHariIni] = useState<Date>(() => awalHari(new Date()));
+
+  useEffect(() => {
+    const semakTarikh = () => {
+      const kini = awalHari(new Date());
+      // Hanya tetapkan keadaan apabila HARI benar-benar bertukar; jika tidak
+      // setiap denyut jam akan mencetuskan render semula tanpa sebab.
+      setHariIni(sedia => (sedia.getTime() === kini.getTime() ? sedia : kini));
+    };
+
+    // Semakan sejam sekali menangkap peralihan tengah malam pada tab yang
+    // dibiarkan terbuka; semakan semasa tab difokuskan semula menangkap kes
+    // biasa iaitu komputer yang dibuka semula pada hari berikutnya.
+    const jam = setInterval(semakTarikh, 60 * 60 * 1000);
+    const bilaKembali = () => {
+      if (document.visibilityState === 'visible') semakTarikh();
+    };
+    document.addEventListener('visibilitychange', bilaKembali);
+    window.addEventListener('focus', semakTarikh);
+
+    return () => {
+      clearInterval(jam);
+      document.removeEventListener('visibilitychange', bilaKembali);
+      window.removeEventListener('focus', semakTarikh);
+    };
+  }, []);
+
+  const tahunSesi = hariIni.getFullYear();
+
+  // Semua minggu bertugas, disusun mengikut tarikh sebenar.
+  const allWeeks = useMemo(
+    () => senaraiMinggu(dutyGroups, tahunSesi),
+    [dutyGroups, tahunSesi]
+  );
+
+  const mingguSemasa = useMemo(
+    () => cariMingguSemasa(allWeeks, hariIni),
+    [allWeeks, hariIni]
+  );
+
+  /*
+   * Minggu yang dipilih pengguna secara manual, atau null untuk mengikut
+   * minggu semasa.
+   *
+   * Nombor minggu TIDAK disimpan sebagai keadaan lalai, kerana keadaan awal
+   * hanya dinilai sekali — itulah punca paparan lama beku pada minggu 25.
+   * Dengan cara ini, pemilihan mengekori kalendar sehingga guru menekan satu
+   * minggu lain dengan sengaja.
+   */
+  const [pilihanManual, setPilihanManual] = useState<number | null>(null);
+
+  const selectedWeekNum =
+    pilihanManual ?? mingguSemasa.minggu?.weekNum ?? allWeeks[0]?.weekNum ?? 0;
+
+  const cutiHariIni = useMemo(
+    () =>
+      mingguSemasa.status === 'semasa'
+        ? cutiPadaHari(mingguSemasa.minggu?.holidays, hariIni, tahunSesi)
+        : [],
+    [mingguSemasa, hariIni, tahunSesi]
+  );
 
   const filteredWeeks = useMemo(() => {
     return allWeeks.filter(wk => {
@@ -328,14 +387,14 @@ export default function Dashboard({
             <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted mt-0.5 md:mt-1">
               <span className="text-lime-core font-semibold">{stats.bmCount} BM</span>
               <span className="hidden sm:inline">•</span>
-              <span className="text-pink-600 font-semibold">{stats.biCount} BI</span>
+              <span className="text-fuchsia-300 font-semibold">{stats.biCount} BI</span>
             </div>
           </div>
         </div>
 
         {/* Card 2 */}
         <div className="glass glass-hover p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
-          <div className="rounded-xl bg-fuchsia-400/12 p-2.5 md:p-3 text-pink-600 shrink-0">
+          <div className="rounded-xl bg-fuchsia-400/12 p-2.5 md:p-3 text-fuchsia-300 shrink-0">
             <Users className="h-5 w-5 md:h-6 md:w-6" />
           </div>
           <div className="min-w-0">
@@ -637,6 +696,139 @@ export default function Dashboard({
           </div>
         </div>
 
+        {/* ==============================================================
+            Panel minggu semasa — dikira daripada tarikh hari ini
+            ==============================================================
+            Panel ini sengaja tidak terikat pada carian atau penapis bulan:
+            ia menjawab satu soalan sahaja ("siapa bertugas sekarang?") dan
+            jawapan itu tidak sepatutnya hilang hanya kerana guru sedang
+            mencari minggu lain di bawah.
+            ============================================================== */}
+        {mingguSemasa.minggu && (
+          <div
+            className={`rounded-2xl p-4 md:p-5 space-y-3 ${
+              mingguSemasa.status === 'semasa'
+                ? 'bg-lime-core/10 ring-1 ring-lime-core/25'
+                : 'bg-white/5 ring-1 ring-white/10'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                      mingguSemasa.status === 'semasa'
+                        ? 'bg-lime-core text-[#0a0f08]'
+                        : 'bg-amber-400/20 text-amber-200'
+                    }`}
+                  >
+                    <Clock className="h-3 w-3" />
+                    {mingguSemasa.status === 'semasa'
+                      ? 'Minggu Bertugas Semasa'
+                      : mingguSemasa.status === 'akan-datang'
+                        ? 'Minggu Bertugas Berikutnya'
+                        : mingguSemasa.status === 'tamat'
+                          ? 'Sesi 2026 Telah Tamat'
+                          : 'Tarikh Jadual Belum Ditetapkan'}
+                  </span>
+                  <span className="text-[11px] font-semibold text-muted">
+                    {tarikhPanjang(hariIni)}
+                  </span>
+                </div>
+
+                <h4 className="text-base md:text-lg font-black text-bright leading-tight">
+                  Minggu {mingguSemasa.minggu.weekNum} · {mingguSemasa.minggu.dates}
+                </h4>
+
+                <p className="text-xs text-muted">
+                  {mingguSemasa.status === 'akan-datang' && typeof mingguSemasa.hariLagi === 'number' ? (
+                    <>
+                      Bermula dalam{' '}
+                      <strong className="text-amber-200">
+                        {mingguSemasa.hariLagi} hari
+                      </strong>{' '}
+                      — hari ini di luar mana-mana minggu bertugas.
+                    </>
+                  ) : mingguSemasa.status === 'tamat' ? (
+                    <>
+                      Semua minggu dalam jadual sudah berlalu. Kemas kini tarikh melalui
+                      Tetapan &amp; Admin → Kumpulan &amp; Jadual untuk sesi baharu.
+                    </>
+                  ) : mingguSemasa.status === 'tiada' ? (
+                    <>
+                      Tarikh minggu tidak dapat dibaca. Semak format tarikh dalam Tetapan
+                      &amp; Admin (contoh yang betul: <em>12 - 16 JANUARI</em>).
+                    </>
+                  ) : (
+                    <>Kumpulan yang bertugas pada minggu persekolahan ini.</>
+                  )}
+                </p>
+              </div>
+
+              <div className="shrink-0 space-y-2 sm:text-right">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border font-black text-xs uppercase ${groupStyleHelpers.getBadge(
+                    mingguSemasa.minggu.groupName
+                  )}`}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${groupStyleHelpers.getDotColor(
+                      mingguSemasa.minggu.groupName
+                    )}`}
+                  />
+                  Kumpulan {mingguSemasa.minggu.groupName}
+                </span>
+
+                {/*
+                  Butang kembali hanya muncul apabila guru sedang melihat minggu
+                  lain — jika tidak ia mengesyorkan tindakan yang tiada kesan.
+                */}
+                {pilihanManual !== null && pilihanManual !== mingguSemasa.minggu.weekNum && (
+                  <button
+                    onClick={() => setPilihanManual(null)}
+                    className="block w-full sm:w-auto sm:ml-auto text-[10.5px] font-bold text-lime-core hover:underline"
+                  >
+                    ← Kembali ke minggu semasa
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Ahli kumpulan bertugas minggu ini */}
+            {(() => {
+              const kumpulan = dutyGroups.find(g => g.name === mingguSemasa.minggu!.groupName);
+              if (!kumpulan?.members.length) return null;
+              return (
+                <div className="flex flex-wrap gap-1.5 pt-1 border-t border-white/8">
+                  {kumpulan.members.map((m, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1 text-[11px]"
+                    >
+                      <span className="font-bold text-bright">{m.name}</span>
+                      <span className="text-faint">·</span>
+                      <span className="text-muted">{m.role}</span>
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Cuti yang jatuh TEPAT pada hari ini */}
+            {cutiHariIni.length > 0 && (
+              <div className="rounded-xl bg-rose-500/12 p-3 flex items-start gap-2.5">
+                <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="text-[11px] leading-relaxed">
+                  <p className="font-black text-rose-300 uppercase tracking-wide">
+                    Hari ini cuti:
+                  </p>
+                  <p className="text-rose-200">{cutiHariIni.join(' · ')}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {viewMode === 'weeks' ? (
           <div className="space-y-6">
             {/* Search and Filters */}
@@ -698,13 +890,19 @@ export default function Dashboard({
                 <select
                   id="mobile-week-selector"
                   value={selectedWeekNum}
-                  onChange={(e) => setSelectedWeekNum(Number(e.target.value))}
+                  onChange={(e) => setPilihanManual(Number(e.target.value))}
                   className="field font-semibold"
                 >
                   {filteredWeeks.length > 0 ? (
                     filteredWeeks.map((wk) => (
                       <option key={wk.weekNum} value={wk.weekNum}>
+                        {wk.weekNum === mingguSemasa.minggu?.weekNum ? '● ' : ''}
                         Minggu {wk.weekNum} ({wk.dates}) - Kumpulan {wk.groupName}
+                        {wk.weekNum === mingguSemasa.minggu?.weekNum
+                          ? mingguSemasa.status === 'semasa'
+                            ? ' — MINGGU INI'
+                            : ' — MINGGU BERIKUTNYA'
+                          : ''}
                       </option>
                     ))
                   ) : (
@@ -731,12 +929,16 @@ export default function Dashboard({
                   {filteredWeeks.length > 0 ? (
                     filteredWeeks.map((wk) => {
                       const isSelected = selectedWeekNum === wk.weekNum;
+                      const isSemasa = wk.weekNum === mingguSemasa.minggu?.weekNum;
+                      const sudahBerlalu = Boolean(
+                        wk.tempoh && wk.tempoh.tamat < hariIni
+                      );
                       const badgeColor = groupStyleHelpers.getBadge(wk.groupName);
                       const dotColor = groupStyleHelpers.getDotColor(wk.groupName);
                       return (
                         <button
                           key={wk.weekNum}
-                          onClick={() => setSelectedWeekNum(wk.weekNum)}
+                          onClick={() => setPilihanManual(wk.weekNum)}
                           className={`w-full text-left p-3 rounded-xl border transition flex items-center justify-between ${
                             isSelected
                               ? 'border-lime-core bg-lime-core/8 shadow-sm ring-1 ring-indigo-600/30'
@@ -744,10 +946,23 @@ export default function Dashboard({
                           }`}
                         >
                           <div className="space-y-0.5">
-                            <span className="text-xs font-extrabold text-bright block">
-                              Minggu {wk.weekNum}
+                            <span className="text-xs font-extrabold text-bright block flex items-center gap-1.5">
+                              {/* Minggu yang sudah berlalu dipudarkan supaya
+                                  kedudukan kita dalam sesi kelihatan sekilas. */}
+                              <span className={sudahBerlalu && !isSemasa ? 'opacity-45' : ''}>
+                                Minggu {wk.weekNum}
+                              </span>
+                              {isSemasa && (
+                                <span className="rounded bg-lime-core px-1.5 py-px text-[9px] font-black uppercase text-[#0a0f08]">
+                                  {mingguSemasa.status === 'semasa' ? 'Minggu Ini' : 'Berikutnya'}
+                                </span>
+                              )}
                             </span>
-                            <span className="text-[11px] text-muted block">
+                            <span
+                              className={`text-[11px] block ${
+                                sudahBerlalu && !isSemasa ? 'text-faint line-through' : 'text-muted'
+                              }`}
+                            >
                               {wk.dates}
                             </span>
                           </div>
@@ -803,8 +1018,8 @@ export default function Dashboard({
                       <div className="rounded-xl bg-rose-500/10 p-3.5 flex items-start gap-2.5">
                         <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-[11px] font-bold text-rose-800 uppercase tracking-wide">Makluman Cuti / Peristiwa Khas Minggu Ini:</p>
-                          <ul className="list-disc pl-4 mt-1 text-[11px] text-rose-700 space-y-0.5">
+                          <p className="text-[11px] font-bold text-rose-300 uppercase tracking-wide">Makluman Cuti / Peristiwa Khas Minggu Ini:</p>
+                          <ul className="list-disc pl-4 mt-1 text-[11px] text-rose-200 space-y-0.5">
                             {selectedWeekDetail.holidays.map((hol, hIdx) => (
                               <li key={hIdx}>{hol}</li>
                             ))}
@@ -890,17 +1105,30 @@ export default function Dashboard({
               {dutyGroups.map((group, gIdx) => {
                 const badgeColor = groupStyleHelpers.getBadge(group.name);
                 const cardColor = groupStyleHelpers.getCard(group.name);
+                const kumpulanBertugas = mingguSemasa.minggu?.groupName === group.name;
                 return (
-                  <div key={gIdx} className={`rounded-2xl border border-l-4 p-5 space-y-4 transition hover:shadow-md ${cardColor}`}>
-                    
+                  <div
+                    key={gIdx}
+                    className={`rounded-2xl border border-l-4 p-5 space-y-4 transition hover:shadow-md ${cardColor} ${
+                      kumpulanBertugas ? 'ring-1 ring-lime-core/40 bg-lime-core/5' : ''
+                    }`}
+                  >
+
                     {/* Header */}
-                    <div className="flex items-center justify-between border-b border-gray-100/50 pb-2">
+                    <div className="flex items-center justify-between border-b border-gray-100/50 pb-2 gap-2">
                       <h4 className="text-sm font-black uppercase text-bright">
                         Kumpulan {group.name}
                       </h4>
-                      <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
-                        {group.members.length} Ahli
-                      </span>
+                      {kumpulanBertugas ? (
+                        <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-lime-core px-2 py-0.5 text-[9px] font-black uppercase text-[#0a0f08]">
+                          <Clock className="h-2.5 w-2.5" />
+                          {mingguSemasa.status === 'semasa' ? 'Bertugas Kini' : 'Bertugas Nanti'}
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeColor}`}>
+                          {group.members.length} Ahli
+                        </span>
+                      )}
                     </div>
 
                     {/* Member list */}
@@ -908,9 +1136,17 @@ export default function Dashboard({
                       <span className="text-[10px] font-bold text-faint uppercase tracking-wider block">Ahli & Peranan:</span>
                       <div className="space-y-1.5">
                         {group.members.map((m, mIdx) => (
-                          <div key={mIdx} className="text-xs flex items-center justify-between text-soft">
+                          <div key={mIdx} className="text-xs flex items-center justify-between gap-2 text-soft">
                             <span className="font-bold">Cikgu {m.name}</span>
-                            <span className="text-[10px] bg-white/70 text-muted rounded px-1.5 py-0.5">{m.role}</span>
+                            {/*
+                              Cip peranan dahulunya bg-white/70 dengan text-muted —
+                              teks kelabu di atas kepingan hampir putih dalam tema
+                              gelap, jadi peranan setiap guru praktikalnya tidak
+                              boleh dibaca. Kini latar gelap dengan teks cerah.
+                            */}
+                            <span className="shrink-0 text-[10px] font-semibold bg-white/10 text-bright rounded px-1.5 py-0.5">
+                              {m.role}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -920,26 +1156,33 @@ export default function Dashboard({
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-bold text-faint uppercase tracking-wider block">Minggu Bertugas Sesi 2026:</span>
                       <div className="flex flex-wrap gap-1">
-                        {group.weeks.map((wk, wIdx) => (
-                          <button
-                            key={wIdx}
-                            onClick={() => {
-                              setSelectedWeekNum(wk.number);
-                              setViewMode('weeks');
-                            }}
-                            title={wk.dates}
-                            className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-soft hover:border-lime-core hover:text-lime-core transition"
-                          >
-                            M{wk.number}
-                          </button>
-                        ))}
+                        {group.weeks.map((wk, wIdx) => {
+                          const iniMingguSemasa = wk.number === mingguSemasa.minggu?.weekNum;
+                          return (
+                            <button
+                              key={wIdx}
+                              onClick={() => {
+                                setPilihanManual(wk.number);
+                                setViewMode('weeks');
+                              }}
+                              title={wk.dates}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition ${
+                                iniMingguSemasa
+                                  ? 'bg-lime-core text-[#0a0f08]'
+                                  : 'bg-white/5 text-soft hover:border-lime-core hover:text-lime-core'
+                              }`}
+                            >
+                              M{wk.number}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
                     {/* Holidays summary */}
                     {group.holidays && group.holidays.length > 0 && (
-                      <div className="text-[10px] text-rose-700 space-y-0.5 bg-rose-500/12 p-2 rounded-lg">
-                        <span className="font-bold uppercase block text-[9px] text-rose-800">Cuti / Peristiwa Khas:</span>
+                      <div className="text-[10px] text-rose-200 space-y-0.5 bg-rose-500/12 p-2 rounded-lg">
+                        <span className="font-bold uppercase block text-[9px] text-rose-300">Cuti / Peristiwa Khas:</span>
                         <ul className="list-disc pl-3">
                           {group.holidays.map((h, hIdx) => (
                             <li key={hIdx}>{h}</li>

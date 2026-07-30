@@ -26,11 +26,19 @@
   --color-surface: #121a14;
   --color-raised: #18221a;
 
-  /* Teks — nisbah kontras dianggarkan berbanding latar gelap */
+  /*
+     Teks — nisbah kontras DIUKUR berbanding permukaan kad kaca (#121512),
+     bukan dianggarkan:
+       bright 18.2:1 · soft 10.2:1 · muted 6.0:1 · faint 4.9:1
+
+     faint dahulunya #6b756a, iaitu hanya 3.84:1 — di bawah ambang WCAG AA
+     (4.5:1) sedangkan ia digunakan untuk label kecil 9-10px, justeru kes yang
+     paling memerlukan kontras. Dicerahkan sehingga ia benar-benar lulus.
+  */
   --color-bright: #f2f7ef;
   --color-soft: #b8c4b4;
   --color-muted: #8b9788;
-  --color-faint: #6b756a;
+  --color-faint: #7d877c;
 }
 
 /* ==========================================================================
@@ -335,6 +343,250 @@
   font-size: 0.6875rem;
   font-weight: 700;
   color: var(--color-lime-glow);
+}
+
+/* ==========================================================================
+   Tema restoran — borang "Rekod Aktiviti Baharu"
+   ==========================================================================
+   Borang ini ialah satu-satunya skrin yang guru isi sambil berdiri di dalam
+   kelas, pada telefon, kadang di bawah cahaya matahari. Tema gelap aplikasi
+   direka untuk memandang papan pemuka, bukan untuk mengisi 40 medan: teks
+   kelabu di atas latar hitam menjadi hampir tidak kelihatan pada skrin
+   telefon di luar bangunan.
+
+   Jadi borang ini membawa temanya sendiri — pulau cerah bergaya senarai
+   pesanan restoran di dalam aplikasi gelap. Semua gaya dilingkungi `.resto`
+   supaya tiada satu pun boleh terlepas ke skrin lain.
+
+   Palet: kertas krim, tomato (BM), basil (BI), madu (aksen), arang (teks).
+   Kontras teks utama pada latar krim ialah ~12:1 — jauh melebihi WCAG AA.
+   ========================================================================== */
+
+.resto {
+  --arang: #33291f;  /* teks utama  — kontras ~12:1 pada kertas krim */
+  --madu: #f2a33c;   /* aksen fokus */
+
+  color: var(--arang);
+  font-size: 15px; /* asas lebih besar — borang ini diisi pada telefon */
+}
+
+/* Latar kertas berjalur halus, seperti alas meja restoran */
+@utility resto-shell {
+  border-radius: 1.25rem;
+  background-color: #fffaf2;
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      rgba(242, 163, 60, 0.05) 0 12px,
+      transparent 12px 24px
+    );
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.6) inset,
+    0 18px 40px -20px rgba(51, 41, 31, 0.45);
+}
+
+/* Satu "kad menu" — seksyen borang */
+@utility resto-card {
+  border-radius: 1rem;
+  background: #ffffff;
+  border: 1px solid #eadfc8;
+  box-shadow: 0 2px 0 0 #f4e7d0;
+}
+
+/* Kepala kad dengan tab bergerigi seperti resit */
+@utility resto-head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-bottom: 1px dashed #e3d5ba;
+  padding: 0.875rem 1rem;
+}
+
+@utility resto-num {
+  display: grid;
+  place-items: center;
+  height: 1.75rem;
+  width: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #33291f;
+  color: #fffaf2;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+@utility resto-num-done {
+  display: grid;
+  place-items: center;
+  height: 1.75rem;
+  width: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #2f8f5b;
+  color: #ffffff;
+}
+
+/* Medan input bertema kertas — sasaran sentuh 44px pada telefon */
+@utility resto-field {
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid #eadfc8;
+  background: #fffdf8;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9375rem;
+  color: #33291f;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+
+  &::placeholder { color: #82705c; }
+
+  &:hover:not(:disabled):not([readonly]) { border-color: #dfcfae; }
+
+  &:focus {
+    outline: none;
+    background: #ffffff;
+    border-color: #f2a33c;
+    box-shadow: 0 0 0 3.5px rgba(242, 163, 60, 0.25);
+  }
+
+  &:disabled,
+  &[readonly] {
+    background: #f7f0e4;
+    color: #6b5a48;
+  }
+}
+
+/* Label kecil bergaya menu */
+@utility resto-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7b6553;
+}
+
+/* Baris checklist yang boleh diketik keseluruhannya */
+@utility resto-check {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2.875rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid #eadfc8;
+  background: #fffdf8;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+
+  &:hover { background: #fff6e8; border-color: #e6d3ae; }
+}
+
+@utility resto-check-on {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2.875rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid #2f8f5b;
+  background: #e3f5ea;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+/* Butang utama — "hantar pesanan" */
+@utility resto-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.875rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(to bottom, #33291f, #241c14);
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #fffaf2;
+  box-shadow: 0 3px 0 0 #1a140e;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+
+  &:hover { filter: brightness(1.14); }
+  &:active { transform: translateY(2px); box-shadow: 0 1px 0 0 #1a140e; }
+}
+
+@utility resto-btn-alt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.875rem;
+  border-radius: 0.875rem;
+  background: #fff3e0;
+  border: 1.5px solid #eadfc8;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #6b5a48;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+
+  &:hover { background: #ffe9c9; color: #33291f; }
+}
+
+/* Cip kecil bertema */
+@utility resto-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  background: #fff2dc;
+  border: 1px solid #f6dcae;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: #8a5a12;
+  white-space: nowrap;
+}
+
+.resto {
+  /*
+   * Peraturan asas aplikasi memaksa popup <select> menjadi gelap. Di dalam
+   * borang cerah ini popup gelap kelihatan seperti pepijat, jadi ia
+   * dikembalikan kepada kertas — dinyatakan di sini supaya pembetulan tema
+   * gelap kekal utuh untuk skrin lain.
+   */
+  & select { color-scheme: light; }
+
+  & select option,
+  & select optgroup {
+    background-color: #fffaf2;
+    color: #33291f;
+  }
+
+  & select option:checked {
+    background-color: #fff2dc;
+    color: #8a5a12;
+  }
+
+  & :focus-visible {
+    outline: 2px solid var(--madu);
+    outline-offset: 2px;
+  }
+
+  /* Papan kekunci telefon tidak sepatutnya mengezum masuk pada fokus:
+     iOS Safari mengezum apabila saiz teks medan di bawah 16px. */
+  & input,
+  & select,
+  & textarea {
+    font-size: max(1rem, 0.9375rem);
+  }
 }
 
 /* ==========================================================================

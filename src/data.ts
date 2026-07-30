@@ -15,8 +15,89 @@ import { Officer } from './types';
 
 export const AVAILABLE_GROUPS = ['Ancala', 'Buana', 'Candra', 'Kencana', 'Mega', 'Pawana'];
 export const MALAYSIAN_DAYS = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
-export const AVAILABLE_CLASSES = ['1 Kritis', '1 Kreatif', '1 Progresif', '2 Kritis', '2 Kreatif', '2 Progresif', '3 Kritis', '3 Kreatif', '3 Progresif'];
+
+/* ==========================================================================
+   Kelas Tahap 1 — nama sebenar SK Bandar Tawau
+   ==========================================================================
+   Nama kelas berkekalan dari Tahun 1 hingga Tahun 3, jadi senarai dijana
+   daripada dua paksi dan bukan ditaip satu per satu. Senarai lama ("Kritis /
+   Kreatif / Progresif") mengandungi kelas rekaan yang tidak wujud di sekolah —
+   guru terpaksa memilih kelas yang salah atau menaip semula setiap kali.
+   ========================================================================== */
+
+export const TAHUN_TAHAP_1 = ['1', '2', '3'];
+export const NAMA_KELAS_TAHAP_1 = ['INOVATIF', 'INTELEK', 'KREATIF', 'KRITIS', 'PATRIOTIK'];
+
+export const AVAILABLE_CLASSES = TAHUN_TAHAP_1.flatMap(tahun =>
+  NAMA_KELAS_TAHAP_1.map(nama => `${tahun} ${nama}`)
+);
+
+/**
+ * Kelas rekaan yang pernah dihantar bersama sistem.
+ *
+ * Disimpan supaya migrasi tetapan boleh mengenal pasti dan membuangnya
+ * daripada localStorage guru, tanpa turut membuang kelas yang ditambah
+ * sendiri oleh sekolah.
+ */
+export const KELAS_DUMMY_LAMA = [
+  '1 Kritis', '1 Kreatif', '1 Progresif',
+  '2 Kritis', '2 Kreatif', '2 Progresif',
+  '3 Kritis', '3 Kreatif', '3 Progresif'
+];
+
 export const COMMON_ACTIVITIES_BM = [
+  'Main Peranan (Roleplay)',
+  'Bercerita (Storytelling)',
+  'Mari Membaca Suku Kata',
+  'Kuiz Interaktif / Kahoot',
+  'Nyanyian dan Muzik Suku Kata',
+  'Permainan Kad Perkataan',
+  'Kerja Kumpulan (Bento PBD)',
+  'Kuiz Menulis Ayat Mudah',
+  'Dekod Suku Kata KV + KVKV',
+  'Bacaan Berpasangan (Rakan Pembaca)',
+  'Dikte Perkataan Bergambar',
+  'Teka Silang Kata Mudah',
+  'Papan Cerita Bergambar (Bina Ayat)',
+  'Sudut Bacaan 10 Minit',
+  'Bengkel Tulisan Cantik & Ejaan',
+  'Gallery Walk (Labelkan Gambar)',
+  'Pantun & Sajak Beraksi',
+  'Cerita Rakyat Boneka Tangan',
+  'Roda Perbendaharaan Kata',
+  'Lakonan Situasi Harian (Kantin / Beli-Belah)'
+];
+
+export const COMMON_ACTIVITIES_BI = [
+  'Roleplay / Dialogues',
+  'Spelling Bee',
+  'Phonics Wheel & Blending',
+  'Show and Tell',
+  'Vocabulary Matching Games',
+  'Interactive Storytelling',
+  'Sight Words Bingo',
+  'Choral Speaking / Action Song',
+  'Flashcard Blending Drill (CVC Words)',
+  'Buddy Reading (Paired Reading)',
+  'Picture Dictation',
+  'Simple Crossword & Word Search',
+  'Story Sequencing Cards',
+  'Reading Corner 10 Minutes',
+  'Handwriting & Spelling Clinic',
+  'Gallery Walk (Label the Picture)',
+  'Nursery Rhymes & Jazz Chants',
+  'Puppet Show Storytelling',
+  'Wheel of Vocabulary',
+  'Daily Situation Roleplay (Canteen / Shopping)'
+];
+
+/**
+ * Senarai aktiviti yang dihantar bersama versi terdahulu (8 setiap subjek).
+ *
+ * Diperlukan oleh migrasi tetapan: entri tersimpan yang TIDAK terkandung di
+ * sini ialah aktiviti yang ditambah sendiri oleh guru, jadi ia dikekalkan.
+ */
+export const AKTIVITI_LAMA_BM = [
   'Main peranan (Roleplay)',
   'Bercerita (Storytelling)',
   'Mari Membaca Suku Kata',
@@ -26,7 +107,8 @@ export const COMMON_ACTIVITIES_BM = [
   'Kerja Kumpulan (Bento PBD)',
   'Kuiz Menulis Ayat Mudah'
 ];
-export const COMMON_ACTIVITIES_BI = [
+
+export const AKTIVITI_LAMA_BI = [
   'Roleplay / Dialogues',
   'Spelling Bee',
   'Phonics Wheel & Blending',
@@ -36,6 +118,97 @@ export const COMMON_ACTIVITIES_BI = [
   'Sight Words Bingo',
   'Choral Speaking / Action Song'
 ];
+
+/* ==========================================================================
+   Preset catatan kemajuan murid (10 set)
+   ==========================================================================
+   Guru bertugas mengisi laporan untuk beberapa murid sekaligus, biasanya
+   menggunakan telefon. Menaip catatan penuh bagi setiap murid ialah punca
+   utama medan ini dibiarkan kosong. Preset ini boleh dipilih dengan satu
+   ketikan, dan masih boleh disunting selepas dipilih.
+   ========================================================================== */
+
+export const PRESET_CATATAN_MURID = [
+  'Menunjukkan peningkatan ketara — sudah boleh membaca dengan bimbingan minimum.',
+  'Mula yakin bertutur dan memberi respons di hadapan rakan sekelas.',
+  'Masih memerlukan bimbingan individu secara berterusan.',
+  'Sudah boleh mengenal dan menyebut suku kata / bunyi dengan betul.',
+  'Aktif memberi respons dan bekerjasama baik dalam kumpulan.',
+  'Perlu latihan tambahan di rumah bersama ibu bapa atau penjaga.',
+  'Tumpuan bertambah baik sepanjang sesi bimbingan berjalan.',
+  'Mampu menyempurnakan tugasan tanpa bantuan rakan.',
+  'Kemajuan perlahan tetapi konsisten; intervensi perlu dikekalkan.',
+  'Tidak dapat mengikuti sepenuhnya kerana kerap tidak hadir ke sekolah.'
+];
+
+/* ==========================================================================
+   Preset catatan impak / refleksi keseluruhan (20 set)
+   ==========================================================================
+   Setiap teks mengandungi ruang ganti yang diisi daripada rekod yang sedang
+   dibuka, jadi catatan menyebut aktiviti, kelas dan bilangan murid yang
+   sebenar — bukan ayat umum yang sama untuk semua laporan.
+
+   Ruang ganti yang difahami: {aktiviti} {kelas} {bil} {bilNaik} {subjek}
+   ========================================================================== */
+
+export const PRESET_CATATAN_IMPAK = [
+  'Aktiviti {aktiviti} berjaya dilaksanakan bersama {bil} murid {kelas}. Murid menunjukkan minat dan penglibatan aktif sepanjang sesi.',
+  'Melalui {aktiviti}, {bilNaik} daripada {bil} murid berjaya meningkatkan tahap penguasaan selepas bimbingan diberikan.',
+  '{aktiviti} membantu murid yang lemah membaca menyebut suku kata dengan lebih jelas dan yakin.',
+  'Keyakinan murid untuk bertutur di hadapan kelas meningkat selepas sesi {aktiviti} dijalankan.',
+  'Sesi {aktiviti} berjalan lancar; semua murid dapat menyiapkan tugasan dalam masa yang ditetapkan.',
+  'Kerjasama dalam kumpulan bertambah baik — murid saling membantu rakan yang lemah semasa {aktiviti}.',
+  'Pendekatan {aktiviti} sesuai dengan tahap murid {kelas} dan disyorkan diteruskan pada minggu berikutnya.',
+  'Sebahagian murid masih memerlukan bimbingan individu; {aktiviti} akan diulang dalam kumpulan yang lebih kecil.',
+  'Penggunaan bahan bantu mengajar dalam {aktiviti} berjaya menarik perhatian murid sepanjang sesi.',
+  'Murid lebih bermotivasi kerana {aktiviti} dijalankan secara santai dan menyeronokkan.',
+  'Guru subjek {subjek} mengesahkan penglibatan murid dalam kelas bertambah baik selepas program {aktiviti}.',
+  'Sesi {aktiviti} mengurangkan rasa malu murid untuk mencuba, walaupun jawapan mereka belum tepat sepenuhnya.',
+  'Kemahiran mendengar dan memberi respons murid bertambah baik melalui {aktiviti}.',
+  '{aktiviti} membantu murid mengenal perbendaharaan kata baharu dan menggunakannya dalam ayat mudah.',
+  'Tumpuan murid kekal baik kerana {aktiviti} melibatkan pergerakan dan unsur permainan.',
+  'Bimbingan rapat semasa {aktiviti} membolehkan guru mengenal pasti kelemahan khusus setiap murid.',
+  'Ibu bapa dimaklumkan tentang kemajuan murid selepas {aktiviti} bagi sokongan berterusan di rumah.',
+  'Cabaran utama sesi ini ialah kekangan masa; {aktiviti} perlu dipecahkan kepada dua sesi yang lebih pendek.',
+  'Kehadiran murid sasaran perlu dipantau kerana ia menjejaskan kesinambungan {aktiviti}.',
+  'Secara keseluruhan, {aktiviti} mencapai objektif sokongan PBD {subjek} dan layak dikekalkan dalam takwim mingguan.'
+];
+
+/** Konteks rekod yang digunakan untuk mengisi ruang ganti preset catatan. */
+export interface KonteksCatatan {
+  aktiviti?: string;
+  kelas?: string;
+  bil?: number;
+  bilNaik?: number;
+  subjek?: string;
+}
+
+/**
+ * Isikan ruang ganti dalam teks preset dengan butiran rekod semasa.
+ *
+ * Ruang ganti yang tidak mempunyai nilai dibiarkan sebagai teks generik yang
+ * masih boleh dibaca ("aktiviti ini", "kelas berkenaan") supaya laporan tidak
+ * pernah tercetak dengan tanda `{aktiviti}` yang mentah.
+ */
+export function isiCatatan(teks: string, konteks: KonteksCatatan = {}): string {
+  const gantian: Record<string, string> = {
+    aktiviti: konteks.aktiviti?.trim() || 'aktiviti ini',
+    kelas: konteks.kelas?.trim() || 'kelas berkenaan',
+    bil: String(konteks.bil ?? 0),
+    bilNaik: String(konteks.bilNaik ?? 0),
+    subjek:
+      konteks.subjek === 'BI'
+        ? 'Bahasa Inggeris'
+        : konteks.subjek === 'BM'
+          ? 'Bahasa Melayu'
+          : 'bahasa'
+  };
+
+  return teks.replace(/\{(\w+)\}/g, (padanan, kunci: string) =>
+    kunci in gantian ? gantian[kunci] : padanan
+  );
+}
+
 export const TAHAP_PENGUASAAN_DESCS = [
   'TP1: Tahu (Murid tahu perkara asas / sangat terhad)',
   'TP2: Tahu dan faham (Murid menunjukkan kefahaman untuk bertukar maklumat)',

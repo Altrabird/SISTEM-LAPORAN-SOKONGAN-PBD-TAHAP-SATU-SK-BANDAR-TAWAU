@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ActivityLog, AppSettings } from './types';
 import {
-  AVAILABLE_CLASSES,
-  COMMON_ACTIVITIES_BM,
-  COMMON_ACTIVITIES_BI,
-  TANGGUNGJAWAB_UMUM,
-  OFFICIAL_DUTY_GROUPS,
-  DEFAULT_PELAPOR,
-  DEFAULT_PENYEMAK
-} from './data';
+  muatTetapan,
+  simpanTetapan,
+  tetapanLalai,
+  KUNCI_TETAPAN
+} from './lib/settingsStore';
 import { migrateInlineImages, deletePhotos, clearPhotos } from './lib/photoStore';
 import {
   deleteFromSheets,
@@ -65,74 +62,50 @@ export default function App() {
   const [selectedActivity, setSelectedActivity] = useState<ActivityLog | null>(null);
   const [editingActivity, setEditingActivity] = useState<ActivityLog | null>(null);
 
-  // Load and save settings in localStorage
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('lapor_pbd_settings');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error loading settings', e);
-      }
-    }
-    return {
-      schoolName: 'SK BANDAR TAWAU',
-      schoolShortCode: 'SKBT',
-      footerText: 'LaporPBD v1.2.0 • SKBT 2026',
-      availableClasses: AVAILABLE_CLASSES,
-      commonActivitiesBm: COMMON_ACTIVITIES_BM,
-      commonActivitiesBi: COMMON_ACTIVITIES_BI,
-      tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
-      dutyGroups: OFFICIAL_DUTY_GROUPS,
-      pelaporList: DEFAULT_PELAPOR,
-      penyemakList: DEFAULT_PENYEMAK
-    };
-  });
+  /*
+   * Tetapan dimuatkan melalui muatTetapan(), yang turut menjalankan migrasi
+   * skema. Guru yang pernah membuka versi terdahulu mempunyai senarai kelas
+   * rekaan dalam localStorage; tanpa migrasi, kod baharu tidak akan pernah
+   * mengubah apa yang mereka lihat.
+   */
+  const [settings, setSettings] = useState<AppSettings>(() => muatTetapan());
+
+  // Tulis kembali hasil migrasi supaya ia berlaku sekali sahaja, bukan pada
+  // setiap kali aplikasi dibuka.
+  useEffect(() => {
+    simpanTetapan(settings);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleUpdateSettings = (newSettings: AppSettings) => {
     setSettings(newSettings);
-    localStorage.setItem('lapor_pbd_settings', JSON.stringify(newSettings));
+    simpanTetapan(newSettings);
   };
 
   const handleResetAllData = () => {
     localStorage.removeItem('lapor_pbd_activities');
-    localStorage.removeItem('lapor_pbd_settings');
+    localStorage.removeItem(KUNCI_TETAPAN);
     void clearPhotos(); // buang juga gambar dalam IndexedDB
     setActivities([]);
-    const defaultVal = {
-      schoolName: 'SK BANDAR TAWAU',
-      schoolShortCode: 'SKBT',
-      footerText: 'LaporPBD v1.2.0 • SKBT 2026',
-      availableClasses: AVAILABLE_CLASSES,
-      commonActivitiesBm: COMMON_ACTIVITIES_BM,
-      commonActivitiesBi: COMMON_ACTIVITIES_BI,
-      tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
-      dutyGroups: OFFICIAL_DUTY_GROUPS,
-      pelaporList: DEFAULT_PELAPOR,
-      penyemakList: DEFAULT_PENYEMAK
-    };
-    setSettings(defaultVal);
+    const lalai = tetapanLalai();
+    setSettings(lalai);
     persistActivities([]);
-    localStorage.setItem('lapor_pbd_settings', JSON.stringify(defaultVal));
+    simpanTetapan(lalai);
     setActiveTab('dashboard');
   };
 
   const handleResetSettingsOnly = () => {
-    localStorage.removeItem('lapor_pbd_settings');
-    const defaultVal = {
-      schoolName: 'SK BANDAR TAWAU',
-      schoolShortCode: 'SKBT',
-      footerText: 'LaporPBD v1.2.0 • SKBT 2026',
-      availableClasses: AVAILABLE_CLASSES,
-      commonActivitiesBm: COMMON_ACTIVITIES_BM,
-      commonActivitiesBi: COMMON_ACTIVITIES_BI,
-      tanggungjawabUmum: TANGGUNGJAWAB_UMUM,
-      dutyGroups: OFFICIAL_DUTY_GROUPS,
-      pelaporList: DEFAULT_PELAPOR,
-      penyemakList: DEFAULT_PENYEMAK
-    };
-    setSettings(defaultVal);
-    localStorage.setItem('lapor_pbd_settings', JSON.stringify(defaultVal));
+    /*
+     * Senarai induk murid TIDAK dibuang di sini.
+     *
+     * "Set semula tetapan" bermaksud memulihkan senarai pilihan dan jadual
+     * kepada nilai sekolah — bukan memadam kerja memasukkan beratus nama
+     * murid, yang mengambil masa jauh lebih lama untuk dibina semula
+     * berbanding tetapan lain. Padam penuh tersedia melalui set semula kilang.
+     */
+    const lalai = { ...tetapanLalai(), studentRoster: settings.studentRoster ?? [] };
+    setSettings(lalai);
+    simpanTetapan(lalai);
   };
   
   // Mobile navigation drawer toggle
@@ -381,7 +354,7 @@ export default function App() {
   const navItems = [
     { id: 'dashboard', label: 'Paparan Utama', icon: LayoutDashboard, aktifBila: ['dashboard'] },
     { id: 'list', label: 'Senarai Aktiviti', icon: ListFilter, aktifBila: ['list', 'report'] },
-    { id: 'form', label: 'Rekod Aktiviti Baru', icon: PlusCircle, aktifBila: ['form'] },
+    { id: 'form', label: 'Rekod Aktiviti Baharu', icon: PlusCircle, aktifBila: ['form'] },
     { id: 'admin', label: 'Tetapan & Admin', icon: Settings, aktifBila: ['admin'] }
   ];
 
@@ -578,6 +551,16 @@ export default function App() {
                 availableClasses={settings.availableClasses}
                 commonActivitiesBm={settings.commonActivitiesBm}
                 commonActivitiesBi={settings.commonActivitiesBi}
+                studentRoster={settings.studentRoster}
+                catatanMuridPresets={settings.catatanMuridPresets}
+                catatanImpakPresets={settings.catatanImpakPresets}
+                onOpenAdmin={() => handleTabChange('admin')}
+                onAddImpakPreset={(teks) =>
+                  handleUpdateSettings({
+                    ...settings,
+                    catatanImpakPresets: [...(settings.catatanImpakPresets ?? []), teks]
+                  })
+                }
               />
             )}
 

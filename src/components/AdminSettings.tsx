@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
-import { AppSettings, DutyGroup, DutyMember, DutyWeek, Officer, ActivityLog } from '../types';
-import { DEFAULT_PELAPOR, DEFAULT_PENYEMAK } from '../data';
+import { AppSettings, DutyMember, Officer, ActivityLog, StudentRosterEntry } from '../types';
+import {
+  DEFAULT_PELAPOR,
+  DEFAULT_PENYEMAK,
+  PRESET_CATATAN_MURID,
+  PRESET_CATATAN_IMPAK
+} from '../data';
 import OfficerList from './OfficerList';
 import CloudSettings from './CloudSettings';
+import StudentRosterManager from './StudentRosterManager';
+import NotePresetList from './NotePresetList';
 import {
   Settings,
   School,
@@ -17,7 +24,9 @@ import {
   X,
   AlertCircle,
   Clock,
-  UserCheck
+  UserCheck,
+  GraduationCap,
+  MessageSquareQuote
 } from 'lucide-react';
 
 interface AdminSettingsProps {
@@ -35,7 +44,17 @@ export default function AdminSettings({
   onResetAllData,
   onResetSettingsOnly
 }: AdminSettingsProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'general' | 'officers' | 'classes' | 'activities' | 'responsibilities' | 'groups' | 'system'>('general');
+  const [activeSubTab, setActiveSubTab] = useState<
+    | 'general'
+    | 'officers'
+    | 'classes'
+    | 'students'
+    | 'activities'
+    | 'notes'
+    | 'responsibilities'
+    | 'groups'
+    | 'system'
+  >('general');
   
   // Local state copy for form editing to prevent immediate parent state writes on keypress
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
@@ -83,7 +102,23 @@ export default function AdminSettings({
   };
 
   const handleRemoveClass = (clsName: string) => {
-    if (confirm(`Adakah anda pasti mahu memadam kelas "${clsName}"?`)) {
+    /*
+     * Kelas yang dibuang mungkin masih memegang nama murid dalam senarai
+     * induk. Murid itu tidak dipadam — tetapi ia akan terkeluar daripada
+     * susunan kelas rasmi dan tidak lagi boleh dipilih semasa merekod
+     * aktiviti, jadi guru perlu tahu bilangannya sebelum meneruskan.
+     */
+    const bilMurid = (localSettings.studentRoster ?? []).filter(
+      m => m.className === clsName
+    ).length;
+
+    const amaran = bilMurid
+      ? `Padam kelas "${clsName}"?\n\n${bilMurid} nama murid dalam senarai induk masih ` +
+        'tergolong dalam kelas ini. Nama mereka TIDAK dipadam, tetapi kelas tersebut ' +
+        'tidak lagi boleh dipilih semasa merekod aktiviti sehingga ia ditambah semula.'
+      : `Adakah anda pasti mahu memadam kelas "${clsName}"?`;
+
+    if (confirm(amaran)) {
       const updated = {
         ...localSettings,
         availableClasses: localSettings.availableClasses.filter(c => c !== clsName)
@@ -257,7 +292,9 @@ export default function AdminSettings({
             Konfigurasi & Tetapan Sistem
           </h2>
           <p className="text-xs text-muted leading-relaxed max-w-2xl">
-            Ubah nama sekolah, kod singkatan, senarai pilihan kelas, aktiviti lazim, tanggungjawab guru bertugas, peranan ahli kumpulan, serta jadual cuti peristiwa mingguan.
+            Ubah nama sekolah, kod singkatan, senarai pilihan kelas, senarai induk nama murid,
+            aktiviti lazim, preset catatan laporan, tanggungjawab guru bertugas, peranan ahli
+            kumpulan, serta jadual cuti peristiwa mingguan.
           </p>
         </div>
 
@@ -278,7 +315,9 @@ export default function AdminSettings({
             { id: 'general', name: 'Maklumat Am', icon: School },
             { id: 'officers', name: 'Pelapor & Penyemak', icon: UserCheck },
             { id: 'classes', name: 'Senarai Kelas', icon: Clock },
+            { id: 'students', name: 'Senarai Murid', icon: GraduationCap },
             { id: 'activities', name: 'Aktiviti Lazim', icon: BookOpen },
+            { id: 'notes', name: 'Preset Catatan', icon: MessageSquareQuote },
             { id: 'responsibilities', name: 'Tanggungjawab', icon: Briefcase },
             { id: 'groups', name: 'Kumpulan & Jadual', icon: Users },
             { id: 'system', name: 'Sistem & Set Semula', icon: RotateCcw }
@@ -349,7 +388,8 @@ export default function AdminSettings({
                 <AlertCircle className="h-4.5 w-4.5 text-lime-core shrink-0 mt-0.5" />
                 <div className="text-[11px] text-lime-glow leading-relaxed">
                   <p className="font-bold">Nota Pengemaskinian Autotamat:</p>
-                  <p className="mt-0.5 text-indigo-700/90">Sebarang perubahan yang anda lakukan pada input di atas disimpan secara automatik dalam simpanan peranti tempatan (Local Storage) dan sedia dipaparkan.</p>
+                  {/* text-indigo-700 di atas panel lime gelap hampir tidak terbaca. */}
+                  <p className="mt-0.5 text-soft">Sebarang perubahan yang anda lakukan pada input di atas disimpan secara automatik dalam simpanan peranti tempatan (Local Storage) dan sedia dipaparkan.</p>
                 </div>
               </div>
             </div>
@@ -441,6 +481,58 @@ export default function AdminSettings({
                     </button>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* SENARAI INDUK NAMA MURID */}
+          {activeSubTab === 'students' && (
+            <StudentRosterManager
+              roster={localSettings.studentRoster ?? []}
+              availableClasses={localSettings.availableClasses}
+              onChange={(senarai: StudentRosterEntry[]) =>
+                triggerSave({ ...localSettings, studentRoster: senarai })
+              }
+            />
+          )}
+
+          {/* PRESET CATATAN */}
+          {activeSubTab === 'notes' && (
+            <div className="space-y-8">
+              <div className="border-b border-white/8 pb-3">
+                <h3 className="text-sm font-black text-bright uppercase tracking-wider">
+                  Preset Catatan Laporan
+                </h3>
+                <p className="text-[11px] text-muted mt-0.5 leading-relaxed">
+                  Ayat siap sedia yang boleh dipilih dengan satu ketikan semasa merekod
+                  aktiviti. Guru masih boleh menaip catatan sendiri pada bila-bila masa —
+                  preset hanya mempercepatkan kes yang biasa.
+                </p>
+              </div>
+
+              <NotePresetList
+                title="Catatan Kemajuan Murid"
+                hint="Dipilih bagi setiap murid dalam senarai checklist rekod aktiviti."
+                presets={localSettings.catatanMuridPresets ?? PRESET_CATATAN_MURID}
+                defaults={PRESET_CATATAN_MURID}
+                placeholder="Contoh: Sudah boleh membaca ayat pendek tanpa bantuan guru."
+                onChange={(senarai: string[]) =>
+                  triggerSave({ ...localSettings, catatanMuridPresets: senarai })
+                }
+              />
+
+              <div className="border-t border-white/8 pt-6">
+                <NotePresetList
+                  title="Catatan Impak / Refleksi Keseluruhan"
+                  hint="Rumusan satu sesi penuh. Gunakan ruang ganti supaya catatan menyebut aktiviti dan kelas yang sebenar."
+                  presets={localSettings.catatanImpakPresets ?? PRESET_CATATAN_IMPAK}
+                  defaults={PRESET_CATATAN_IMPAK}
+                  placeholder="Contoh: Sesi {aktiviti} bersama {bil} murid {kelas} berjalan lancar dan objektif tercapai."
+                  showPreview
+                  onChange={(senarai: string[]) =>
+                    triggerSave({ ...localSettings, catatanImpakPresets: senarai })
+                  }
+                />
               </div>
             </div>
           )}
@@ -746,12 +838,12 @@ export default function AdminSettings({
                                 {wk.holidays && wk.holidays.length > 0 ? (
                                   <div className="flex flex-wrap gap-1">
                                     {wk.holidays.map((hol, holIdx) => (
-                                      <span key={holIdx} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700">
+                                      <span key={holIdx} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-200">
                                         {hol}
                                         <button
                                           type="button"
                                           onClick={() => handleRemoveWeekHoliday(selectedGroupIdx, wIdx, holIdx)}
-                                          className="text-rose-500 hover:text-rose-800"
+                                          className="text-rose-300 hover:text-rose-100"
                                         >
                                           <X className="h-3 w-3" />
                                         </button>
@@ -834,7 +926,7 @@ export default function AdminSettings({
                   <div className="flex items-center gap-2.5">
                     <X className="h-5 w-5 text-rose-400 animate-pulse" />
                     <div>
-                      <h4 className="text-xs font-black text-red-900 uppercase">Set Semula Kilang & Padam Semua Laporan (Factory Reset All Data)</h4>
+                      <h4 className="text-xs font-black text-rose-200 uppercase">Set Semula Kilang &amp; Padam Semua Laporan (Factory Reset All Data)</h4>
                       <p className="text-[10.5px] text-muted mt-0.5">Memadam semua rekod laporan aktiviti sokongan murid yang disimpan dalam pelayar ini secara kekal bersama tetapan konfigurasinya.</p>
                     </div>
                   </div>
